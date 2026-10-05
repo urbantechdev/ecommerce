@@ -1,0 +1,2421 @@
+{
+  "branches": [
+    {
+      "id": "branch-nbi-cbd",
+      "code": "NBI-CBD",
+      "name": "Nairobi CBD Flagship (HQ)",
+      "location": "Biashara Street, Nairobi CBD",
+      "address": "Naisia Textiles Complex, 2nd Flr, Biashara St, P.O. Box 48291-00100 Nairobi",
+      "phone": "+254 722 001 100",
+      "email": "cbd@naisiaetextiles.com",
+      "isHQ": true,
+      "createdAt": "2026-10-05T04:16:55.899Z"
+    },
+    {
+      "id": "branch-nbi-west",
+      "code": "NBI-WST",
+      "name": "Nairobi Westlands Branch",
+      "location": "Sarit Centre Arcade, Westlands",
+      "address": "Shop 14B, Mezzanine 1, Sarit Centre, Nairobi",
+      "phone": "+254 733 002 200",
+      "email": "westlands@naisiaetextiles.com",
+      "isHQ": false,
+      "createdAt": "2026-10-05T04:16:55.899Z"
+    },
+    {
+      "id": "branch-msa-nyl",
+      "code": "MSA-NYL",
+      "name": "Mombasa Nyali Branch",
+      "location": "Links Road, Nyali, Mombasa",
+      "address": "City Mall Nyali, Ground Flr Suite 9, Mombasa",
+      "phone": "+254 720 003 300",
+      "email": "mombasa@naisiaetextiles.com",
+      "isHQ": false,
+      "createdAt": "2026-10-05T04:16:55.899Z"
+    },
+    {
+      "id": "branch-ksm-cpt",
+      "code": "KSM-CEN",
+      "name": "Kisumu Mega Plaza Branch",
+      "location": "Oginga Odinga Street, Kisumu",
+      "address": "Mega Plaza Mall, 1st Floor, Kisumu",
+      "phone": "+254 725 004 400",
+      "email": "kisumu@naisiaetextiles.com",
+      "isHQ": false,
+      "createdAt": "2026-10-05T04:16:55.899Z"
+    }
+  ],
+  "users": [
+    {
+      "id": "usr-admin-01",
+      "name": "Mercy Chebet (Director & System Admin)",
+      "email": "admin@naisiaetextiles.com",
+      "passwordHash": "$2b$10$1zXx86umuXUMuwwAPUevRenFK5MbZj8KAA2X18qF9lloJNbEnA2c6",
+      "role": "ADMIN",
+      "branchId": "all",
+      "phone": "+254 711 990 001",
+      "status": "ACTIVE",
+      "createdAt": "2026-10-05T04:16:55.899Z",
+      "lastLogin": "2026-10-05T07:16:44.944Z",
+      "pin": "888888"
+    },
+    {
+      "id": "usr-acc-01",
+      "name": "David Omondi (Chief Accountant & Tax Officer)",
+      "email": "accountant@naisiaetextiles.com",
+      "passwordHash": "$2b$10$1zXx86umuXUMuwwAPUevRe8L9K6yBRTN69GH3l/HcbZYZbGHV8PnC",
+      "role": "ACCOUNTANT",
+      "branchId": "all",
+      "phone": "+254 722 880 002",
+      "status": "ACTIVE",
+      "createdAt": "2026-10-05T04:16:55.899Z",
+      "lastLogin": "2026-10-05T07:13:08.855Z",
+      "pin": "555555"
+    },
+    {
+      "id": "usr-pos-nbi",
+      "name": "Faith Muthoni (POS Cashier - Nairobi CBD)",
+      "email": "staff.nairobi@naisiaetextiles.com",
+      "passwordHash": "$2b$10$1zXx86umuXUMuwwAPUevReXXmHJIzpdifn/RP3KQI4FdMEJe4R2kO",
+      "role": "STAFF",
+      "branchId": "branch-nbi-cbd",
+      "phone": "+254 733 770 003",
+      "status": "ACTIVE",
+      "createdAt": "2026-10-05T04:16:55.899Z",
+      "lastLogin": "2026-10-05T05:43:38.280Z",
+      "pin": "123456"
+    },
+    {
+      "id": "usr-pos-wst",
+      "name": "Brian Kiprop (POS Cashier - Westlands)",
+      "email": "staff.westlands@naisiaetextiles.com",
+      "passwordHash": "$2b$10$1zXx86umuXUMuwwAPUevRegKuhCCAUjIhpI44EVUfiZgUpjemWygK",
+      "role": "STAFF",
+      "branchId": "branch-nbi-west",
+      "phone": "+254 714 660 004",
+      "status": "ACTIVE",
+      "createdAt": "2026-10-05T04:16:55.899Z",
+      "pin": "654321"
+    },
+    {
+      "id": "usr-pos-msa",
+      "name": "Amina Salim (POS Cashier - Mombasa Nyali)",
+      "email": "staff.mombasa@naisiaetextiles.com",
+      "passwordHash": "$2b$10$1zXx86umuXUMuwwAPUevReCiVWa7VTMtFYHTh7Fpm0lJTi5dLHBOO",
+      "role": "STAFF",
+      "branchId": "branch-msa-nyl",
+      "phone": "+254 728 550 005",
+      "status": "ACTIVE",
+      "createdAt": "2026-10-05T04:16:55.899Z",
+      "pin": "112233",
+      "lastLogin": "2026-10-05T05:49:58.562Z"
+    }
+  ],
+  "products": [
+    {
+      "id": "prod-ns-shirt",
+      "name": "Nairobi School Official Poplin Shirt (Short Sleeve)",
+      "school": "Nairobi School",
+      "category": "SHIRTS",
+      "gender": "BOYS",
+      "description": "Premium cotton uniform shirt with reinforced seams.",
+      "taxCategory": "VAT_16",
+      "supplierId": "sup-02",
+      "active": true,
+      "variants": [
+        {
+          "id": "var-ns-shirt-26",
+          "sku": "NS-SH-WHT-26",
+          "barcode": "616129480526",
+          "size": "26",
+          "color": "White",
+          "costPrice": 550,
+          "sellingPrice": 1000,
+          "branchStock": {
+            "branch-nbi-cbd": 45,
+            "branch-nbi-west": 29,
+            "branch-msa-nyl": 12,
+            "branch-ksm-cpt": 10
+          },
+          "reorderLevel": 15,
+          "reorderQuantity": 30
+        },
+        {
+          "id": "var-ns-shirt-28",
+          "sku": "NS-SH-WHT-28",
+          "barcode": "616698805142",
+          "size": "28",
+          "color": "White",
+          "costPrice": 550,
+          "sellingPrice": 1000,
+          "branchStock": {
+            "branch-nbi-cbd": 43,
+            "branch-nbi-west": 29,
+            "branch-msa-nyl": 12,
+            "branch-ksm-cpt": 11
+          },
+          "reorderLevel": 15,
+          "reorderQuantity": 30
+        },
+        {
+          "id": "var-ns-shirt-30",
+          "sku": "NS-SH-WHT-30",
+          "barcode": "616433038974",
+          "size": "30",
+          "color": "White",
+          "costPrice": 550,
+          "sellingPrice": 1000,
+          "branchStock": {
+            "branch-nbi-cbd": 44,
+            "branch-nbi-west": 31,
+            "branch-msa-nyl": 12,
+            "branch-ksm-cpt": 10
+          },
+          "reorderLevel": 15,
+          "reorderQuantity": 30
+        },
+        {
+          "id": "var-ns-shirt-32",
+          "sku": "NS-SH-WHT-32",
+          "barcode": "616972495336",
+          "size": "32",
+          "color": "White",
+          "costPrice": 550,
+          "sellingPrice": 1000,
+          "branchStock": {
+            "branch-nbi-cbd": 43,
+            "branch-nbi-west": 31,
+            "branch-msa-nyl": 13,
+            "branch-ksm-cpt": 9
+          },
+          "reorderLevel": 15,
+          "reorderQuantity": 30
+        },
+        {
+          "id": "var-ns-shirt-34",
+          "sku": "NS-SH-WHT-34",
+          "barcode": "616757896982",
+          "size": "34",
+          "color": "White",
+          "costPrice": 550,
+          "sellingPrice": 1000,
+          "branchStock": {
+            "branch-nbi-cbd": 47,
+            "branch-nbi-west": 31,
+            "branch-msa-nyl": 11,
+            "branch-ksm-cpt": 11
+          },
+          "reorderLevel": 15,
+          "reorderQuantity": 30
+        },
+        {
+          "id": "var-ns-shirt-36",
+          "sku": "NS-SH-WHT-36",
+          "barcode": "616958118381",
+          "size": "36",
+          "color": "White",
+          "costPrice": 550,
+          "sellingPrice": 1000,
+          "branchStock": {
+            "branch-nbi-cbd": 47,
+            "branch-nbi-west": 28,
+            "branch-msa-nyl": 12,
+            "branch-ksm-cpt": 9
+          },
+          "reorderLevel": 15,
+          "reorderQuantity": 30
+        }
+      ],
+      "createdAt": "2026-10-05T04:16:55.899Z",
+      "updatedAt": "2026-10-05T07:16:44.967Z",
+      "imageUrl": "https://images.unsplash.com/photo-1598033129183-c4f50c736f10?w=500&q=80"
+    },
+    {
+      "id": "prod-ns-trouser",
+      "name": "Nairobi School Heavyweight Navy Wool-Blend Trouser",
+      "school": "Nairobi School",
+      "category": "TROUSERS",
+      "gender": "BOYS",
+      "description": "Tough tailored school trouser with reinforced inner crotch and expandable waistband. High fade-resistant navy twill.",
+      "taxCategory": "VAT_16",
+      "supplierId": "sup-01",
+      "active": true,
+      "variants": [
+        {
+          "id": "var-ns-trouser-26",
+          "sku": "NS-TR-NVY-26",
+          "barcode": "616603864014",
+          "size": "26",
+          "color": "Navy Blue",
+          "costPrice": 800,
+          "sellingPrice": 1520,
+          "branchStock": {
+            "branch-nbi-cbd": 37,
+            "branch-nbi-west": 20,
+            "branch-msa-nyl": 9,
+            "branch-ksm-cpt": 5
+          },
+          "reorderLevel": 12,
+          "reorderQuantity": 30
+        },
+        {
+          "id": "var-ns-trouser-28",
+          "sku": "NS-TR-NVY-28",
+          "barcode": "616402120342",
+          "size": "28",
+          "color": "Navy Blue",
+          "costPrice": 800,
+          "sellingPrice": 1520,
+          "branchStock": {
+            "branch-nbi-cbd": 34,
+            "branch-nbi-west": 23,
+            "branch-msa-nyl": 7,
+            "branch-ksm-cpt": 7
+          },
+          "reorderLevel": 12,
+          "reorderQuantity": 30
+        },
+        {
+          "id": "var-ns-trouser-30",
+          "sku": "NS-TR-NVY-30",
+          "barcode": "616791218058",
+          "size": "30",
+          "color": "Navy Blue",
+          "costPrice": 800,
+          "sellingPrice": 1520,
+          "branchStock": {
+            "branch-nbi-cbd": 34,
+            "branch-nbi-west": 23,
+            "branch-msa-nyl": 8,
+            "branch-ksm-cpt": 7
+          },
+          "reorderLevel": 12,
+          "reorderQuantity": 30
+        },
+        {
+          "id": "var-ns-trouser-32",
+          "sku": "NS-TR-NVY-32",
+          "barcode": "616404836576",
+          "size": "32",
+          "color": "Navy Blue",
+          "costPrice": 800,
+          "sellingPrice": 1520,
+          "branchStock": {
+            "branch-nbi-cbd": 37,
+            "branch-nbi-west": 21,
+            "branch-msa-nyl": 8,
+            "branch-ksm-cpt": 5
+          },
+          "reorderLevel": 12,
+          "reorderQuantity": 30
+        },
+        {
+          "id": "var-ns-trouser-34",
+          "sku": "NS-TR-NVY-34",
+          "barcode": "616524921862",
+          "size": "34",
+          "color": "Navy Blue",
+          "costPrice": 800,
+          "sellingPrice": 1520,
+          "branchStock": {
+            "branch-nbi-cbd": 34,
+            "branch-nbi-west": 20,
+            "branch-msa-nyl": 8,
+            "branch-ksm-cpt": 5
+          },
+          "reorderLevel": 12,
+          "reorderQuantity": 30
+        },
+        {
+          "id": "var-ns-trouser-36",
+          "sku": "NS-TR-NVY-36",
+          "barcode": "616589269806",
+          "size": "36",
+          "color": "Navy Blue",
+          "costPrice": 800,
+          "sellingPrice": 1520,
+          "branchStock": {
+            "branch-nbi-cbd": 35,
+            "branch-nbi-west": 23,
+            "branch-msa-nyl": 8,
+            "branch-ksm-cpt": 5
+          },
+          "reorderLevel": 12,
+          "reorderQuantity": 30
+        }
+      ],
+      "createdAt": "2026-10-05T04:16:55.899Z",
+      "updatedAt": "2026-10-05T07:16:44.967Z"
+    },
+    {
+      "id": "prod-ns-blazer",
+      "name": "Nairobi School Royal Navy Blazer with Braided Crest",
+      "school": "Nairobi School",
+      "category": "BLAZERS",
+      "gender": "BOYS",
+      "description": "Formal school blazer, fully lined with gold piping trim and precision gold bullion crest embroidery.",
+      "taxCategory": "VAT_16",
+      "supplierId": "sup-01",
+      "active": true,
+      "variants": [
+        {
+          "id": "var-ns-blazer-28",
+          "sku": "NS-BLZ-NVY-28",
+          "barcode": "616684534235",
+          "size": "28",
+          "color": "Royal Navy",
+          "costPrice": 2200,
+          "sellingPrice": 3990,
+          "branchStock": {
+            "branch-nbi-cbd": 19,
+            "branch-nbi-west": 14,
+            "branch-msa-nyl": 4,
+            "branch-ksm-cpt": 3
+          },
+          "reorderLevel": 8,
+          "reorderQuantity": 30
+        },
+        {
+          "id": "var-ns-blazer-30",
+          "sku": "NS-BLZ-NVY-30",
+          "barcode": "616826536165",
+          "size": "30",
+          "color": "Royal Navy",
+          "costPrice": 2200,
+          "sellingPrice": 3990,
+          "branchStock": {
+            "branch-nbi-cbd": 19,
+            "branch-nbi-west": 14,
+            "branch-msa-nyl": 4,
+            "branch-ksm-cpt": 3
+          },
+          "reorderLevel": 8,
+          "reorderQuantity": 30
+        },
+        {
+          "id": "var-ns-blazer-32",
+          "sku": "NS-BLZ-NVY-32",
+          "barcode": "616457110215",
+          "size": "32",
+          "color": "Royal Navy",
+          "costPrice": 2200,
+          "sellingPrice": 3990,
+          "branchStock": {
+            "branch-nbi-cbd": 19,
+            "branch-nbi-west": 14,
+            "branch-msa-nyl": 4,
+            "branch-ksm-cpt": 3
+          },
+          "reorderLevel": 8,
+          "reorderQuantity": 30
+        },
+        {
+          "id": "var-ns-blazer-34",
+          "sku": "NS-BLZ-NVY-34",
+          "barcode": "616343713923",
+          "size": "34",
+          "color": "Royal Navy",
+          "costPrice": 2200,
+          "sellingPrice": 3990,
+          "branchStock": {
+            "branch-nbi-cbd": 18,
+            "branch-nbi-west": 12,
+            "branch-msa-nyl": 4,
+            "branch-ksm-cpt": 4
+          },
+          "reorderLevel": 8,
+          "reorderQuantity": 30
+        },
+        {
+          "id": "var-ns-blazer-36",
+          "sku": "NS-BLZ-NVY-36",
+          "barcode": "616303576306",
+          "size": "36",
+          "color": "Royal Navy",
+          "costPrice": 2200,
+          "sellingPrice": 3990,
+          "branchStock": {
+            "branch-nbi-cbd": 22,
+            "branch-nbi-west": 12,
+            "branch-msa-nyl": 4,
+            "branch-ksm-cpt": 3
+          },
+          "reorderLevel": 8,
+          "reorderQuantity": 30
+        },
+        {
+          "id": "var-ns-blazer-38",
+          "sku": "NS-BLZ-NVY-38",
+          "barcode": "616288294318",
+          "size": "38",
+          "color": "Royal Navy",
+          "costPrice": 2200,
+          "sellingPrice": 3990,
+          "branchStock": {
+            "branch-nbi-cbd": 22,
+            "branch-nbi-west": 15,
+            "branch-msa-nyl": 6,
+            "branch-ksm-cpt": 3
+          },
+          "reorderLevel": 8,
+          "reorderQuantity": 30
+        }
+      ],
+      "createdAt": "2026-10-05T04:16:55.899Z",
+      "updatedAt": "2026-10-05T07:16:44.967Z"
+    },
+    {
+      "id": "prod-ns-sweater",
+      "name": "Nairobi School V-Neck Knit Sweater with Gold Stripes",
+      "school": "Nairobi School",
+      "category": "SWEATERS",
+      "gender": "UNISEX",
+      "description": "100% anti-pill acrylic knitwear in navy blue with double gold collar stripe and school monogram.",
+      "taxCategory": "VAT_16",
+      "supplierId": "sup-03",
+      "active": true,
+      "variants": [
+        {
+          "id": "var-ns-sweater-26",
+          "sku": "NS-SWT-NVY-26",
+          "barcode": "616748561692",
+          "size": "26",
+          "color": "Navy / Gold",
+          "costPrice": 750,
+          "sellingPrice": 1420,
+          "branchStock": {
+            "branch-nbi-cbd": 28,
+            "branch-nbi-west": 16,
+            "branch-msa-nyl": 5,
+            "branch-ksm-cpt": 5
+          },
+          "reorderLevel": 10,
+          "reorderQuantity": 30
+        },
+        {
+          "id": "var-ns-sweater-28",
+          "sku": "NS-SWT-NVY-28",
+          "barcode": "616548248175",
+          "size": "28",
+          "color": "Navy / Gold",
+          "costPrice": 750,
+          "sellingPrice": 1420,
+          "branchStock": {
+            "branch-nbi-cbd": 30,
+            "branch-nbi-west": 17,
+            "branch-msa-nyl": 7,
+            "branch-ksm-cpt": 5
+          },
+          "reorderLevel": 10,
+          "reorderQuantity": 30
+        },
+        {
+          "id": "var-ns-sweater-30",
+          "sku": "NS-SWT-NVY-30",
+          "barcode": "616452486595",
+          "size": "30",
+          "color": "Navy / Gold",
+          "costPrice": 750,
+          "sellingPrice": 1420,
+          "branchStock": {
+            "branch-nbi-cbd": 27,
+            "branch-nbi-west": 18,
+            "branch-msa-nyl": 7,
+            "branch-ksm-cpt": 6
+          },
+          "reorderLevel": 10,
+          "reorderQuantity": 30
+        },
+        {
+          "id": "var-ns-sweater-32",
+          "sku": "NS-SWT-NVY-32",
+          "barcode": "616884866060",
+          "size": "32",
+          "color": "Navy / Gold",
+          "costPrice": 750,
+          "sellingPrice": 1420,
+          "branchStock": {
+            "branch-nbi-cbd": 30,
+            "branch-nbi-west": 17,
+            "branch-msa-nyl": 5,
+            "branch-ksm-cpt": 5
+          },
+          "reorderLevel": 10,
+          "reorderQuantity": 30
+        },
+        {
+          "id": "var-ns-sweater-34",
+          "sku": "NS-SWT-NVY-34",
+          "barcode": "616746510628",
+          "size": "34",
+          "color": "Navy / Gold",
+          "costPrice": 750,
+          "sellingPrice": 1420,
+          "branchStock": {
+            "branch-nbi-cbd": 26,
+            "branch-nbi-west": 17,
+            "branch-msa-nyl": 6,
+            "branch-ksm-cpt": 4
+          },
+          "reorderLevel": 10,
+          "reorderQuantity": 30
+        },
+        {
+          "id": "var-ns-sweater-36",
+          "sku": "NS-SWT-NVY-36",
+          "barcode": "616995104402",
+          "size": "36",
+          "color": "Navy / Gold",
+          "costPrice": 750,
+          "sellingPrice": 1420,
+          "branchStock": {
+            "branch-nbi-cbd": 30,
+            "branch-nbi-west": 18,
+            "branch-msa-nyl": 6,
+            "branch-ksm-cpt": 5
+          },
+          "reorderLevel": 10,
+          "reorderQuantity": 30
+        }
+      ],
+      "createdAt": "2026-10-05T04:16:55.899Z",
+      "updatedAt": "2026-10-05T07:16:44.967Z"
+    },
+    {
+      "id": "prod-ahs-shirt",
+      "name": "Alliance High School White Oxford Button-Down Shirt",
+      "school": "Alliance High School",
+      "category": "SHIRTS",
+      "gender": "BOYS",
+      "description": "Classic durable white Oxford weave with Alliance High School red/green crest badge.",
+      "taxCategory": "VAT_16",
+      "supplierId": "sup-02",
+      "active": true,
+      "variants": [
+        {
+          "id": "var-ahs-shirt-26",
+          "sku": "AHS-SH-WHT-26",
+          "barcode": "616100910664",
+          "size": "26",
+          "color": "White",
+          "costPrice": 550,
+          "sellingPrice": 1000,
+          "branchStock": {
+            "branch-nbi-cbd": 42,
+            "branch-nbi-west": 26,
+            "branch-msa-nyl": 9,
+            "branch-ksm-cpt": 9
+          },
+          "reorderLevel": 12,
+          "reorderQuantity": 30
+        },
+        {
+          "id": "var-ahs-shirt-28",
+          "sku": "AHS-SH-WHT-28",
+          "barcode": "616127508299",
+          "size": "28",
+          "color": "White",
+          "costPrice": 550,
+          "sellingPrice": 1000,
+          "branchStock": {
+            "branch-nbi-cbd": 42,
+            "branch-nbi-west": 25,
+            "branch-msa-nyl": 11,
+            "branch-ksm-cpt": 9
+          },
+          "reorderLevel": 12,
+          "reorderQuantity": 30
+        },
+        {
+          "id": "var-ahs-shirt-30",
+          "sku": "AHS-SH-WHT-30",
+          "barcode": "616684284538",
+          "size": "30",
+          "color": "White",
+          "costPrice": 550,
+          "sellingPrice": 1000,
+          "branchStock": {
+            "branch-nbi-cbd": 42,
+            "branch-nbi-west": 24,
+            "branch-msa-nyl": 11,
+            "branch-ksm-cpt": 8
+          },
+          "reorderLevel": 12,
+          "reorderQuantity": 30
+        },
+        {
+          "id": "var-ahs-shirt-32",
+          "sku": "AHS-SH-WHT-32",
+          "barcode": "616619170473",
+          "size": "32",
+          "color": "White",
+          "costPrice": 550,
+          "sellingPrice": 1000,
+          "branchStock": {
+            "branch-nbi-cbd": 42,
+            "branch-nbi-west": 23,
+            "branch-msa-nyl": 9,
+            "branch-ksm-cpt": 8
+          },
+          "reorderLevel": 12,
+          "reorderQuantity": 30
+        },
+        {
+          "id": "var-ahs-shirt-34",
+          "sku": "AHS-SH-WHT-34",
+          "barcode": "616618952731",
+          "size": "34",
+          "color": "White",
+          "costPrice": 550,
+          "sellingPrice": 1000,
+          "branchStock": {
+            "branch-nbi-cbd": 38,
+            "branch-nbi-west": 24,
+            "branch-msa-nyl": 11,
+            "branch-ksm-cpt": 8
+          },
+          "reorderLevel": 12,
+          "reorderQuantity": 30
+        },
+        {
+          "id": "var-ahs-shirt-36",
+          "sku": "AHS-SH-WHT-36",
+          "barcode": "616786666823",
+          "size": "36",
+          "color": "White",
+          "costPrice": 550,
+          "sellingPrice": 1000,
+          "branchStock": {
+            "branch-nbi-cbd": 40,
+            "branch-nbi-west": 24,
+            "branch-msa-nyl": 10,
+            "branch-ksm-cpt": 9
+          },
+          "reorderLevel": 12,
+          "reorderQuantity": 30
+        }
+      ],
+      "createdAt": "2026-10-05T04:16:55.899Z",
+      "updatedAt": "2026-10-05T07:16:44.967Z"
+    },
+    {
+      "id": "prod-ahs-trouser",
+      "name": "Alliance High School Forest Green Tailored Trouser",
+      "school": "Alliance High School",
+      "category": "TROUSERS",
+      "gender": "BOYS",
+      "description": "Signature Alliance deep forest green durable twill trouser, crease-resistant.",
+      "taxCategory": "VAT_16",
+      "supplierId": "sup-01",
+      "active": true,
+      "variants": [
+        {
+          "id": "var-ahs-trouser-26",
+          "sku": "AHS-TR-GRN-26",
+          "barcode": "616790434671",
+          "size": "26",
+          "color": "Forest Green",
+          "costPrice": 850,
+          "sellingPrice": 1580,
+          "branchStock": {
+            "branch-nbi-cbd": 32,
+            "branch-nbi-west": 19,
+            "branch-msa-nyl": 8,
+            "branch-ksm-cpt": 8
+          },
+          "reorderLevel": 10,
+          "reorderQuantity": 30
+        },
+        {
+          "id": "var-ahs-trouser-28",
+          "sku": "AHS-TR-GRN-28",
+          "barcode": "616236449899",
+          "size": "28",
+          "color": "Forest Green",
+          "costPrice": 850,
+          "sellingPrice": 1580,
+          "branchStock": {
+            "branch-nbi-cbd": 31,
+            "branch-nbi-west": 19,
+            "branch-msa-nyl": 7,
+            "branch-ksm-cpt": 7
+          },
+          "reorderLevel": 10,
+          "reorderQuantity": 30
+        },
+        {
+          "id": "var-ahs-trouser-30",
+          "sku": "AHS-TR-GRN-30",
+          "barcode": "616565459011",
+          "size": "30",
+          "color": "Forest Green",
+          "costPrice": 850,
+          "sellingPrice": 1580,
+          "branchStock": {
+            "branch-nbi-cbd": 28,
+            "branch-nbi-west": 21,
+            "branch-msa-nyl": 6,
+            "branch-ksm-cpt": 7
+          },
+          "reorderLevel": 10,
+          "reorderQuantity": 30
+        },
+        {
+          "id": "var-ahs-trouser-32",
+          "sku": "AHS-TR-GRN-32",
+          "barcode": "616245966721",
+          "size": "32",
+          "color": "Forest Green",
+          "costPrice": 850,
+          "sellingPrice": 1580,
+          "branchStock": {
+            "branch-nbi-cbd": 29,
+            "branch-nbi-west": 21,
+            "branch-msa-nyl": 8,
+            "branch-ksm-cpt": 8
+          },
+          "reorderLevel": 10,
+          "reorderQuantity": 30
+        },
+        {
+          "id": "var-ahs-trouser-34",
+          "sku": "AHS-TR-GRN-34",
+          "barcode": "616477022163",
+          "size": "34",
+          "color": "Forest Green",
+          "costPrice": 850,
+          "sellingPrice": 1580,
+          "branchStock": {
+            "branch-nbi-cbd": 31,
+            "branch-nbi-west": 21,
+            "branch-msa-nyl": 7,
+            "branch-ksm-cpt": 7
+          },
+          "reorderLevel": 10,
+          "reorderQuantity": 30
+        },
+        {
+          "id": "var-ahs-trouser-36",
+          "sku": "AHS-TR-GRN-36",
+          "barcode": "616211220046",
+          "size": "36",
+          "color": "Forest Green",
+          "costPrice": 850,
+          "sellingPrice": 1580,
+          "branchStock": {
+            "branch-nbi-cbd": 28,
+            "branch-nbi-west": 19,
+            "branch-msa-nyl": 7,
+            "branch-ksm-cpt": 8
+          },
+          "reorderLevel": 10,
+          "reorderQuantity": 30
+        }
+      ],
+      "createdAt": "2026-10-05T04:16:55.899Z",
+      "updatedAt": "2026-10-05T07:16:44.967Z"
+    },
+    {
+      "id": "prod-kh-skirt",
+      "name": "Kenya High School Pleated Box Skirt (Sky Blue / Navy)",
+      "school": "Kenya High School",
+      "category": "SKIRTS",
+      "gender": "GIRLS",
+      "description": "Permanent knife-pleated school skirt with adjustable side zip and concealed inner pocket.",
+      "taxCategory": "VAT_16",
+      "supplierId": "sup-01",
+      "active": true,
+      "variants": [
+        {
+          "id": "var-kh-skirt-24",
+          "sku": "KHS-SK-BLU-24",
+          "barcode": "616712135648",
+          "size": "24",
+          "color": "Navy / Sky Blue",
+          "costPrice": 750,
+          "sellingPrice": 1420,
+          "branchStock": {
+            "branch-nbi-cbd": 37,
+            "branch-nbi-west": 29,
+            "branch-msa-nyl": 9,
+            "branch-ksm-cpt": 11
+          },
+          "reorderLevel": 12,
+          "reorderQuantity": 30
+        },
+        {
+          "id": "var-kh-skirt-26",
+          "sku": "KHS-SK-BLU-26",
+          "barcode": "616623951866",
+          "size": "26",
+          "color": "Navy / Sky Blue",
+          "costPrice": 750,
+          "sellingPrice": 1420,
+          "branchStock": {
+            "branch-nbi-cbd": 35,
+            "branch-nbi-west": 27,
+            "branch-msa-nyl": 9,
+            "branch-ksm-cpt": 9
+          },
+          "reorderLevel": 12,
+          "reorderQuantity": 30
+        },
+        {
+          "id": "var-kh-skirt-28",
+          "sku": "KHS-SK-BLU-28",
+          "barcode": "616718333257",
+          "size": "28",
+          "color": "Navy / Sky Blue",
+          "costPrice": 750,
+          "sellingPrice": 1420,
+          "branchStock": {
+            "branch-nbi-cbd": 33,
+            "branch-nbi-west": 28,
+            "branch-msa-nyl": 10,
+            "branch-ksm-cpt": 9
+          },
+          "reorderLevel": 12,
+          "reorderQuantity": 30
+        },
+        {
+          "id": "var-kh-skirt-30",
+          "sku": "KHS-SK-BLU-30",
+          "barcode": "616539460603",
+          "size": "30",
+          "color": "Navy / Sky Blue",
+          "costPrice": 750,
+          "sellingPrice": 1420,
+          "branchStock": {
+            "branch-nbi-cbd": 33,
+            "branch-nbi-west": 29,
+            "branch-msa-nyl": 10,
+            "branch-ksm-cpt": 10
+          },
+          "reorderLevel": 12,
+          "reorderQuantity": 30
+        },
+        {
+          "id": "var-kh-skirt-32",
+          "sku": "KHS-SK-BLU-32",
+          "barcode": "616454370073",
+          "size": "32",
+          "color": "Navy / Sky Blue",
+          "costPrice": 750,
+          "sellingPrice": 1420,
+          "branchStock": {
+            "branch-nbi-cbd": 35,
+            "branch-nbi-west": 27,
+            "branch-msa-nyl": 10,
+            "branch-ksm-cpt": 11
+          },
+          "reorderLevel": 12,
+          "reorderQuantity": 30
+        },
+        {
+          "id": "var-kh-skirt-34",
+          "sku": "KHS-SK-BLU-34",
+          "barcode": "616298023880",
+          "size": "34",
+          "color": "Navy / Sky Blue",
+          "costPrice": 750,
+          "sellingPrice": 1420,
+          "branchStock": {
+            "branch-nbi-cbd": 35,
+            "branch-nbi-west": 26,
+            "branch-msa-nyl": 10,
+            "branch-ksm-cpt": 10
+          },
+          "reorderLevel": 12,
+          "reorderQuantity": 30
+        }
+      ],
+      "createdAt": "2026-10-05T04:16:55.899Z",
+      "updatedAt": "2026-10-05T07:16:44.967Z"
+    },
+    {
+      "id": "prod-kh-blouse",
+      "name": "Kenya High School Sky Blue Revere Collar Blouse",
+      "school": "Kenya High School",
+      "category": "BLOUSES",
+      "gender": "GIRLS",
+      "description": "Comfortable pastel sky blue school blouse with crisp revere collar and embroidered school emblem.",
+      "taxCategory": "VAT_16",
+      "supplierId": "sup-02",
+      "active": true,
+      "variants": [
+        {
+          "id": "var-kh-blouse-24",
+          "sku": "KHS-BL-SKY-24",
+          "barcode": "616731248309",
+          "size": "24",
+          "color": "Sky Blue",
+          "costPrice": 520,
+          "sellingPrice": 970,
+          "branchStock": {
+            "branch-nbi-cbd": 40,
+            "branch-nbi-west": 28,
+            "branch-msa-nyl": 15,
+            "branch-ksm-cpt": 13
+          },
+          "reorderLevel": 15,
+          "reorderQuantity": 30
+        },
+        {
+          "id": "var-kh-blouse-26",
+          "sku": "KHS-BL-SKY-26",
+          "barcode": "616533500578",
+          "size": "26",
+          "color": "Sky Blue",
+          "costPrice": 520,
+          "sellingPrice": 970,
+          "branchStock": {
+            "branch-nbi-cbd": 38,
+            "branch-nbi-west": 30,
+            "branch-msa-nyl": 14,
+            "branch-ksm-cpt": 12
+          },
+          "reorderLevel": 15,
+          "reorderQuantity": 30
+        },
+        {
+          "id": "var-kh-blouse-28",
+          "sku": "KHS-BL-SKY-28",
+          "barcode": "616827084852",
+          "size": "28",
+          "color": "Sky Blue",
+          "costPrice": 520,
+          "sellingPrice": 970,
+          "branchStock": {
+            "branch-nbi-cbd": 42,
+            "branch-nbi-west": 28,
+            "branch-msa-nyl": 13,
+            "branch-ksm-cpt": 11
+          },
+          "reorderLevel": 15,
+          "reorderQuantity": 30
+        },
+        {
+          "id": "var-kh-blouse-30",
+          "sku": "KHS-BL-SKY-30",
+          "barcode": "616817609021",
+          "size": "30",
+          "color": "Sky Blue",
+          "costPrice": 520,
+          "sellingPrice": 970,
+          "branchStock": {
+            "branch-nbi-cbd": 38,
+            "branch-nbi-west": 31,
+            "branch-msa-nyl": 15,
+            "branch-ksm-cpt": 11
+          },
+          "reorderLevel": 15,
+          "reorderQuantity": 30
+        },
+        {
+          "id": "var-kh-blouse-32",
+          "sku": "KHS-BL-SKY-32",
+          "barcode": "616211776847",
+          "size": "32",
+          "color": "Sky Blue",
+          "costPrice": 520,
+          "sellingPrice": 970,
+          "branchStock": {
+            "branch-nbi-cbd": 42,
+            "branch-nbi-west": 29,
+            "branch-msa-nyl": 15,
+            "branch-ksm-cpt": 12
+          },
+          "reorderLevel": 15,
+          "reorderQuantity": 30
+        },
+        {
+          "id": "var-kh-blouse-34",
+          "sku": "KHS-BL-SKY-34",
+          "barcode": "616378389040",
+          "size": "34",
+          "color": "Sky Blue",
+          "costPrice": 520,
+          "sellingPrice": 970,
+          "branchStock": {
+            "branch-nbi-cbd": 41,
+            "branch-nbi-west": 28,
+            "branch-msa-nyl": 15,
+            "branch-ksm-cpt": 11
+          },
+          "reorderLevel": 15,
+          "reorderQuantity": 30
+        }
+      ],
+      "createdAt": "2026-10-05T04:16:55.899Z",
+      "updatedAt": "2026-10-05T07:16:44.967Z"
+    },
+    {
+      "id": "prod-gen-tracksuit",
+      "name": "All-Weather Fleece-Lined Sports Tracksuit (Navy/Gold)",
+      "school": "General Uniform",
+      "category": "TRACKSUITS",
+      "gender": "UNISEX",
+      "description": "Microfiber windproof athletic jacket with zip pockets plus matching track pants with ankle zips.",
+      "taxCategory": "VAT_16",
+      "supplierId": "sup-03",
+      "active": true,
+      "variants": [
+        {
+          "id": "var-gen-track-26",
+          "sku": "GEN-TRK-NG-26",
+          "barcode": "616846080612",
+          "size": "26",
+          "color": "Navy / Gold",
+          "costPrice": 1400,
+          "sellingPrice": 2520,
+          "branchStock": {
+            "branch-nbi-cbd": 25,
+            "branch-nbi-west": 17,
+            "branch-msa-nyl": 8,
+            "branch-ksm-cpt": 5
+          },
+          "reorderLevel": 8,
+          "reorderQuantity": 30
+        },
+        {
+          "id": "var-gen-track-28",
+          "sku": "GEN-TRK-NG-28",
+          "barcode": "616100916720",
+          "size": "28",
+          "color": "Navy / Gold",
+          "costPrice": 1400,
+          "sellingPrice": 2520,
+          "branchStock": {
+            "branch-nbi-cbd": 24,
+            "branch-nbi-west": 18,
+            "branch-msa-nyl": 7,
+            "branch-ksm-cpt": 5
+          },
+          "reorderLevel": 8,
+          "reorderQuantity": 30
+        },
+        {
+          "id": "var-gen-track-30",
+          "sku": "GEN-TRK-NG-30",
+          "barcode": "616661216464",
+          "size": "30",
+          "color": "Navy / Gold",
+          "costPrice": 1400,
+          "sellingPrice": 2520,
+          "branchStock": {
+            "branch-nbi-cbd": 24,
+            "branch-nbi-west": 19,
+            "branch-msa-nyl": 7,
+            "branch-ksm-cpt": 7
+          },
+          "reorderLevel": 8,
+          "reorderQuantity": 30
+        },
+        {
+          "id": "var-gen-track-32",
+          "sku": "GEN-TRK-NG-32",
+          "barcode": "616376714976",
+          "size": "32",
+          "color": "Navy / Gold",
+          "costPrice": 1400,
+          "sellingPrice": 2520,
+          "branchStock": {
+            "branch-nbi-cbd": 25,
+            "branch-nbi-west": 17,
+            "branch-msa-nyl": 9,
+            "branch-ksm-cpt": 5
+          },
+          "reorderLevel": 8,
+          "reorderQuantity": 30
+        },
+        {
+          "id": "var-gen-track-34",
+          "sku": "GEN-TRK-NG-34",
+          "barcode": "616906617227",
+          "size": "34",
+          "color": "Navy / Gold",
+          "costPrice": 1400,
+          "sellingPrice": 2520,
+          "branchStock": {
+            "branch-nbi-cbd": 24,
+            "branch-nbi-west": 19,
+            "branch-msa-nyl": 7,
+            "branch-ksm-cpt": 5
+          },
+          "reorderLevel": 8,
+          "reorderQuantity": 30
+        },
+        {
+          "id": "var-gen-track-36",
+          "sku": "GEN-TRK-NG-36",
+          "barcode": "616928991157",
+          "size": "36",
+          "color": "Navy / Gold",
+          "costPrice": 1400,
+          "sellingPrice": 2520,
+          "branchStock": {
+            "branch-nbi-cbd": 23,
+            "branch-nbi-west": 17,
+            "branch-msa-nyl": 9,
+            "branch-ksm-cpt": 7
+          },
+          "reorderLevel": 8,
+          "reorderQuantity": 30
+        }
+      ],
+      "createdAt": "2026-10-05T04:16:55.899Z",
+      "updatedAt": "2026-10-05T07:16:44.967Z"
+    },
+    {
+      "id": "prod-gen-tie",
+      "name": "Woven Jacquard Striped School Tie (Elastic / Standard)",
+      "school": "General Uniform",
+      "category": "TIES",
+      "gender": "UNISEX",
+      "description": "High-density micro-woven school tie available in standard 54-inch or junior elastic band.",
+      "taxCategory": "VAT_16",
+      "supplierId": "sup-04",
+      "active": true,
+      "variants": [
+        {
+          "id": "var-gen-tie-Junior-Elastic",
+          "sku": "GEN-TIE-STR-Junior-Elastic",
+          "barcode": "616704785533",
+          "size": "Junior-Elastic",
+          "color": "Navy / Gold Stripe",
+          "costPrice": 120,
+          "sellingPrice": 290,
+          "branchStock": {
+            "branch-nbi-cbd": 80,
+            "branch-nbi-west": 49,
+            "branch-msa-nyl": 24,
+            "branch-ksm-cpt": 19
+          },
+          "reorderLevel": 20,
+          "reorderQuantity": 30
+        },
+        {
+          "id": "var-gen-tie-Senior-Standard",
+          "sku": "GEN-TIE-STR-Senior-Standard",
+          "barcode": "616276695995",
+          "size": "Senior-Standard",
+          "color": "Navy / Gold Stripe",
+          "costPrice": 120,
+          "sellingPrice": 290,
+          "branchStock": {
+            "branch-nbi-cbd": 78,
+            "branch-nbi-west": 48,
+            "branch-msa-nyl": 24,
+            "branch-ksm-cpt": 20
+          },
+          "reorderLevel": 20,
+          "reorderQuantity": 30
+        }
+      ],
+      "createdAt": "2026-10-05T04:16:55.899Z",
+      "updatedAt": "2026-10-05T07:16:44.967Z"
+    },
+    {
+      "id": "prod-gen-socks",
+      "name": "Cotton Rich School Knee-High Socks (3-Pack)",
+      "school": "General Uniform",
+      "category": "SOCKS",
+      "gender": "UNISEX",
+      "description": "Cushioned heel and toe, elastic rib top that stays up all day. Breathable combed cotton.",
+      "taxCategory": "VAT_16",
+      "supplierId": "sup-03",
+      "active": true,
+      "variants": [
+        {
+          "id": "var-gen-socks-Small (Shoe 1-3)",
+          "sku": "GEN-SCK-WHT-Small (Shoe 1-3)",
+          "barcode": "616499717805",
+          "size": "Small (Shoe 1-3)",
+          "color": "White / Navy Rib",
+          "costPrice": 180,
+          "sellingPrice": 440,
+          "branchStock": {
+            "branch-nbi-cbd": 120,
+            "branch-nbi-west": 86,
+            "branch-msa-nyl": 41,
+            "branch-ksm-cpt": 36
+          },
+          "reorderLevel": 25,
+          "reorderQuantity": 30
+        },
+        {
+          "id": "var-gen-socks-Medium (Shoe 4-7)",
+          "sku": "GEN-SCK-WHT-Medium (Shoe 4-7)",
+          "barcode": "616553219797",
+          "size": "Medium (Shoe 4-7)",
+          "color": "White / Navy Rib",
+          "costPrice": 180,
+          "sellingPrice": 440,
+          "branchStock": {
+            "branch-nbi-cbd": 121,
+            "branch-nbi-west": 83,
+            "branch-msa-nyl": 41,
+            "branch-ksm-cpt": 36
+          },
+          "reorderLevel": 25,
+          "reorderQuantity": 30
+        },
+        {
+          "id": "var-gen-socks-Large (Shoe 8-11)",
+          "sku": "GEN-SCK-WHT-Large (Shoe 8-11)",
+          "barcode": "616967242673",
+          "size": "Large (Shoe 8-11)",
+          "color": "White / Navy Rib",
+          "costPrice": 180,
+          "sellingPrice": 440,
+          "branchStock": {
+            "branch-nbi-cbd": 120,
+            "branch-nbi-west": 84,
+            "branch-msa-nyl": 40,
+            "branch-ksm-cpt": 36
+          },
+          "reorderLevel": 25,
+          "reorderQuantity": 30
+        }
+      ],
+      "createdAt": "2026-10-05T04:16:55.899Z",
+      "updatedAt": "2026-10-05T07:16:44.967Z"
+    }
+  ],
+  "inventoryMovements": [
+    {
+      "id": "cb4732af-e34b-4cd7-9fba-cfe275b16b1d",
+      "productId": "prod-ns-shirt",
+      "variantId": "var-ns-shirt-26",
+      "productName": "Nairobi School Official Poplin Shirt (Short Sleeve)",
+      "sku": "NS-SH-WHT-26",
+      "branchId": "branch-nbi-cbd",
+      "branchName": "Nairobi CBD Flagship (HQ)",
+      "type": "SALE",
+      "quantityChange": -2,
+      "previousStock": 47,
+      "newStock": 45,
+      "referenceNumber": "RCP-2026-00003",
+      "userId": "usr-admin-01",
+      "userName": "Mercy Chebet (Director & System Admin)",
+      "timestamp": "2026-10-05T04:17:08.018Z"
+    }
+  ],
+  "stockTransfers": [
+    {
+      "id": "trf-001",
+      "transferNumber": "TRF-2026-00001",
+      "sourceBranchId": "branch-nbi-cbd",
+      "sourceBranchName": "Nairobi CBD Flagship (HQ)",
+      "destBranchId": "branch-msa-nyl",
+      "destBranchName": "Mombasa Nyali Branch",
+      "items": [
+        {
+          "productId": "prod-kh-skirt",
+          "variantId": "var-kh-skirt-28",
+          "productName": "Kenya High School Pleated Box Skirt (Sky Blue / Navy)",
+          "sku": "KHS-SK-BLU-28",
+          "size": "28",
+          "quantity": 10
+        },
+        {
+          "productId": "prod-gen-socks",
+          "variantId": "var-gen-socks-Medium (Shoe 4-7)",
+          "productName": "Cotton Rich School Knee-High Socks (3-Pack)",
+          "sku": "GEN-SCK-WHT-Medium (Shoe 4-7)",
+          "size": "Medium",
+          "quantity": 20
+        }
+      ],
+      "status": "RECEIVED",
+      "notes": "Urgent transfer to restock Mombasa Nyali branch for coastal term rush.",
+      "initiatedBy": "usr-admin-01",
+      "initiatedByName": "Mercy Chebet",
+      "dispatchedAt": "2026-10-05T04:16:55.899Z",
+      "receivedBy": "usr-pos-msa",
+      "receivedByName": "Amina Salim",
+      "receivedAt": "2026-10-05T04:16:55.899Z",
+      "createdAt": "2026-10-05T04:16:55.899Z"
+    }
+  ],
+  "sales": [
+    {
+      "id": "307099de-25ff-453b-8f6e-9fe9a0a879a6",
+      "receiptNumber": "RCP-2026-00003",
+      "branchId": "branch-nbi-cbd",
+      "branchName": "Nairobi CBD Flagship (HQ)",
+      "cashierId": "usr-admin-01",
+      "cashierName": "Mercy Chebet (Director & System Admin)",
+      "customerName": "Dr. Peter Otieno (Parent)",
+      "customerPhone": "+254 733 987 654",
+      "customerEmail": "support@naisiaetextiles.com",
+      "items": [
+        {
+          "productId": "prod-ns-shirt",
+          "variantId": "var-ns-shirt-26",
+          "productName": "Nairobi School Official Poplin Shirt (Short Sleeve)",
+          "sku": "NS-SH-WHT-26",
+          "school": "Nairobi School",
+          "size": "26",
+          "color": "White",
+          "quantity": 2,
+          "unitPrice": 950,
+          "costPrice": 550,
+          "taxRate": 0.16,
+          "taxAmount": 262.07,
+          "discountAmount": 0,
+          "subtotal": 1637.93,
+          "total": 1900
+        }
+      ],
+      "subtotal": 1637.93,
+      "totalTax": 262.07,
+      "totalDiscount": 0,
+      "totalAmount": 1900,
+      "paymentMethod": "MPESA",
+      "paymentReference": "QKJ9928172M",
+      "amountTendered": 1900,
+      "changeGiven": 0,
+      "status": "COMPLETED",
+      "kraStatus": "FISCALIZED",
+      "cuInvoiceNumber": "013000000001001",
+      "kraControlCode": "7346-CE07-678F-C4DF",
+      "kraQrCodeUrl": "https://itax.kra.go.ke/KRA-Portal/invoiceChk.htm?actionCode=loadPage&invoiceNo=013000000001001&traderPin=P051839281Z&invAmt=1900.00&invDate=20261005",
+      "kraSubmissionTimestamp": "2026-10-05T04:17:08.018Z",
+      "createdAt": "2026-10-05T04:17:08.018Z"
+    },
+    {
+      "id": "sale-001",
+      "receiptNumber": "RCP-2026-00001",
+      "branchId": "branch-nbi-cbd",
+      "branchName": "Nairobi CBD Flagship (HQ)",
+      "cashierId": "usr-pos-nbi",
+      "cashierName": "Faith Muthoni",
+      "customerId": "cust-parent-wanjiku",
+      "customerName": "Dr. Wanjiku Mwangi (Parent)",
+      "customerPhone": "+254 722 345 678",
+      "customerEmail": "wanjiku.mwangi@gmail.com",
+      "items": [
+        {
+          "productId": "prod-kh-skirt",
+          "variantId": "var-kh-skirt-28",
+          "productName": "Kenya High School Pleated Box Skirt (Sky Blue / Navy)",
+          "sku": "KHS-SK-BLU-28",
+          "school": "Kenya High School",
+          "size": "28",
+          "color": "Navy / Sky Blue",
+          "quantity": 2,
+          "unitPrice": 1350,
+          "costPrice": 750,
+          "taxRate": 0.16,
+          "taxAmount": 372.41,
+          "discountAmount": 0,
+          "subtotal": 2327.59,
+          "total": 2700
+        },
+        {
+          "productId": "prod-kh-blouse",
+          "variantId": "var-kh-blouse-28",
+          "productName": "Kenya High School Sky Blue Revere Collar Blouse",
+          "sku": "KHS-BL-SKY-28",
+          "school": "Kenya High School",
+          "size": "28",
+          "color": "Sky Blue",
+          "quantity": 3,
+          "unitPrice": 920,
+          "costPrice": 520,
+          "taxRate": 0.16,
+          "taxAmount": 380.69,
+          "discountAmount": 0,
+          "subtotal": 2379.31,
+          "total": 2760
+        },
+        {
+          "productId": "prod-gen-socks",
+          "variantId": "var-gen-socks-Medium (Shoe 4-7)",
+          "productName": "Cotton Rich School Knee-High Socks (3-Pack)",
+          "sku": "GEN-SCK-WHT-Medium (Shoe 4-7)",
+          "school": "General Uniform",
+          "size": "Medium",
+          "color": "White / Navy Rib",
+          "quantity": 2,
+          "unitPrice": 420,
+          "costPrice": 180,
+          "taxRate": 0.16,
+          "taxAmount": 115.86,
+          "discountAmount": 0,
+          "subtotal": 724.14,
+          "total": 840
+        }
+      ],
+      "subtotal": 5431.04,
+      "totalTax": 868.96,
+      "totalDiscount": 0,
+      "totalAmount": 6300,
+      "paymentMethod": "MPESA",
+      "paymentReference": "QKJ9283741M",
+      "amountTendered": 6300,
+      "changeGiven": 0,
+      "status": "COMPLETED",
+      "kraStatus": "FISCALIZED",
+      "cuInvoiceNumber": "013000000000001",
+      "kraControlCode": "B48F-72CC-91E0-4491",
+      "kraQrCodeUrl": "https://itax.kra.go.ke/KRA-Portal/invoiceChk.htm?actionCode=loadPage&invoiceNo=013000000000001",
+      "kraSubmissionTimestamp": "2026-10-05T04:16:55.899Z",
+      "createdAt": "2026-10-05T04:16:55.899Z"
+    },
+    {
+      "id": "sale-002",
+      "receiptNumber": "RCP-2026-00002",
+      "branchId": "branch-nbi-west",
+      "branchName": "Nairobi Westlands Branch",
+      "cashierId": "usr-pos-wst",
+      "cashierName": "Brian Kiprop",
+      "customerName": "Walk-In Customer (Cash/MPESA)",
+      "items": [
+        {
+          "productId": "prod-ns-shirt",
+          "variantId": "var-ns-shirt-30",
+          "productName": "Nairobi School Official Poplin Shirt (Short Sleeve)",
+          "sku": "NS-SH-WHT-30",
+          "school": "Nairobi School",
+          "size": "30",
+          "color": "White",
+          "quantity": 2,
+          "unitPrice": 950,
+          "costPrice": 550,
+          "taxRate": 0.16,
+          "taxAmount": 262.07,
+          "discountAmount": 0,
+          "subtotal": 1637.93,
+          "total": 1900
+        },
+        {
+          "productId": "prod-ns-trouser",
+          "variantId": "var-ns-trouser-30",
+          "productName": "Nairobi School Heavyweight Navy Wool-Blend Trouser",
+          "sku": "NS-TR-NVY-30",
+          "school": "Nairobi School",
+          "size": "30",
+          "color": "Navy Blue",
+          "quantity": 1,
+          "unitPrice": 1450,
+          "costPrice": 800,
+          "taxRate": 0.16,
+          "taxAmount": 200,
+          "discountAmount": 0,
+          "subtotal": 1250,
+          "total": 1450
+        }
+      ],
+      "subtotal": 2887.93,
+      "totalTax": 462.07,
+      "totalDiscount": 0,
+      "totalAmount": 3350,
+      "paymentMethod": "CASH",
+      "amountTendered": 3500,
+      "changeGiven": 150,
+      "status": "COMPLETED",
+      "kraStatus": "FISCALIZED",
+      "cuInvoiceNumber": "013000000000002",
+      "kraControlCode": "C77B-11DA-8291-5502",
+      "kraQrCodeUrl": "https://itax.kra.go.ke/KRA-Portal/invoiceChk.htm?actionCode=loadPage&invoiceNo=013000000000002",
+      "kraSubmissionTimestamp": "2026-10-05T04:16:55.899Z",
+      "createdAt": "2026-10-05T04:16:55.899Z"
+    }
+  ],
+  "quotations": [
+    {
+      "id": "quo-001",
+      "quotationNumber": "QUO-2026-00001",
+      "branchId": "branch-nbi-cbd",
+      "customerId": "cust-nairobi-school",
+      "customerName": "Nairobi School PTA Association",
+      "customerEmail": "pta@nairobischool.ac.ke",
+      "customerPhone": "+254 20 444 2855",
+      "schoolOrOrg": "Nairobi School",
+      "items": [
+        {
+          "productId": "prod-ns-blazer",
+          "variantId": "var-ns-blazer-32",
+          "productName": "Nairobi School Royal Navy Blazer with Braided Crest",
+          "sku": "NS-BLZ-NVY-32",
+          "size": "32",
+          "quantity": 50,
+          "unitPrice": 3800,
+          "taxRate": 0.16,
+          "taxAmount": 26206.9,
+          "discountAmount": 10000,
+          "total": 180000
+        },
+        {
+          "productId": "prod-ns-sweater",
+          "variantId": "var-ns-sweater-32",
+          "productName": "Nairobi School V-Neck Knit Sweater with Gold Stripes",
+          "sku": "NS-SWT-NVY-32",
+          "size": "32",
+          "quantity": 50,
+          "unitPrice": 1350,
+          "taxRate": 0.16,
+          "taxAmount": 9310.34,
+          "discountAmount": 2500,
+          "total": 65000
+        }
+      ],
+      "subtotal": 211206.9,
+      "taxAmount": 35517.24,
+      "discountAmount": 12500,
+      "totalAmount": 245000,
+      "status": "CONVERTED",
+      "validUntil": "2026-11-30",
+      "terms": "Payment terms: 50% deposit on order, 50% upon delivery. Prices inclusive of 16% VAT.",
+      "notes": "Bulk Form 1 intake replenishment quote.",
+      "createdBy": "usr-admin-01",
+      "createdByName": "Mercy Chebet",
+      "createdAt": "2026-10-05T04:16:55.899Z",
+      "updatedAt": "2026-10-05T07:07:52.269Z",
+      "convertedInvoiceId": "bfa77a5c-d669-4fb9-9118-75b907d1e7a1"
+    }
+  ],
+  "invoices": [
+    {
+      "id": "d731c713-a17f-466f-926e-daf1bfbaa4ec",
+      "invoiceNumber": "INV-2026-00003",
+      "branchId": "branch-nbi-cbd",
+      "branchName": "Nairobi CBD Flagship (HQ)",
+      "customerId": "cust-generic",
+      "customerName": "Strathmore School Nairobi",
+      "customerEmail": "finance@strathmore.ac.ke",
+      "customerPhone": "+254 722 999 111",
+      "customerKraPin": "P051992811A",
+      "items": [
+        {
+          "productName": "Senior Prefect Blazers (Navy Blue, Custom Crest)",
+          "size": "40",
+          "quantity": 35,
+          "unitPrice": 3800,
+          "taxRate": 0.16,
+          "taxAmount": 18344.83,
+          "discountAmount": 0,
+          "total": 133000
+        },
+        {
+          "productName": "Silk Crested School Ties",
+          "size": "Standard",
+          "quantity": 70,
+          "unitPrice": 650,
+          "taxRate": 0.16,
+          "taxAmount": 6275.86,
+          "discountAmount": 0,
+          "total": 45500
+        }
+      ],
+      "subtotal": 153879.31,
+      "taxAmount": 24620.69,
+      "discountAmount": 0,
+      "totalAmount": 178500,
+      "amountPaid": 0,
+      "balanceDue": 178500,
+      "status": "ISSUED",
+      "dueDate": "2026-10-30",
+      "paymentTerms": "Net 14 Days",
+      "kraStatus": "FISCALIZED",
+      "cuInvoiceNumber": "013000000001001",
+      "kraControlCode": "F500-41EF-0A25-F67A",
+      "kraQrCodeUrl": "https://itax.kra.go.ke/KRA-Portal/invoiceChk.htm?actionCode=loadPage&invoiceNo=013000000001001&traderPin=P051839281Z&invAmt=178500.00&invDate=20261005",
+      "createdBy": "usr-acc-01",
+      "createdByName": "David Omondi (Chief Accountant & Tax Officer)",
+      "createdAt": "2026-10-05T07:13:08.879Z",
+      "updatedAt": "2026-10-05T07:13:08.879Z"
+    },
+    {
+      "id": "bfa77a5c-d669-4fb9-9118-75b907d1e7a1",
+      "invoiceNumber": "INV-2026-00002",
+      "branchId": "branch-nbi-cbd",
+      "branchName": "Nairobi CBD Flagship (HQ)",
+      "customerId": "cust-nairobi-school",
+      "customerName": "Nairobi School PTA Association",
+      "customerEmail": "pta@nairobischool.ac.ke",
+      "customerPhone": "+254 20 444 2855",
+      "quotationId": "quo-001",
+      "items": [
+        {
+          "productId": "prod-ns-blazer",
+          "variantId": "var-ns-blazer-32",
+          "productName": "Nairobi School Royal Navy Blazer with Braided Crest",
+          "sku": "NS-BLZ-NVY-32",
+          "size": "32",
+          "quantity": 50,
+          "unitPrice": 3800,
+          "taxRate": 0.16,
+          "taxAmount": 26206.9,
+          "discountAmount": 10000,
+          "total": 180000
+        },
+        {
+          "productId": "prod-ns-sweater",
+          "variantId": "var-ns-sweater-32",
+          "productName": "Nairobi School V-Neck Knit Sweater with Gold Stripes",
+          "sku": "NS-SWT-NVY-32",
+          "size": "32",
+          "quantity": 50,
+          "unitPrice": 1350,
+          "taxRate": 0.16,
+          "taxAmount": 9310.34,
+          "discountAmount": 2500,
+          "total": 65000
+        }
+      ],
+      "subtotal": 211206.9,
+      "taxAmount": 35517.24,
+      "discountAmount": 12500,
+      "totalAmount": 245000,
+      "amountPaid": 0,
+      "balanceDue": 245000,
+      "status": "ISSUED",
+      "dueDate": "2026-10-19",
+      "paymentTerms": "Payment terms: 50% deposit on order, 50% upon delivery. Prices inclusive of 16% VAT.",
+      "notes": "Generated from Quotation QUO-2026-00001. Bulk Form 1 intake replenishment quote.",
+      "kraStatus": "FISCALIZED",
+      "cuInvoiceNumber": "013000000001001",
+      "kraControlCode": "AF2A-BA19-8F53-069E",
+      "kraQrCodeUrl": "https://itax.kra.go.ke/KRA-Portal/invoiceChk.htm?actionCode=loadPage&invoiceNo=013000000001001&traderPin=P051839281Z&invAmt=245000.00&invDate=20261005",
+      "createdBy": "usr-acc-01",
+      "createdByName": "David Omondi (Chief Accountant & Tax Officer)",
+      "createdAt": "2026-10-05T07:07:52.269Z",
+      "updatedAt": "2026-10-05T07:07:52.269Z"
+    },
+    {
+      "id": "inv-001",
+      "invoiceNumber": "INV-2026-00001",
+      "branchId": "branch-nbi-cbd",
+      "branchName": "Nairobi CBD Flagship (HQ)",
+      "customerId": "cust-nairobi-school",
+      "customerName": "Nairobi School PTA Association",
+      "customerEmail": "pta@nairobischool.ac.ke",
+      "customerPhone": "+254 20 444 2855",
+      "customerKraPin": "P051982736Y",
+      "items": [
+        {
+          "productId": "prod-ns-blazer",
+          "variantId": "var-ns-blazer-32",
+          "productName": "Nairobi School Royal Navy Blazer with Braided Crest",
+          "sku": "NS-BLZ-NVY-32",
+          "size": "32",
+          "quantity": 50,
+          "unitPrice": 3800,
+          "taxRate": 0.16,
+          "taxAmount": 26206.9,
+          "discountAmount": 10000,
+          "total": 180000
+        },
+        {
+          "productId": "prod-ns-sweater",
+          "variantId": "var-ns-sweater-32",
+          "productName": "Nairobi School V-Neck Knit Sweater with Gold Stripes",
+          "sku": "NS-SWT-NVY-32",
+          "size": "32",
+          "quantity": 50,
+          "unitPrice": 1350,
+          "taxRate": 0.16,
+          "taxAmount": 9310.34,
+          "discountAmount": 2500,
+          "total": 65000
+        }
+      ],
+      "subtotal": 211206.9,
+      "taxAmount": 35517.24,
+      "discountAmount": 12500,
+      "totalAmount": 245000,
+      "amountPaid": 120000,
+      "balanceDue": 125000,
+      "status": "PARTIALLY_PAID",
+      "dueDate": "2026-10-25",
+      "paymentTerms": "Net 30 Days",
+      "notes": "Converted from Quotation QUO-2026-00001 for Form 1 intake batch.",
+      "kraStatus": "FISCALIZED",
+      "cuInvoiceNumber": "013000000000003",
+      "kraControlCode": "D90A-55CC-7112-9901",
+      "kraQrCodeUrl": "https://itax.kra.go.ke/KRA-Portal/invoiceChk.htm?actionCode=loadPage&invoiceNo=013000000000003",
+      "createdBy": "usr-acc-01",
+      "createdByName": "David Omondi",
+      "createdAt": "2026-10-05T04:16:55.899Z",
+      "updatedAt": "2026-10-05T04:16:55.899Z"
+    }
+  ],
+  "receipts": [
+    {
+      "id": "bea9ba58-41b8-4a82-8e97-e791e06d8ecc",
+      "receiptNumber": "RCP-2026-00003",
+      "saleId": "307099de-25ff-453b-8f6e-9fe9a0a879a6",
+      "branchId": "branch-nbi-cbd",
+      "branchName": "Nairobi CBD Flagship (HQ)",
+      "customerId": "cust-walkin",
+      "customerName": "Dr. Peter Otieno (Parent)",
+      "amount": 1900,
+      "paymentMethod": "MPESA",
+      "paymentReference": "QKJ9928172M",
+      "notes": "POS Retail Sale at Nairobi CBD Flagship (HQ)",
+      "receivedBy": "usr-admin-01",
+      "receivedByName": "Mercy Chebet (Director & System Admin)",
+      "cuNumber": "013000000001001",
+      "kraQrCodeUrl": "https://itax.kra.go.ke/KRA-Portal/invoiceChk.htm?actionCode=loadPage&invoiceNo=013000000001001&traderPin=P051839281Z&invAmt=1900.00&invDate=20261005",
+      "createdAt": "2026-10-05T04:17:08.018Z"
+    },
+    {
+      "id": "rcp-001",
+      "receiptNumber": "RCP-2026-00001",
+      "saleId": "sale-001",
+      "branchId": "branch-nbi-cbd",
+      "branchName": "Nairobi CBD Flagship (HQ)",
+      "customerId": "cust-parent-wanjiku",
+      "customerName": "Dr. Wanjiku Mwangi (Parent)",
+      "amount": 6300,
+      "paymentMethod": "MPESA",
+      "paymentReference": "QKJ9283741M",
+      "notes": "POS Sale Walk-in retail checkout",
+      "receivedBy": "usr-pos-nbi",
+      "receivedByName": "Faith Muthoni",
+      "cuNumber": "013000000000001",
+      "kraQrCodeUrl": "https://itax.kra.go.ke/KRA-Portal/invoiceChk.htm?actionCode=loadPage&invoiceNo=013000000000001",
+      "createdAt": "2026-10-05T04:16:55.899Z"
+    },
+    {
+      "id": "rcp-002",
+      "receiptNumber": "RCP-2026-00003",
+      "invoiceId": "inv-001",
+      "branchId": "branch-nbi-cbd",
+      "branchName": "Nairobi CBD Flagship (HQ)",
+      "customerId": "cust-nairobi-school",
+      "customerName": "Nairobi School PTA Association",
+      "amount": 120000,
+      "paymentMethod": "BANK_TRANSFER",
+      "paymentReference": "EFT-88492019",
+      "notes": "50% Initial deposit payment against invoice INV-2026-00001",
+      "receivedBy": "usr-acc-01",
+      "receivedByName": "David Omondi",
+      "cuNumber": "013000000000004",
+      "kraQrCodeUrl": "https://itax.kra.go.ke/KRA-Portal/invoiceChk.htm?actionCode=loadPage&invoiceNo=013000000000004",
+      "createdAt": "2026-10-05T04:16:55.899Z"
+    }
+  ],
+  "customers": [
+    {
+      "id": "cust-walkin",
+      "name": "Walk-In Customer (Cash/MPESA)",
+      "email": "sales@naisiaetextiles.com",
+      "phone": "+254 700 000 000",
+      "customerType": "INDIVIDUAL",
+      "creditLimit": 0,
+      "currentBalance": 0,
+      "createdAt": "2026-10-05T04:16:55.899Z",
+      "updatedAt": "2026-10-05T04:16:55.899Z"
+    },
+    {
+      "id": "cust-nairobi-school",
+      "name": "Nairobi School PTA Association",
+      "email": "pta@nairobischool.ac.ke",
+      "phone": "+254 20 444 2855",
+      "customerType": "SCHOOL",
+      "schoolOrOrg": "Nairobi School",
+      "kraPin": "P051982736Y",
+      "address": "Waiyaki Way, Westlands, Nairobi",
+      "creditLimit": 500000,
+      "currentBalance": 370000,
+      "createdAt": "2026-10-05T04:16:55.899Z",
+      "updatedAt": "2026-10-05T04:16:55.899Z"
+    },
+    {
+      "id": "cust-alliance-high",
+      "name": "Alliance High School Stores",
+      "email": "bursar@alliancehighschool.sc.ke",
+      "phone": "+254 20 201 4725",
+      "customerType": "SCHOOL",
+      "schoolOrOrg": "Alliance High School",
+      "kraPin": "P051772635B",
+      "address": "Kikuyu, Kiambu County",
+      "creditLimit": 600000,
+      "currentBalance": 88000,
+      "createdAt": "2026-10-05T04:16:55.899Z",
+      "updatedAt": "2026-10-05T04:16:55.899Z"
+    },
+    {
+      "id": "cust-parent-wanjiku",
+      "name": "Dr. Wanjiku Mwangi (Parent)",
+      "email": "wanjiku.mwangi@gmail.com",
+      "phone": "+254 722 345 678",
+      "customerType": "INDIVIDUAL",
+      "schoolOrOrg": "Kenya High School",
+      "creditLimit": 20000,
+      "currentBalance": 0,
+      "createdAt": "2026-10-05T04:16:55.899Z",
+      "updatedAt": "2026-10-05T04:16:55.899Z"
+    },
+    {
+      "id": "cust-parent-otieno",
+      "name": "Eng. Peter Otieno (Parent)",
+      "email": "potieno.consult@yahoo.com",
+      "phone": "+254 733 987 654",
+      "customerType": "INDIVIDUAL",
+      "schoolOrOrg": "Nairobi School",
+      "creditLimit": 15000,
+      "currentBalance": 4500,
+      "createdAt": "2026-10-05T04:16:55.899Z",
+      "updatedAt": "2026-10-05T04:16:55.899Z"
+    }
+  ],
+  "suppliers": [
+    {
+      "id": "sup-01",
+      "name": "Rivatex East Africa Ltd",
+      "companyName": "Rivatex East Africa Limited",
+      "contactPerson": "Eng. Patrick Koech",
+      "email": "sales@rivatex.co.ke",
+      "phone": "+254 53 203 1400",
+      "address": "Kapsoya, Eldoret, Kenya",
+      "kraPin": "P051112233M",
+      "paymentTerms": "Net 30 Days",
+      "bankDetails": "KCB Bank Eldoret Branch, Acc: 1102938475",
+      "category": "FABRIC",
+      "currentBalance": 320000,
+      "createdAt": "2026-10-05T04:16:55.899Z",
+      "updatedAt": "2026-10-05T04:16:55.899Z"
+    },
+    {
+      "id": "sup-02",
+      "name": "Thika Cloth Mills Ltd",
+      "companyName": "Thika Cloth Mills Limited",
+      "contactPerson": "Sanjay Patel",
+      "email": "orders@thikatwills.com",
+      "phone": "+254 67 220 188",
+      "address": "Garissa Road, Thika, Kenya",
+      "kraPin": "P051223344K",
+      "paymentTerms": "Net 15 Days",
+      "bankDetails": "NCBA Thika Branch, Acc: 772639102",
+      "category": "FABRIC",
+      "currentBalance": 185000,
+      "createdAt": "2026-10-05T04:16:55.899Z",
+      "updatedAt": "2026-10-05T04:16:55.899Z"
+    },
+    {
+      "id": "sup-03",
+      "name": "Apex Knitwear & Hosiery",
+      "companyName": "Apex Knitwear Manufacturing Ltd",
+      "contactPerson": "Grace Wambui",
+      "email": "sales@apexknitwear.co.ke",
+      "phone": "+254 20 558 920",
+      "address": "Enterprise Road, Industrial Area, Nairobi",
+      "kraPin": "P051334455W",
+      "paymentTerms": "Payment on Delivery",
+      "bankDetails": "Equity Bank Community Branch, Acc: 0180293817",
+      "category": "KNITWEAR",
+      "currentBalance": 95000,
+      "createdAt": "2026-10-05T04:16:55.899Z",
+      "updatedAt": "2026-10-05T04:16:55.899Z"
+    },
+    {
+      "id": "sup-04",
+      "name": "Prestige Embroidery & Ties",
+      "companyName": "Prestige School Accessories Ltd",
+      "contactPerson": "Moses Otieno",
+      "email": "info@prestigebadges.co.ke",
+      "phone": "+254 722 411 902",
+      "address": "River Road Commercial Centre, Nairobi",
+      "kraPin": "P051445566T",
+      "paymentTerms": "Immediate",
+      "bankDetails": "Co-op Bank River Road, Acc: 0112938475",
+      "category": "ACCESSORIES",
+      "currentBalance": 42000,
+      "createdAt": "2026-10-05T04:16:55.899Z",
+      "updatedAt": "2026-10-05T04:16:55.899Z"
+    }
+  ],
+  "purchases": [
+    {
+      "id": "po-001",
+      "poNumber": "PO-2026-00001",
+      "supplierId": "sup-01",
+      "supplierName": "Rivatex East Africa Ltd",
+      "branchId": "branch-nbi-cbd",
+      "branchName": "Nairobi CBD Flagship (HQ)",
+      "items": [
+        {
+          "productId": "prod-ns-trouser",
+          "variantId": "var-ns-trouser-30",
+          "productName": "Nairobi School Heavyweight Navy Wool-Blend Trouser",
+          "sku": "NS-TR-NVY-30",
+          "size": "30",
+          "quantityOrdered": 50,
+          "quantityReceived": 50,
+          "unitCost": 800,
+          "taxAmount": 6400,
+          "totalCost": 46400
+        },
+        {
+          "productId": "prod-ns-blazer",
+          "variantId": "var-ns-blazer-32",
+          "productName": "Nairobi School Royal Navy Blazer with Braided Crest",
+          "sku": "NS-BLZ-NVY-32",
+          "size": "32",
+          "quantityOrdered": 40,
+          "quantityReceived": 40,
+          "unitCost": 2200,
+          "taxAmount": 14080,
+          "totalCost": 102080
+        }
+      ],
+      "subtotal": 128000,
+      "taxAmount": 20480,
+      "totalAmount": 148480,
+      "amountPaid": 148480,
+      "status": "RECEIVED",
+      "expectedDate": "2026-10-15",
+      "notes": "Pre-season restocking order.",
+      "receivedAt": "2026-10-05T04:16:55.899Z",
+      "createdBy": "usr-admin-01",
+      "createdByName": "Mercy Chebet",
+      "createdAt": "2026-10-05T04:16:55.899Z",
+      "updatedAt": "2026-10-05T04:16:55.899Z"
+    }
+  ],
+  "expenses": [
+    {
+      "id": "exp-001",
+      "expenseNumber": "EXP-2026-00001",
+      "branchId": "branch-nbi-cbd",
+      "branchName": "Nairobi CBD Flagship (HQ)",
+      "category": "RENT",
+      "title": "Monthly Store Rent - Biashara St Flagship",
+      "description": "Payment to Biashara Plaza Management for October 2026 occupancy.",
+      "amount": 85000,
+      "paymentMethod": "BANK_TRANSFER",
+      "paymentReference": "RENT-OCT-2026",
+      "incurredDate": "2026-10-01",
+      "recordedBy": "usr-acc-01",
+      "recordedByName": "David Omondi",
+      "createdAt": "2026-10-05T04:16:55.899Z"
+    },
+    {
+      "id": "exp-002",
+      "expenseNumber": "EXP-2026-00002",
+      "branchId": "branch-nbi-west",
+      "branchName": "Nairobi Westlands Branch",
+      "category": "UTILITIES",
+      "title": "Kenya Power Electricity & Internet Bills",
+      "description": "Monthly utility settlement for Sarit Centre branch.",
+      "amount": 14800,
+      "paymentMethod": "MPESA",
+      "paymentReference": "KPLC-9948201",
+      "incurredDate": "2026-10-02",
+      "recordedBy": "usr-acc-01",
+      "recordedByName": "David Omondi",
+      "createdAt": "2026-10-05T04:16:55.899Z"
+    }
+  ],
+  "auditLogs": [
+    {
+      "id": "2813c004-3371-4ed4-b5b0-9dbd7945ba47",
+      "timestamp": "2026-10-05T07:16:44.968Z",
+      "userId": "usr-admin-01",
+      "userName": "Mercy Chebet (Director & System Admin)",
+      "userRole": "ADMIN",
+      "branchId": "all",
+      "branchName": "N/A",
+      "action": "PRICE_SET_APPLIED",
+      "entityType": "PRODUCT",
+      "entityId": "ALL",
+      "details": "Applied price set (PERCENTAGE): updated 11 products and 59 variants. Scope: ALL / ALL",
+      "ipAddress": "127.0.0.1"
+    },
+    {
+      "id": "5f86c18e-3a3c-4777-b71f-1b9e8049b634",
+      "timestamp": "2026-10-05T07:16:44.947Z",
+      "userId": "usr-admin-01",
+      "userName": "Mercy Chebet (Director & System Admin)",
+      "userRole": "ADMIN",
+      "branchId": "all",
+      "branchName": "All Branches (HQ)",
+      "action": "USER_LOGIN_SUCCESS",
+      "entityType": "AUTH",
+      "entityId": "usr-admin-01",
+      "details": "User Mercy Chebet (Director & System Admin) (ADMIN) logged in successfully",
+      "ipAddress": "127.0.0.1"
+    },
+    {
+      "id": "7d662f51-0da0-46fa-8772-7957e5e8a7c3",
+      "timestamp": "2026-10-05T07:13:08.949Z",
+      "userId": "usr-acc-01",
+      "userName": "David Omondi (Chief Accountant & Tax Officer)",
+      "userRole": "ACCOUNTANT",
+      "branchId": "branch-nbi-cbd",
+      "branchName": "Nairobi CBD Flagship (HQ)",
+      "action": "INVOICE_EMAILED",
+      "entityType": "INVOICE",
+      "entityId": "INV-2026-00003",
+      "details": "Dispatched invoice INV-2026-00003 to finance@strathmore.ac.ke",
+      "ipAddress": "127.0.0.1"
+    },
+    {
+      "id": "41926e1c-807a-44c9-bbfc-89a509dd06d4",
+      "timestamp": "2026-10-05T07:13:08.939Z",
+      "userId": "usr-acc-01",
+      "userName": "David Omondi (Chief Accountant & Tax Officer)",
+      "userRole": "ACCOUNTANT",
+      "branchId": "branch-nbi-cbd",
+      "branchName": "Nairobi CBD Flagship (HQ)",
+      "action": "INVOICE_CREATED",
+      "entityType": "INVOICE",
+      "entityId": "INV-2026-00003",
+      "details": "Issued invoice INV-2026-00003 to Strathmore School Nairobi. Amount: KES 178,500",
+      "ipAddress": "127.0.0.1"
+    },
+    {
+      "id": "5311d9ae-6366-4604-bf38-09bc5a91bf21",
+      "timestamp": "2026-10-05T07:13:08.858Z",
+      "userId": "usr-acc-01",
+      "userName": "David Omondi (Chief Accountant & Tax Officer)",
+      "userRole": "ACCOUNTANT",
+      "branchId": "all",
+      "branchName": "All Branches (HQ)",
+      "action": "USER_LOGIN_SUCCESS",
+      "entityType": "AUTH",
+      "entityId": "usr-acc-01",
+      "details": "User David Omondi (Chief Accountant & Tax Officer) (ACCOUNTANT) logged in successfully",
+      "ipAddress": "127.0.0.1"
+    },
+    {
+      "id": "b50fb911-3eba-47de-a045-9afb927768d7",
+      "timestamp": "2026-10-05T07:09:33.685Z",
+      "userId": "usr-admin-01",
+      "userName": "Mercy Chebet (Director & System Admin)",
+      "userRole": "ADMIN",
+      "branchId": "all",
+      "branchName": "N/A",
+      "action": "PRODUCT_UPDATED",
+      "entityType": "PRODUCT",
+      "entityId": "prod-ns-shirt",
+      "details": "Updated catalog item: Nairobi School Official Poplin Shirt (Short Sleeve)",
+      "ipAddress": "127.0.0.1"
+    },
+    {
+      "id": "c56c749f-acb9-4388-95fa-d986304f1a72",
+      "timestamp": "2026-10-05T07:09:33.656Z",
+      "userId": "usr-admin-01",
+      "userName": "Mercy Chebet (Director & System Admin)",
+      "userRole": "ADMIN",
+      "branchId": "all",
+      "branchName": "All Branches (HQ)",
+      "action": "USER_LOGIN_SUCCESS",
+      "entityType": "AUTH",
+      "entityId": "usr-admin-01",
+      "details": "User Mercy Chebet (Director & System Admin) (ADMIN) logged in successfully",
+      "ipAddress": "127.0.0.1"
+    },
+    {
+      "id": "3727cd68-5dd6-4487-903b-6d964db3ea5a",
+      "timestamp": "2026-10-05T07:07:52.322Z",
+      "userId": "usr-acc-01",
+      "userName": "David Omondi (Chief Accountant & Tax Officer)",
+      "userRole": "ACCOUNTANT",
+      "branchId": "branch-nbi-cbd",
+      "branchName": "Nairobi CBD Flagship (HQ)",
+      "action": "QUOTATION_CONVERTED_TO_INVOICE",
+      "entityType": "INVOICE",
+      "entityId": "INV-2026-00002",
+      "details": "Converted Quotation QUO-2026-00001 into Invoice INV-2026-00002",
+      "ipAddress": "127.0.0.1"
+    },
+    {
+      "id": "f7bc9a6f-1590-43eb-a021-d57bdb1b4ede",
+      "timestamp": "2026-10-05T07:07:21.776Z",
+      "userId": "usr-acc-01",
+      "userName": "David Omondi (Chief Accountant & Tax Officer)",
+      "userRole": "ACCOUNTANT",
+      "branchId": "all",
+      "branchName": "All Branches (HQ)",
+      "action": "USER_LOGIN_SUCCESS",
+      "entityType": "AUTH",
+      "entityId": "usr-acc-01",
+      "details": "User David Omondi (Chief Accountant & Tax Officer) (ACCOUNTANT) logged in successfully",
+      "ipAddress": "127.0.0.1"
+    },
+    {
+      "id": "04b66646-1609-44c4-9a52-c72f91b4490d",
+      "timestamp": "2026-10-05T07:05:32.345Z",
+      "userId": "usr-admin-01",
+      "userName": "Mercy Chebet (Director & System Admin)",
+      "userRole": "ADMIN",
+      "branchId": "all",
+      "branchName": "N/A",
+      "action": "USER_LOGOUT",
+      "entityType": "AUTH",
+      "entityId": "usr-admin-01",
+      "details": "User Mercy Chebet (Director & System Admin) logged out",
+      "ipAddress": "127.0.0.1"
+    },
+    {
+      "id": "26d475e7-c531-45f2-a7b3-fdc90777b9b2",
+      "timestamp": "2026-10-05T06:56:38.916Z",
+      "userId": "usr-admin-01",
+      "userName": "Mercy Chebet (Director & System Admin)",
+      "userRole": "ADMIN",
+      "branchId": "all",
+      "branchName": "All Branches (HQ)",
+      "action": "USER_LOGIN_SUCCESS",
+      "entityType": "AUTH",
+      "entityId": "usr-admin-01",
+      "details": "User Mercy Chebet (Director & System Admin) (ADMIN) logged in successfully",
+      "ipAddress": "127.0.0.1"
+    },
+    {
+      "id": "1d524013-6e00-4951-95d3-ce3010a26884",
+      "timestamp": "2026-10-05T06:56:35.967Z",
+      "userId": "usr-pos-msa",
+      "userName": "Amina Salim (POS Cashier - Mombasa Nyali)",
+      "userRole": "STAFF",
+      "branchId": "branch-msa-nyl",
+      "branchName": "N/A",
+      "action": "USER_LOGOUT",
+      "entityType": "AUTH",
+      "entityId": "usr-pos-msa",
+      "details": "User Amina Salim (POS Cashier - Mombasa Nyali) logged out",
+      "ipAddress": "127.0.0.1"
+    },
+    {
+      "id": "459fd108-0255-46c7-a03d-a1c3c12f6262",
+      "timestamp": "2026-10-05T05:49:58.564Z",
+      "userId": "usr-pos-msa",
+      "userName": "Amina Salim (POS Cashier - Mombasa Nyali)",
+      "userRole": "STAFF",
+      "branchId": "branch-msa-nyl",
+      "branchName": "Mombasa Nyali Branch",
+      "action": "USER_PIN_LOGIN_SUCCESS",
+      "entityType": "AUTH",
+      "entityId": "usr-pos-msa",
+      "details": "Staff cashier Amina Salim (POS Cashier - Mombasa Nyali) logged into POS terminal via 6-digit PIN",
+      "ipAddress": "127.0.0.1"
+    },
+    {
+      "id": "16b8c6a9-c50e-43f1-85fe-292efe4e3985",
+      "timestamp": "2026-10-05T05:49:11.094Z",
+      "userId": "usr-pos-msa",
+      "userName": "Amina Salim (POS Cashier - Mombasa Nyali)",
+      "userRole": "STAFF",
+      "branchId": "branch-msa-nyl",
+      "branchName": "N/A",
+      "action": "FAILED_PIN_LOGIN",
+      "entityType": "AUTH",
+      "entityId": "usr-pos-msa",
+      "details": "Incorrect 6-digit PIN entered for Amina Salim (POS Cashier - Mombasa Nyali)",
+      "ipAddress": "127.0.0.1"
+    },
+    {
+      "id": "68756724-4f7e-4a2d-8df9-960dc142d28e",
+      "timestamp": "2026-10-05T05:47:34.094Z",
+      "userId": "usr-pos-nbi",
+      "userName": "Faith Muthoni (POS Cashier - Nairobi CBD)",
+      "userRole": "STAFF",
+      "branchId": "branch-nbi-cbd",
+      "branchName": "N/A",
+      "action": "USER_LOGOUT",
+      "entityType": "AUTH",
+      "entityId": "usr-pos-nbi",
+      "details": "User Faith Muthoni (POS Cashier - Nairobi CBD) logged out",
+      "ipAddress": "127.0.0.1"
+    },
+    {
+      "id": "355349e4-1c86-409d-a8cf-7c1bce9a5d43",
+      "timestamp": "2026-10-05T05:43:38.282Z",
+      "userId": "usr-pos-nbi",
+      "userName": "Faith Muthoni (POS Cashier - Nairobi CBD)",
+      "userRole": "STAFF",
+      "branchId": "branch-nbi-cbd",
+      "branchName": "Nairobi CBD Flagship (HQ)",
+      "action": "USER_PIN_LOGIN_SUCCESS",
+      "entityType": "AUTH",
+      "entityId": "usr-pos-nbi",
+      "details": "Staff cashier Faith Muthoni (POS Cashier - Nairobi CBD) logged into POS terminal via 6-digit PIN",
+      "ipAddress": "127.0.0.1"
+    },
+    {
+      "id": "8a20154a-5c7f-48fd-9bed-8d85a7d415fe",
+      "timestamp": "2026-10-05T05:42:32.653Z",
+      "userId": "usr-pos-nbi",
+      "userName": "Faith Muthoni (POS Cashier - Nairobi CBD)",
+      "userRole": "STAFF",
+      "branchId": "branch-nbi-cbd",
+      "branchName": "Nairobi CBD Flagship (HQ)",
+      "action": "USER_LOGIN_SUCCESS",
+      "entityType": "AUTH",
+      "entityId": "usr-pos-nbi",
+      "details": "User Faith Muthoni (POS Cashier - Nairobi CBD) (STAFF) logged in successfully",
+      "ipAddress": "127.0.0.1"
+    },
+    {
+      "id": "fdd5f332-c0d0-4bef-8a74-9c985e94a3ac",
+      "timestamp": "2026-10-05T05:39:27.577Z",
+      "userId": "usr-admin-01",
+      "userName": "Mercy Chebet (Director & System Admin)",
+      "userRole": "ADMIN",
+      "branchId": "all",
+      "branchName": "N/A",
+      "action": "USER_LOGOUT",
+      "entityType": "AUTH",
+      "entityId": "usr-admin-01",
+      "details": "User Mercy Chebet (Director & System Admin) logged out",
+      "ipAddress": "127.0.0.1"
+    },
+    {
+      "id": "fa213a4b-ed75-4cc1-99b3-732ae4904dc2",
+      "timestamp": "2026-10-05T05:36:31.178Z",
+      "userId": "usr-admin-01",
+      "userName": "Mercy Chebet (Director & System Admin)",
+      "userRole": "ADMIN",
+      "branchId": "all",
+      "branchName": "All Branches (HQ)",
+      "action": "USER_LOGIN_SUCCESS",
+      "entityType": "AUTH",
+      "entityId": "usr-admin-01",
+      "details": "User Mercy Chebet (Director & System Admin) (ADMIN) logged in successfully",
+      "ipAddress": "127.0.0.1"
+    },
+    {
+      "id": "a1c1264d-b782-4fb4-a00a-fbc1d47cb209",
+      "timestamp": "2026-10-05T05:36:29.425Z",
+      "userId": "usr-acc-01",
+      "userName": "David Omondi (Chief Accountant & Tax Officer)",
+      "userRole": "ACCOUNTANT",
+      "branchId": "all",
+      "branchName": "All Branches (HQ)",
+      "action": "USER_LOGIN_SUCCESS",
+      "entityType": "AUTH",
+      "entityId": "usr-acc-01",
+      "details": "User David Omondi (Chief Accountant & Tax Officer) (ACCOUNTANT) logged in successfully",
+      "ipAddress": "127.0.0.1"
+    },
+    {
+      "id": "78682bce-0f34-4a6b-87d2-f84eaa10da85",
+      "timestamp": "2026-10-05T05:36:25.824Z",
+      "userId": "usr-admin-01",
+      "userName": "Mercy Chebet (Director & System Admin)",
+      "userRole": "ADMIN",
+      "branchId": "all",
+      "branchName": "All Branches (HQ)",
+      "action": "USER_LOGIN_SUCCESS",
+      "entityType": "AUTH",
+      "entityId": "usr-admin-01",
+      "details": "User Mercy Chebet (Director & System Admin) (ADMIN) logged in successfully",
+      "ipAddress": "127.0.0.1"
+    },
+    {
+      "id": "b070f56e-b02d-434a-a00f-e1e3cdb8a3ac",
+      "timestamp": "2026-10-05T05:34:59.218Z",
+      "userId": "usr-pos-nbi",
+      "userName": "Faith Muthoni (POS Cashier - Nairobi CBD)",
+      "userRole": "STAFF",
+      "branchId": "branch-nbi-cbd",
+      "branchName": "Nairobi CBD Flagship (HQ)",
+      "action": "USER_LOGIN_SUCCESS",
+      "entityType": "AUTH",
+      "entityId": "usr-pos-nbi",
+      "details": "User Faith Muthoni (POS Cashier - Nairobi CBD) (STAFF) logged in successfully",
+      "ipAddress": "127.0.0.1"
+    },
+    {
+      "id": "00f5912a-5d94-46c3-8939-68194c146c49",
+      "timestamp": "2026-10-05T05:33:00.736Z",
+      "userId": "usr-pos-nbi",
+      "userName": "Faith Muthoni (POS Cashier - Nairobi CBD)",
+      "userRole": "STAFF",
+      "branchId": "branch-nbi-cbd",
+      "branchName": "Nairobi CBD Flagship (HQ)",
+      "action": "USER_LOGIN_SUCCESS",
+      "entityType": "AUTH",
+      "entityId": "usr-pos-nbi",
+      "details": "User Faith Muthoni (POS Cashier - Nairobi CBD) (STAFF) logged in successfully",
+      "ipAddress": "127.0.0.1"
+    },
+    {
+      "id": "942ea5f9-b05f-4c80-a4a3-37274995deb6",
+      "timestamp": "2026-10-05T05:28:30.732Z",
+      "userId": "usr-admin-01",
+      "userName": "Mercy Chebet (Director & System Admin)",
+      "userRole": "ADMIN",
+      "branchId": "all",
+      "branchName": "All Branches (HQ)",
+      "action": "USER_LOGIN_SUCCESS",
+      "entityType": "AUTH",
+      "entityId": "usr-admin-01",
+      "details": "User Mercy Chebet (Director & System Admin) (ADMIN) logged in successfully",
+      "ipAddress": "127.0.0.1"
+    },
+    {
+      "id": "37ca4dfc-d496-4db9-b533-3e3a68c07e8c",
+      "timestamp": "2026-10-05T04:17:08.075Z",
+      "userId": "usr-admin-01",
+      "userName": "Mercy Chebet (Director & System Admin)",
+      "userRole": "ADMIN",
+      "branchId": "branch-nbi-cbd",
+      "branchName": "Nairobi CBD Flagship (HQ)",
+      "action": "SALE_COMPLETED",
+      "entityType": "SALE",
+      "entityId": "RCP-2026-00003",
+      "details": "POS Sale RCP-2026-00003 completed by Mercy Chebet (Director & System Admin). Total: KES 1,900 via MPESA. KRA CU: 013000000001001",
+      "newValue": "{\"totalAmount\":1900,\"itemsCount\":1}",
+      "ipAddress": "127.0.0.1"
+    },
+    {
+      "id": "266c8911-e5fb-4b6e-94ca-7716b12b6f54",
+      "timestamp": "2026-10-05T04:17:07.993Z",
+      "userId": "usr-admin-01",
+      "userName": "Mercy Chebet (Director & System Admin)",
+      "userRole": "ADMIN",
+      "branchId": "all",
+      "branchName": "All Branches (HQ)",
+      "action": "USER_LOGIN_SUCCESS",
+      "entityType": "AUTH",
+      "entityId": "usr-admin-01",
+      "details": "User Mercy Chebet (Director & System Admin) (ADMIN) logged in successfully",
+      "ipAddress": "127.0.0.1"
+    },
+    {
+      "id": "ad89b694-fb01-45e8-8bfc-6cc9f880c776",
+      "userId": "usr-admin-01",
+      "userName": "Mercy Chebet",
+      "userRole": "ADMIN",
+      "branchId": "branch-nbi-cbd",
+      "branchName": "Nairobi CBD Flagship (HQ)",
+      "action": "SYSTEM_INITIALIZATION",
+      "entityType": "SYSTEM",
+      "entityId": "SYSTEM",
+      "details": "Naisiae ERP system initialized with multi-branch synchronization and KRA eTIMS integration readiness.",
+      "timestamp": "2026-10-05T04:16:55.899Z"
+    }
+  ],
+  "settings": {
+    "companyName": "Naisia Textiles",
+    "companyDomain": "naisiaetextiles.com",
+    "companyEmail": "support@naisiaetextiles.com",
+    "companyPhone": "+254 722 001 100",
+    "companyAddress": "Naisia Textiles Complex, Biashara Street, P.O. Box 48291-00100 Nairobi, Kenya",
+    "kraPin": "P051839281Z",
+    "currency": "KES",
+    "taxRateStandard": 0.16,
+    "taxRateZero": 0,
+    "invoicePrefix": "INV",
+    "receiptPrefix": "RCP",
+    "quotationPrefix": "QUO",
+    "poPrefix": "PO",
+    "transferPrefix": "TRF",
+    "kraTraderCode": "NAISIAE-OSCU-01",
+    "kraOscuSerial": "KRA-ETIMS-KE-2026-9921",
+    "kraMode": "SANDBOX",
+    "autoRetryKra": true,
+    "smtpHost": "smtp.zoho.com",
+    "smtpPort": 465,
+    "smtpUser": "support@naisiaetextiles.com",
+    "smtpSecure": true,
+    "lowStockNotificationThreshold": 10,
+    "receiptFooterMessage": "Thank you for shopping with Naisia Textiles. Genuine Quality School Uniforms. Goods once sold may be exchanged within 7 days with valid receipt."
+  }
+}
