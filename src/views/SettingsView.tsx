@@ -78,6 +78,33 @@ export const SettingsView: React.FC = () => {
             <h3 className="font-bold text-sm text-slate-900">Company Identity & Contact</h3>
           </div>
 
+          {/* Company Brand Logo */}
+          <div className="flex items-center space-x-4 p-3 bg-slate-50 rounded-xl border border-slate-200">
+            <img
+              src={settings.logoUrl || 'https://plain-eeur-prod-public.komododecks.com/202605/07/1sm3ITZIdJmYjyTcxmiP/image.png'}
+              alt="Brand Logo"
+              className="w-14 h-14 object-contain shrink-0"
+              onError={(e) => {
+                (e.target as HTMLImageElement).src = '/logo.png';
+              }}
+            />
+            <div className="flex-1 min-w-0">
+              <label className="text-xs font-bold text-slate-700 uppercase block mb-1">
+                Official Logo Image URL:
+              </label>
+              <input
+                type="url"
+                value={settings.logoUrl || ''}
+                onChange={(e) => setSettings({ ...settings, logoUrl: e.target.value })}
+                placeholder="https://.../logo.png"
+                className="w-full px-3 py-1.5 text-xs bg-white border border-slate-300 rounded-xl font-mono"
+              />
+              <span className="text-[10px] text-slate-400 mt-1 block">
+                Displayed on Top Header, Mobile Navigation, Invoices, Quotations, and POS Thermal Receipts.
+              </span>
+            </div>
+          </div>
+
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="text-xs font-bold text-slate-700 uppercase block mb-1">

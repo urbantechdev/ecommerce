@@ -222,6 +222,7 @@ export const LoginView: React.FC = () => {
     if (userId === 'usr-pos-nbi') return '123456';
     if (userId === 'usr-pos-wst') return '654321';
     if (userId === 'usr-pos-msa') return '112233';
+    if (userId === 'usr-pos-ksm') return '334455';
     return '123456';
   };
 
@@ -242,16 +243,21 @@ export const LoginView: React.FC = () => {
       {/* ==================================================== */}
       <div className="w-full relative bg-gradient-to-r from-[#02066F] via-[#030A91] to-[#0412B3] text-white shadow-md">
         <div className="max-w-7xl mx-auto px-4 pt-10 pb-8 sm:pt-14 sm:pb-12 text-center relative z-10">
-          <div className="inline-flex items-center justify-center space-x-3">
-            <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-[#FACB00] text-[#030A91] flex items-center justify-center font-black text-2xl sm:text-3xl shadow-lg ring-4 ring-white/10 tracking-tighter">
-              NT
-            </div>
+          <div className="inline-flex items-center justify-center space-x-3.5">
+            <img
+              src="https://plain-eeur-prod-public.komododecks.com/202605/07/1sm3ITZIdJmYjyTcxmiP/image.png"
+              alt="Naisia Textiles Logo"
+              className="w-16 h-16 sm:w-20 sm:h-20 object-contain shrink-0 drop-shadow-md"
+              onError={(e) => {
+                (e.target as HTMLImageElement).src = '/logo.png';
+              }}
+            />
             <div className="text-left">
               <h1 className="text-2xl sm:text-4xl font-black tracking-tight leading-none text-white drop-shadow-sm">
                 NAISIAE ERP
               </h1>
               <p className="text-xs sm:text-sm text-[#FACB00] font-bold tracking-widest mt-1 uppercase">
-                ERP
+                TEXTILES & UNIFORMS
               </p>
             </div>
           </div>
@@ -815,7 +821,7 @@ export const LoginView: React.FC = () => {
 
             {/* Card Footer */}
             <div className="bg-slate-50 p-3.5 text-center border-t border-slate-100 text-[11px] text-slate-500">
-              Naisia Textiles • support@naisiaetextiles.com • Biashara St, Nairobi
+              Naisia Textiles • support@naisiaetextiles.com • Tel: 0792021496 / 0112264870 • Biashara St, Nairobi
             </div>
           </div>
         )}
@@ -823,7 +829,7 @@ export const LoginView: React.FC = () => {
 
       {/* Global Footer info bar */}
       <footer className="text-center py-4 text-xs text-slate-400">
-        &copy; {new Date().getFullYear()} Naisia Textiles Ltd. All rights reserved. • naisiaetextiles.com
+        &copy; {new Date().getFullYear()} Naisia Textiles Ltd. All rights reserved. • naisiaetextiles.com • 0792021496 / 0112264870
       </footer>
     </div>
   );

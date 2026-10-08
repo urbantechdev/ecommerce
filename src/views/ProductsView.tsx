@@ -243,6 +243,10 @@ export const ProductsView: React.FC = () => {
     setEditingProduct(product);
     setEditName(product.name);
     setEditSchool(product.school);
+    setEditSector(product.sector || 'SECONDARY');
+    setEditInstitutionType(product.institutionType || '');
+    setEditProfessionalDomain(product.professionalDomain || '');
+    setEditGarmentType(product.garmentType || product.category);
     setEditCategory(product.category);
     setEditGender(product.gender);
     setEditDescription(product.description || '');
@@ -264,6 +268,10 @@ export const ProductsView: React.FC = () => {
       const updated = await api.updateProduct(editingProduct.id, {
         name: editName,
         school: editSchool,
+        sector: editSector,
+        institutionType: editInstitutionType || undefined,
+        professionalDomain: editProfessionalDomain || undefined,
+        garmentType: editCategory,
         category: editCategory,
         gender: editGender,
         description: editDescription,
@@ -444,6 +452,25 @@ export const ProductsView: React.FC = () => {
     );
   }, [priceSetSector, priceSetProfessionalDomain]);
 
+  // Uniform categories list for the products catalog filter
+  const availableCategoriesList = React.useMemo(() => {
+    const cats = new Set<string>();
+    products.forEach((p) => {
+      if (p.category) cats.add(p.category);
+    });
+    return Array.from(cats).sort();
+  }, [products]);
+
+  // Available garments for Create Modal
+  const createAvailableGarments = React.useMemo(() => {
+    return getAvailableGarments(createSector, createProfessionalDomain);
+  }, [createSector, createProfessionalDomain]);
+
+  // Available garments for Edit Modal
+  const editAvailableGarments = React.useMemo(() => {
+    return getAvailableGarments(editSector, editProfessionalDomain as any);
+  }, [editSector, editProfessionalDomain]);
+
   const matchingBatchProducts = products.filter((p) => {
     if (priceSetSector !== 'ALL' && p.sector && p.sector !== priceSetSector) return false;
     if (priceSetSchool !== 'ALL' && p.school.toLowerCase() !== priceSetSchool.toLowerCase()) return false;
@@ -529,16 +556,12 @@ export const ProductsView: React.FC = () => {
             onChange={(e) => setSelectedCategory(e.target.value)}
             className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold"
           >
-            <option value="ALL">All Categories</option>
-            <option value="SHIRTS">Shirts</option>
-            <option value="BLOUSES">Blouses</option>
-            <option value="TROUSERS">Trousers</option>
-            <option value="SKIRTS">Skirts</option>
-            <option value="BLAZERS">Blazers</option>
-            <option value="SWEATERS">Sweaters</option>
-            <option value="TRACKSUITS">Tracksuits</option>
-            <option value="TIES">Ties</option>
-            <option value="SOCKS">Socks</option>
+            <option value="ALL">All Uniform Categories ({availableCategoriesList.length})</option>
+            {availableCategoriesList.map((cat) => (
+              <option key={cat} value={cat}>
+                {cat}
+              </option>
+            ))}
           </select>
         </div>
       </div>
@@ -733,18 +756,24 @@ export const ProductsView: React.FC = () => {
                   </label>
                   <select
                     value={editCategory}
-                    onChange={(e) => setEditCategory(e.target.value as any)}
+                    onChange={(e) => {
+                      setEditCategory(e.target.value);
+                      setEditGarmentType(e.target.value);
+                    }}
                     className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl font-bold"
                   >
-                    <option value="SHIRTS">Shirts</option>
-                    <option value="BLOUSES">Blouses</option>
-                    <option value="TROUSERS">Trousers</option>
-                    <option value="SKIRTS">Skirts</option>
-                    <option value="BLAZERS">Blazers</option>
-                    <option value="SWEATERS">Sweaters</option>
-                    <option value="TRACKSUITS">Tracksuits</option>
-                    <option value="TIES">Ties</option>
-                    <option value="SOCKS">Socks</option>
+                    {editAvailableGarments.length > 0 ? (
+                      editAvailableGarments.map((g) => (
+                        <option key={g} value={g}>
+                          {g}
+                        </option>
+                      ))
+                    ) : (
+                      <option value={editCategory}>{editCategory}</option>
+                    )}
+                    {!editAvailableGarments.includes(editCategory) && (
+                      <option value={editCategory}>{editCategory}</option>
+                    )}
                   </select>
                 </div>
 
@@ -1249,18 +1278,17 @@ export const ProductsView: React.FC = () => {
                   </label>
                   <select
                     value={createCategory}
-                    onChange={(e) => setCreateCategory(e.target.value as any)}
+                    onChange={(e) => {
+                      setCreateCategory(e.target.value);
+                      setCreateGarmentType(e.target.value);
+                    }}
                     className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl"
                   >
-                    <option value="SHIRTS">Shirts</option>
-                    <option value="BLOUSES">Blouses</option>
-                    <option value="TROUSERS">Trousers</option>
-                    <option value="SKIRTS">Skirts</option>
-                    <option value="BLAZERS">Blazers</option>
-                    <option value="SWEATERS">Sweaters</option>
-                    <option value="TRACKSUITS">Tracksuits</option>
-                    <option value="TIES">Ties</option>
-                    <option value="SOCKS">Socks</option>
+                    {createAvailableGarments.map((g) => (
+                      <option key={g} value={g}>
+                        {g}
+                      </option>
+                    ))}
                   </select>
                 </div>
               </div>
@@ -1729,6 +1757,20 @@ export const ProductsView: React.FC = () => {
           </div>
         </div>
       )}
+      {/* Dedicated Single Product Price Set Modal */}
+      <ProductPriceSetModal
+        product={priceSetSelectedProduct}
+        isOpen={isSinglePriceSetModalOpen}
+        onClose={() => {
+          setIsSinglePriceSetModalOpen(false);
+          setPriceSetSelectedProduct(null);
+        }}
+        onSaved={(updated) => {
+          setProducts((prev) =>
+            prev.map((p) => (p.id === updated.id ? updated : p))
+          );
+        }}
+      />
     </div>
   );
 };

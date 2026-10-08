@@ -394,6 +394,9 @@ export const InvoicesView: React.FC = () => {
                 <tr key={inv.id} className="hover:bg-slate-50">
                   <td className="py-3 px-4 font-mono font-bold text-slate-900">
                     {inv.invoiceNumber}
+                    <span className="block font-sans text-[10px] text-slate-500 font-normal">
+                      Served by: <strong className="text-slate-700">{inv.createdByName || user?.name || 'Staff'}</strong>
+                    </span>
                   </td>
                   <td className="py-3 px-3">
                     <span className="font-bold text-slate-900 block">{inv.customerName}</span>

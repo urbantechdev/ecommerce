@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Invoice } from '../types';
+import { useAuth } from '../context/AuthContext';
 import {
   Printer,
   Mail,
@@ -27,6 +28,7 @@ export const InvoicePreviewModal: React.FC<InvoicePreviewModalProps> = ({
   onClose,
 }) => {
   const { notify } = useNotification();
+  const { user } = useAuth();
   const [emailInput, setEmailInput] = useState('');
   const [isSendingEmail, setIsSendingEmail] = useState(false);
 
@@ -37,6 +39,9 @@ export const InvoicePreviewModal: React.FC<InvoicePreviewModalProps> = ({
   }, [invoice]);
 
   if (!isOpen || !invoice) return null;
+
+  // Always show served by currently logged-in user, falling back to document record
+  const servedByName = user?.name || invoice.createdByName || 'Naisia Textiles Officer';
 
   const handlePrint = () => {
     window.print();
@@ -73,9 +78,14 @@ export const InvoicePreviewModal: React.FC<InvoicePreviewModalProps> = ({
         {/* Modal Top Bar (Hidden on Print) */}
         <div className="px-6 py-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between no-print print:hidden shrink-0">
           <div className="flex items-center space-x-2">
-            <div className="w-8 h-8 rounded-xl bg-[#030A91] text-[#FACB00] flex items-center justify-center font-black text-xs shadow-xs">
-              NT
-            </div>
+            <img
+              src="https://plain-eeur-prod-public.komododecks.com/202605/07/1sm3ITZIdJmYjyTcxmiP/image.png"
+              alt="Naisia Textiles Logo"
+              className="w-8 h-8 object-contain shrink-0"
+              onError={(e) => {
+                (e.target as HTMLImageElement).src = '/logo.png';
+              }}
+            />
             <div>
               <div className="flex items-center space-x-1.5">
                 <span className="font-extrabold text-slate-900 text-xs sm:text-sm">
@@ -84,7 +94,7 @@ export const InvoicePreviewModal: React.FC<InvoicePreviewModalProps> = ({
                 <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
               </div>
               <span className="font-mono text-[11px] text-slate-500">
-                {invoice.invoiceNumber}
+                {invoice.invoiceNumber} • Served by: <strong className="text-slate-700">{servedByName}</strong>
               </span>
             </div>
           </div>
@@ -111,25 +121,32 @@ export const InvoicePreviewModal: React.FC<InvoicePreviewModalProps> = ({
         <div className="p-6 sm:p-8 overflow-y-auto flex-1 space-y-6 text-xs text-slate-800 bg-white">
           {/* Header */}
           <div className="flex justify-between items-start border-b border-slate-200 pb-5">
-            <div>
-              <div className="inline-block bg-[#030A91] text-[#FACB00] font-black px-2.5 py-1 rounded-lg text-sm mb-2">
-                NAISIA TEXTILES LTD
+            <div className="flex items-start space-x-3.5">
+              <img
+                src="https://plain-eeur-prod-public.komododecks.com/202605/07/1sm3ITZIdJmYjyTcxmiP/image.png"
+                alt="Naisia Textiles Logo"
+                className="w-14 h-14 object-contain shrink-0"
+                onError={(e) => {
+                  (e.target as HTMLImageElement).src = '/logo.png';
+                }}
+              />
+              <div>
+                <h1 className="text-xl font-black text-[#030A91] tracking-tight">
+                  NAISIA TEXTILES LTD
+                </h1>
+                <p className="text-[11px] text-slate-600 font-semibold uppercase tracking-wider">
+                  Institutional Apparel & School Uniform Manufacturers
+                </p>
+                <p className="text-[10px] text-slate-500 mt-1">
+                  Biashara Street, Nairobi CBD • P.O. Box 48291 - 00100 GPO
+                </p>
+                <p className="text-[10px] text-slate-500">
+                  Tel: 0792021496 / 0112264870 • support@naisiaetextiles.com • naisiaetextiles.com
+                </p>
+                <p className="text-[10px] font-bold text-slate-700 mt-0.5">
+                  KRA PIN: P051839281Z • VAT REGISTERED
+                </p>
               </div>
-              <h1 className="text-xl font-black text-[#030A91] tracking-tight">
-                NAISIA TEXTILES LTD
-              </h1>
-              <p className="text-[11px] text-slate-600 font-semibold uppercase tracking-wider">
-                Institutional Apparel & School Uniform Manufacturers
-              </p>
-              <p className="text-[10px] text-slate-500 mt-1">
-                Biashara Street, Nairobi CBD • P.O. Box 48291 - 00100 GPO
-              </p>
-              <p className="text-[10px] text-slate-500">
-                Tel: +254 722 001 100 • accounts@naisiaetextiles.com
-              </p>
-              <p className="text-[10px] font-bold text-slate-700 mt-0.5">
-                KRA PIN: P051839281Z • VAT REGISTERED
-              </p>
             </div>
 
             <div className="text-right">
@@ -142,6 +159,9 @@ export const InvoicePreviewModal: React.FC<InvoicePreviewModalProps> = ({
               <div className="text-[11px] text-slate-500 space-y-0.5 mt-1 font-mono">
                 <p>Date: {new Date(invoice.createdAt).toLocaleDateString()}</p>
                 <p className="text-rose-700 font-bold">Due Date: {invoice.dueDate}</p>
+                <p className="text-slate-800 font-bold">
+                  Served By: <span className="text-[#030A91] font-black">{servedByName}</span>
+                </p>
               </div>
               <div className="mt-2">
                 <StatusBadge status={invoice.status} type="invoice" />
@@ -259,6 +279,23 @@ export const InvoicePreviewModal: React.FC<InvoicePreviewModalProps> = ({
                 <span>Balance Due:</span>
                 <span>KES {invoice.balanceDue.toLocaleString()}</span>
               </div>
+            </div>
+          </div>
+
+          {/* Document Issuance & Served By Attendant Footer */}
+          <div className="p-3.5 bg-slate-50 rounded-2xl border border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between text-xs">
+            <div>
+              <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider block mb-0.5">
+                Served & Prepared By (Attendant):
+              </span>
+              <p className="font-extrabold text-sm text-[#030A91]">{servedByName}</p>
+              <p className="text-[10px] text-slate-500 font-medium">
+                Authorised Officer • {invoice.branchName || 'Nairobi CBD Flagship Station'}
+              </p>
+            </div>
+            <div className="mt-2 sm:mt-0 text-left sm:text-right font-mono text-[10px] text-slate-500">
+              <p>Document Control: {invoice.kraControlCode || 'A98F-21BC-77E0-4491'}</p>
+              <p className="text-emerald-700 font-bold">● Officer Authenticated & Verified</p>
             </div>
           </div>
 

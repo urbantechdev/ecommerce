@@ -139,9 +139,14 @@ export const Layout: React.FC<LayoutProps> = ({ currentView, onNavigate, childre
               className="flex items-center space-x-2.5 cursor-pointer select-none"
               onClick={() => handleSelectNav('dashboard')}
             >
-              <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-[#FACB00] text-[#030A91] flex items-center justify-center font-black text-lg sm:text-xl shadow-md tracking-tighter shrink-0">
-                NT
-              </div>
+              <img
+                src="https://plain-eeur-prod-public.komododecks.com/202605/07/1sm3ITZIdJmYjyTcxmiP/image.png"
+                alt="Naisia Textiles"
+                className="w-10 h-10 object-contain shrink-0 drop-shadow-sm"
+                onError={(e) => {
+                  (e.target as HTMLImageElement).src = '/logo.png';
+                }}
+              />
               <div className="leading-none">
                 <div className="flex items-center space-x-1.5">
                   <h1 className="font-black text-sm sm:text-base tracking-tight text-white drop-shadow-xs">
@@ -220,21 +225,21 @@ export const Layout: React.FC<LayoutProps> = ({ currentView, onNavigate, childre
             </div>
           </div>
 
-          {/* Right Header Controls (with Mobile Hamburger on the far right) */}
+          {/* Right Header Controls: On mobile, ONLY the hamburger menu is displayed. All other buttons are inside the hamburger drawer. On desktop, full toolbar is shown. */}
           <div className="flex items-center space-x-2 sm:space-x-3">
-            {/* Quick POS action button */}
+            {/* Quick POS action button (Desktop only) */}
             <button
               onClick={() => onNavigate('pos')}
-              className="inline-flex items-center px-2.5 sm:px-3.5 py-1.5 rounded-xl bg-[#FACB00] text-[#030A91] text-xs font-black hover:bg-yellow-400 transition-colors shadow-sm"
+              className="hidden md:inline-flex items-center px-3.5 py-1.5 rounded-xl bg-[#FACB00] text-[#030A91] text-xs font-black hover:bg-yellow-400 transition-colors shadow-sm"
             >
-              <ShoppingCart className="w-3.5 h-3.5 sm:mr-1.5 text-[#030A91]" />
-              <span className="hidden sm:inline">Launch</span> POS
+              <ShoppingCart className="w-3.5 h-3.5 mr-1.5 text-[#030A91]" />
+              <span>Launch POS</span>
             </button>
 
-            {/* Low stock alerts pill */}
+            {/* Low stock alerts pill (Desktop only) */}
             <button
               onClick={() => onNavigate('inventory')}
-              className="relative p-2 rounded-xl text-white/80 hover:text-white hover:bg-white/10 transition-colors"
+              className="hidden md:flex relative p-2 rounded-xl text-white/80 hover:text-white hover:bg-white/10 transition-colors"
               title="Low Stock Alerts"
             >
               <Bell className="w-4 h-4 text-white" />
@@ -243,12 +248,12 @@ export const Layout: React.FC<LayoutProps> = ({ currentView, onNavigate, childre
               )}
             </button>
 
-            {/* User display */}
-            <div className="flex items-center space-x-2 pl-1 sm:pl-2 border-l border-white/20">
-              <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-[#FACB00] text-[#030A91] flex items-center justify-center font-black text-xs shadow-xs">
+            {/* User display (Desktop only) */}
+            <div className="hidden md:flex items-center space-x-2 pl-2 border-l border-white/20">
+              <div className="w-8 h-8 rounded-full bg-[#FACB00] text-[#030A91] flex items-center justify-center font-black text-xs shadow-xs">
                 {user?.name.charAt(0)}
               </div>
-              <div className="hidden sm:block text-left text-xs leading-none">
+              <div className="text-left text-xs leading-none">
                 <span className="font-bold text-white block truncate max-w-[120px]">
                   {user?.name.split(' ')[0]}
                 </span>
@@ -260,16 +265,16 @@ export const Layout: React.FC<LayoutProps> = ({ currentView, onNavigate, childre
             <button
               onClick={logout}
               title="Logout session"
-              className="hidden sm:block p-1.5 rounded-xl text-white/70 hover:text-rose-300 hover:bg-white/10 transition-colors"
+              className="hidden md:block p-1.5 rounded-xl text-white/70 hover:text-rose-300 hover:bg-white/10 transition-colors"
             >
               <LogOut className="w-4 h-4" />
             </button>
 
-            {/* MOBILE HAMBURGER MENU ON THE FAR RIGHT */}
+            {/* MOBILE ONLY: Pristine Hamburger Menu Button (Native Mobile App Style) */}
             <button
               onClick={() => setMobileMenuOpen(true)}
-              className="p-2 rounded-xl bg-white/10 hover:bg-white/20 active:scale-95 text-[#FACB00] transition-all md:hidden ml-0.5"
-              aria-label="Open Mobile Menu"
+              className="flex md:hidden items-center justify-center p-2.5 rounded-xl bg-white/10 hover:bg-white/20 active:scale-95 text-[#FACB00] transition-all border border-white/15 shadow-sm"
+              aria-label="Open Navigation Menu"
             >
               <Menu className="w-5 h-5 text-[#FACB00]" />
             </button>
@@ -369,60 +374,146 @@ export const Layout: React.FC<LayoutProps> = ({ currentView, onNavigate, childre
         </aside>
 
         {/* Primary Page Body */}
-        <main className="flex-1 min-w-0 p-4 md:p-8 max-w-7xl mx-auto -mt-1 sm:-mt-2 pb-20 md:pb-12">{children}</main>
+        <main
+          className={`flex-1 min-w-0 p-3 sm:p-4 md:p-6 lg:p-8 ${
+            currentView === 'pos' ? 'max-w-[1600px]' : 'max-w-7xl'
+          } mx-auto -mt-1 sm:-mt-2 pb-24 md:pb-12`}
+        >
+          {children}
+        </main>
       </div>
 
       {/* ==================================================== */}
-      {/* MOBILE BOTTOM NAVIGATION BAR                          */}
+      {/* MOBILE BOTTOM NAVIGATION BAR (NATIVE APP STYLE)      */}
       {/* ==================================================== */}
-      <nav className="md:hidden fixed bottom-0 inset-x-0 bg-white border-t border-slate-200 z-40 flex items-center justify-around h-16 px-2 shadow-lg">
-        <button
-          onClick={() => handleSelectNav('dashboard')}
-          className={`flex flex-col items-center justify-center flex-1 py-1 ${
-            currentView === 'dashboard' ? 'text-[#030A91] font-bold' : 'text-slate-500'
-          }`}
-        >
-          <LayoutDashboard className="w-5 h-5 mb-0.5" />
-          <span className="text-[10px]">Home</span>
-        </button>
+      <nav className="md:hidden fixed bottom-0 inset-x-0 z-40 bg-white/95 backdrop-blur-md border-t border-slate-200/90 shadow-[0_-4px_20px_rgba(0,0,0,0.06)] select-none">
+        <div className="max-w-md mx-auto px-2 py-1.5 flex items-center justify-around">
+          {/* 1. Dashboard / Home */}
+          <button
+            onClick={() => handleSelectNav('dashboard')}
+            className={`flex flex-col items-center justify-center py-1 px-2.5 rounded-xl transition-all ${
+              currentView === 'dashboard'
+                ? 'text-[#030A91] font-black'
+                : 'text-slate-500 hover:text-slate-800'
+            }`}
+          >
+            <div className="relative">
+              <LayoutDashboard
+                className={`w-5 h-5 transition-transform ${
+                  currentView === 'dashboard' ? 'scale-110 text-[#030A91]' : 'text-slate-500'
+                }`}
+              />
+              {currentView === 'dashboard' && (
+                <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-[#030A91]" />
+              )}
+            </div>
+            <span className={`text-[10px] mt-1 tracking-tight ${currentView === 'dashboard' ? 'font-black text-[#030A91]' : 'font-medium'}`}>
+              Home
+            </span>
+          </button>
 
-        <button
-          onClick={() => handleSelectNav('pos')}
-          className="flex flex-col items-center justify-center flex-1 py-1 -mt-4"
-        >
-          <div className="w-12 h-12 rounded-full bg-[#030A91] text-[#FACB00] flex items-center justify-center shadow-lg border-2 border-white">
-            <ShoppingCart className="w-6 h-6" />
-          </div>
-          <span className="text-[10px] font-bold text-[#030A91] mt-0.5">POS</span>
-        </button>
+          {/* 2. Inventory / Stock */}
+          <button
+            onClick={() => handleSelectNav('inventory')}
+            className={`flex flex-col items-center justify-center py-1 px-2.5 rounded-xl transition-all ${
+              currentView === 'inventory'
+                ? 'text-[#030A91] font-black'
+                : 'text-slate-500 hover:text-slate-800'
+            }`}
+          >
+            <div className="relative">
+              <Layers
+                className={`w-5 h-5 transition-transform ${
+                  currentView === 'inventory' ? 'scale-110 text-[#030A91]' : 'text-slate-500'
+                }`}
+              />
+              {lowStockCount > 0 && (
+                <span className="absolute -top-1 -right-2 px-1 py-0.2 rounded-full text-[8.5px] font-black bg-rose-500 text-white animate-pulse">
+                  {lowStockCount}
+                </span>
+              )}
+              {currentView === 'inventory' && (
+                <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-[#030A91]" />
+              )}
+            </div>
+            <span className={`text-[10px] mt-1 tracking-tight ${currentView === 'inventory' ? 'font-black text-[#030A91]' : 'font-medium'}`}>
+              Stock
+            </span>
+          </button>
 
-        <button
-          onClick={() => handleSelectNav('inventory')}
-          className={`flex flex-col items-center justify-center flex-1 py-1 ${
-            currentView === 'inventory' ? 'text-[#030A91] font-bold' : 'text-slate-500'
-          }`}
-        >
-          <Layers className="w-5 h-5 mb-0.5" />
-          <span className="text-[10px]">Inventory</span>
-        </button>
+          {/* 3. POS Terminal (Elevated Center Button) */}
+          <button
+            onClick={() => handleSelectNav('pos')}
+            className="flex flex-col items-center justify-center -mt-4 group active:scale-95 transition-transform"
+          >
+            <div
+              className={`w-12 h-12 rounded-2xl flex items-center justify-center shadow-lg transition-all ${
+                currentView === 'pos'
+                  ? 'bg-gradient-to-tr from-[#02066F] to-[#0412B3] text-[#FACB00] ring-4 ring-[#FACB00]/40 scale-105'
+                  : 'bg-gradient-to-tr from-[#02066F] to-[#030A91] text-[#FACB00] ring-4 ring-white shadow-blue-900/30'
+              }`}
+            >
+              <ShoppingCart className="w-5 h-5 text-[#FACB00]" />
+            </div>
+            <span
+              className={`text-[10px] mt-1 tracking-tight ${
+                currentView === 'pos' ? 'font-black text-[#030A91]' : 'font-bold text-slate-700'
+              }`}
+            >
+              POS
+            </span>
+          </button>
 
-        <button
-          onClick={() => handleSelectNav('invoices')}
-          className={`flex flex-col items-center justify-center flex-1 py-1 ${
-            currentView === 'invoices' ? 'text-[#030A91] font-bold' : 'text-slate-500'
-          }`}
-        >
-          <FileSpreadsheet className="w-5 h-5 mb-0.5" />
-          <span className="text-[10px]">Billing</span>
-        </button>
+          {/* 4. Sales Receipts */}
+          <button
+            onClick={() => handleSelectNav('receipts')}
+            className={`flex flex-col items-center justify-center py-1 px-2.5 rounded-xl transition-all ${
+              currentView === 'receipts'
+                ? 'text-[#030A91] font-black'
+                : 'text-slate-500 hover:text-slate-800'
+            }`}
+          >
+            <div className="relative">
+              <Receipt
+                className={`w-5 h-5 transition-transform ${
+                  currentView === 'receipts' ? 'scale-110 text-[#030A91]' : 'text-slate-500'
+                }`}
+              />
+              {currentView === 'receipts' && (
+                <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-[#030A91]" />
+              )}
+            </div>
+            <span className={`text-[10px] mt-1 tracking-tight ${currentView === 'receipts' ? 'font-black text-[#030A91]' : 'font-medium'}`}>
+              Receipts
+            </span>
+          </button>
 
-        <button
-          onClick={() => setMobileMenuOpen(true)}
-          className="flex flex-col items-center justify-center flex-1 py-1 text-slate-500"
-        >
-          <Menu className="w-5 h-5 mb-0.5" />
-          <span className="text-[10px]">More</span>
-        </button>
+          {/* 5. Full Menu / More */}
+          <button
+            onClick={() => setMobileMenuOpen(true)}
+            className={`flex flex-col items-center justify-center py-1 px-2.5 rounded-xl transition-all ${
+              !['dashboard', 'inventory', 'pos', 'receipts'].includes(currentView)
+                ? 'text-[#030A91] font-black'
+                : 'text-slate-500 hover:text-slate-800'
+            }`}
+          >
+            <div className="relative">
+              <Menu className="w-5 h-5 text-slate-500 group-hover:text-slate-800" />
+              {!['dashboard', 'inventory', 'pos', 'receipts'].includes(currentView) && (
+                <span className="absolute -top-0.5 -right-1 w-2 h-2 rounded-full bg-[#030A91]" />
+              )}
+            </div>
+            <span
+              className={`text-[10px] mt-1 tracking-tight ${
+                !['dashboard', 'inventory', 'pos', 'receipts'].includes(currentView)
+                  ? 'font-black text-[#030A91]'
+                  : 'font-medium'
+              }`}
+            >
+              Menu
+            </span>
+          </button>
+        </div>
       </nav>
 
       {/* ==================================================== */}
@@ -438,15 +529,20 @@ export const Layout: React.FC<LayoutProps> = ({ currentView, onNavigate, childre
             {/* Drawer App Bar Header */}
             <div className="p-4 bg-black/20 border-b border-white/10 flex items-center justify-between shrink-0">
               <div className="flex items-center space-x-2.5">
-                <div className="w-8 h-8 rounded-xl bg-[#FACB00] text-[#030A91] flex items-center justify-center font-black text-sm shadow-md">
-                  NT
-                </div>
+                <img
+                  src="https://plain-eeur-prod-public.komododecks.com/202605/07/1sm3ITZIdJmYjyTcxmiP/image.png"
+                  alt="Naisia Textiles"
+                  className="w-9 h-9 object-contain shrink-0 drop-shadow-sm"
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).src = '/logo.png';
+                  }}
+                />
                 <div>
                   <h3 className="font-black text-sm text-white tracking-tight leading-none">
                     NAISIAE ERP
                   </h3>
                   <span className="text-[9px] text-[#FACB00] font-bold uppercase tracking-wider block mt-0.5">
-                    Navigation Menu
+                    Mobile Control Menu
                   </span>
                 </div>
               </div>
@@ -470,7 +566,8 @@ export const Layout: React.FC<LayoutProps> = ({ currentView, onNavigate, childre
                   <h4 className="font-black text-sm text-white truncate">
                     {user?.name}
                   </h4>
-                  <div className="flex items-center space-x-1.5 mt-0.5">
+                  <p className="text-[10px] text-blue-200 truncate">{user?.email}</p>
+                  <div className="flex items-center space-x-1.5 mt-1">
                     <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-full bg-[#FACB00] text-[#030A91]">
                       {user?.role === 'ADMIN' ? 'Administrator' : user?.role === 'ACCOUNTANT' ? 'Chief Accountant' : 'POS Cashier'}
                     </span>
@@ -481,8 +578,11 @@ export const Layout: React.FC<LayoutProps> = ({ currentView, onNavigate, childre
               {/* Mobile Branch Context Switcher */}
               <div className="mt-3 pt-3 border-t border-white/10">
                 <div className="flex items-center justify-between text-[10px] text-blue-200 mb-1">
-                  <span className="font-bold uppercase tracking-wider">Branch Station:</span>
-                  <span className="text-[#FACB00] font-mono">{activeBranchName}</span>
+                  <span className="font-bold uppercase tracking-wider flex items-center">
+                    <Store className="w-3 h-3 mr-1 text-[#FACB00]" />
+                    Station Context:
+                  </span>
+                  <span className="text-[#FACB00] font-mono text-[10px] truncate max-w-[130px]">{activeBranchName}</span>
                 </div>
                 <select
                   value={activeBranchId}
@@ -498,10 +598,34 @@ export const Layout: React.FC<LayoutProps> = ({ currentView, onNavigate, childre
                   ))}
                 </select>
               </div>
+
+              {/* Mobile Quick Action Buttons Inside Drawer */}
+              <div className="grid grid-cols-2 gap-2 mt-3 pt-3 border-t border-white/10">
+                <button
+                  onClick={() => handleSelectNav('pos')}
+                  className="flex items-center justify-center space-x-1.5 py-2 px-2.5 rounded-xl bg-[#FACB00] text-[#030A91] text-xs font-black shadow-sm active:scale-95 transition-transform"
+                >
+                  <ShoppingCart className="w-3.5 h-3.5" />
+                  <span>Launch POS</span>
+                </button>
+
+                <button
+                  onClick={() => handleSelectNav('inventory')}
+                  className="flex items-center justify-center space-x-1.5 py-2 px-2.5 rounded-xl bg-white/15 text-white text-xs font-bold hover:bg-white/20 active:scale-95 transition-transform relative"
+                >
+                  <Bell className="w-3.5 h-3.5 text-[#FACB00]" />
+                  <span>Alerts</span>
+                  {lowStockCount > 0 && (
+                    <span className="ml-1 px-1.5 py-0.2 rounded-full text-[9px] font-black bg-rose-500 text-white">
+                      {lowStockCount}
+                    </span>
+                  )}
+                </button>
+              </div>
             </div>
 
             {/* Well-Organized Grouped Navigation Items */}
-            <div className="flex-1 overflow-y-auto p-3 space-y-4">
+            <div className="flex-1 overflow-y-auto p-3 space-y-3.5">
               {navGroups.map((group, idx) => (
                 <div key={idx} className="bg-white/5 rounded-2xl p-2.5 border border-white/10 space-y-1">
                   <p className="px-2 pt-1 pb-1.5 text-[10px] font-black text-[#FACB00] uppercase tracking-wider flex items-center justify-between">
@@ -543,19 +667,19 @@ export const Layout: React.FC<LayoutProps> = ({ currentView, onNavigate, childre
 
             {/* Mobile Drawer Bottom Actions */}
             <div className="p-3 bg-black/30 border-t border-white/10 space-y-2 shrink-0">
-              <button
-                onClick={() => handleSelectNav('pos')}
-                className="w-full flex items-center justify-center space-x-2 py-2.5 rounded-xl bg-[#FACB00] text-[#030A91] text-xs font-black shadow-md hover:bg-yellow-400 active:scale-98 transition-all"
-              >
-                <ShoppingCart className="w-4 h-4 text-[#030A91]" />
-                <span>Open POS Terminal</span>
-              </button>
+              <div className="flex items-center justify-between px-1 text-[10px] text-blue-200 font-medium">
+                <span className="flex items-center">
+                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse mr-1.5"></span>
+                  KRA eTIMS Active
+                </span>
+                <span className="font-mono text-slate-400">v2.6 Cloud</span>
+              </div>
 
               <button
                 onClick={logout}
-                className="w-full flex items-center justify-center space-x-2 py-2 rounded-xl bg-white/10 text-rose-300 text-xs font-bold hover:bg-rose-500/20 active:scale-98 transition-all"
+                className="w-full flex items-center justify-center space-x-2 py-2.5 rounded-xl bg-rose-500/20 hover:bg-rose-500/30 border border-rose-500/30 text-rose-200 text-xs font-bold active:scale-98 transition-all"
               >
-                <LogOut className="w-4 h-4" />
+                <LogOut className="w-4 h-4 text-rose-300" />
                 <span>Sign Out of ERP</span>
               </button>
             </div>

@@ -96,7 +96,7 @@ apiRouter.get('/auth/staff-users', (req, res) => {
 
   const staff = db
     .getData()
-    .users.filter((u) => u.status === 'ACTIVE')
+    .users.filter((u) => u.status === 'ACTIVE' && u.role === 'STAFF')
     .map((u) => ({
       id: u.id,
       name: u.name,

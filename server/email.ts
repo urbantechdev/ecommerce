@@ -109,7 +109,7 @@ export function generateInvoiceEmailHtml(invoice: any, settings: any): string {
         </div>
       </div>
       <div style="background-color: #030A91; padding: 10px; border-radius: 6px; text-align: center; color: white; font-size: 12px;">
-        Naisia Textiles Ltd • Biashara St, Nairobi • Phone: +254 722 001 100 • support@naisiaetextiles.com
+        Naisia Textiles Ltd • Biashara St, Nairobi • Phone: 0792021496 / 0112264870 • support@naisiaetextiles.com • naisiaetextiles.com
       </div>
     </div>
   `;
@@ -167,7 +167,7 @@ export function generateQuotationEmailHtml(quote: any, settings: any): string {
         </div>
       </div>
       <div style="background-color: #030A91; padding: 10px; border-radius: 6px; text-align: center; color: white; font-size: 12px;">
-        Naisia Textiles Ltd • Biashara St, Nairobi • Phone: +254 722 001 100 • support@naisiaetextiles.com
+        Naisia Textiles Ltd • Biashara St, Nairobi • Phone: 0792021496 / 0112264870 • support@naisiaetextiles.com • naisiaetextiles.com
       </div>
     </div>
   `;

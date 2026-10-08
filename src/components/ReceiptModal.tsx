@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Sale, PaymentReceipt } from '../types';
+import { useAuth } from '../context/AuthContext';
 import {
   Printer,
   Mail,
@@ -33,6 +34,7 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({
   onClose,
 }) => {
   const { notify } = useNotification();
+  const { user } = useAuth();
   const [activeSale, setActiveSale] = useState<Sale | null>(initialSale || null);
   const [qrCode, setQrCode] = useState<string>(initialQrCode || '');
   const [rollWidth, setRollWidth] = useState<'80mm' | '58mm'>('80mm');
@@ -100,7 +102,9 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({
   const cuInvoiceNumber = activeSale?.cuInvoiceNumber || receipt?.cuNumber || '013000000001001';
   const controlCode = activeSale?.kraControlCode || 'A98F-21BC-77E0-4491';
   const timestamp = activeSale?.createdAt || receipt?.createdAt || new Date().toISOString();
-  const cashierName = activeSale?.cashierName || receipt?.receivedByName || 'Cashier Terminal';
+  // Always show served by the currently logged-in user, falling back to document creator
+  const servedByName = user?.name || activeSale?.cashierName || receipt?.receivedByName || 'Active Terminal Officer';
+  const cashierName = servedByName;
 
   // ==========================================
   // THERMAL PRINT ENGINE (ISOLATED IFRAME)
@@ -241,12 +245,12 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({
     let text = `NAISIA TEXTILES LTD\n`;
     text += `SCHOOL UNIFORMS & APPAREL ERP\n`;
     text += `Biashara Street, Nairobi\n`;
-    text += `Tel: +254 722 001 100 • PIN: P051839281Z\n`;
+    text += `Tel: 0792021496 / 0112264870 • support@naisiaetextiles.com\n`;
     text += `${divider}\n`;
     text += `RECEIPT #: ${receiptNumber}\n`;
     text += `DATE:      ${new Date(timestamp).toLocaleString()}\n`;
     text += `BRANCH:    ${branchName}\n`;
-    text += `CASHIER:   ${cashierName}\n`;
+    text += `SERVED BY: ${servedByName}\n`;
     text += `CUSTOMER:  ${customerName}\n`;
     text += `${divider}\n`;
     text += `ITEM                    QTY   PRICE   TOTAL\n`;
@@ -337,9 +341,14 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({
         {/* ==================================================== */}
         <div className="px-5 py-3.5 border-b border-slate-200 bg-slate-50 flex items-center justify-between no-print print:hidden shrink-0">
           <div className="flex items-center space-x-2">
-            <div className="w-8 h-8 rounded-xl bg-[#FACB00] text-[#030A91] flex items-center justify-center font-black text-sm shadow-xs">
-              NT
-            </div>
+            <img
+              src="https://plain-eeur-prod-public.komododecks.com/202605/07/1sm3ITZIdJmYjyTcxmiP/image.png"
+              alt="Naisia Textiles Logo"
+              className="w-8 h-8 object-contain shrink-0"
+              onError={(e) => {
+                (e.target as HTMLImageElement).src = '/logo.png';
+              }}
+            />
             <div>
               <div className="flex items-center space-x-1.5">
                 <span className="font-extrabold text-slate-900 text-xs sm:text-sm">
@@ -348,7 +357,7 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({
                 <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
               </div>
               <p className="text-[10px] text-slate-500 font-mono">
-                {receiptNumber}
+                {receiptNumber} • Served by: <strong className="text-slate-800 font-semibold">{servedByName}</strong>
               </p>
             </div>
           </div>
@@ -471,7 +480,7 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({
                   Biashara Street, Nairobi CBD • P.O. Box 48291
                 </p>
                 <p className="text-[10px] text-slate-600">
-                  Tel: +254 722 001 100 • info@naisiaetextiles.com
+                  Tel: 0792021496 / 0112264870 • support@naisiaetextiles.com • naisiaetextiles.com
                 </p>
                 <div className="mt-1.5 text-[9.5px] font-bold text-black">
                   PIN: P051839281Z • VAT REGISTERED
@@ -492,8 +501,8 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({
                   <span className="font-bold text-black truncate max-w-[190px]">{branchName}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-slate-600">CASHIER:</span>
-                  <span className="truncate max-w-[190px]">{cashierName}</span>
+                  <span className="text-slate-600 font-bold">SERVED BY:</span>
+                  <span className="font-bold text-black truncate max-w-[190px]">{servedByName}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-slate-600">CUSTOMER:</span>
@@ -642,7 +651,10 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({
                   *{receiptNumber}*
                 </p>
 
-                <p className="font-bold text-slate-800 uppercase mt-1">
+                <p className="font-black text-slate-900 uppercase mt-1">
+                  SERVED BY: {servedByName.toUpperCase()}
+                </p>
+                <p className="font-bold text-slate-800 uppercase mt-0.5">
                   THANK YOU FOR CHOOSING NAISIA TEXTILES
                 </p>
                 <p className="text-slate-500">Quality Uniforms for Kenyan Schools</p>

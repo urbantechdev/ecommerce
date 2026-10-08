@@ -7,7 +7,7 @@ import { Receipt, Search, Printer, Mail, ExternalLink } from 'lucide-react';
 import { ReceiptModal } from '../components/ReceiptModal';
 
 export const ReceiptsView: React.FC = () => {
-  const { activeBranchId } = useAuth();
+  const { activeBranchId, user } = useAuth();
   const { notify } = useNotification();
 
   const [receipts, setReceipts] = useState<PaymentReceipt[]>([]);
@@ -90,6 +90,7 @@ export const ReceiptsView: React.FC = () => {
                 <th className="py-3 px-3">Date & Time</th>
                 <th className="py-3 px-3">Customer</th>
                 <th className="py-3 px-3">Branch</th>
+                <th className="py-3 px-3">Served By</th>
                 <th className="py-3 px-3">Payment Method</th>
                 <th className="py-3 px-3 text-right">Amount (KES)</th>
                 <th className="py-3 px-3">KRA CU #</th>
@@ -107,6 +108,7 @@ export const ReceiptsView: React.FC = () => {
                   </td>
                   <td className="py-3 px-3 font-semibold text-slate-800">{r.customerName}</td>
                   <td className="py-3 px-3 text-slate-600">{r.branchName}</td>
+                  <td className="py-3 px-3 font-semibold text-slate-800">{r.receivedByName || user?.name || 'Active Attendant'}</td>
                   <td className="py-3 px-3">
                     <span className="font-bold uppercase text-[10px] bg-slate-100 px-2 py-0.5 rounded text-slate-800">
                       {r.paymentMethod} {r.paymentReference ? `(${r.paymentReference})` : ''}
@@ -131,7 +133,7 @@ export const ReceiptsView: React.FC = () => {
               ))}
               {receipts.length === 0 && (
                 <tr>
-                  <td colSpan={8} className="py-12 text-center text-slate-400">
+                  <td colSpan={9} className="py-12 text-center text-slate-400">
                     No receipts recorded yet.
                   </td>
                 </tr>
