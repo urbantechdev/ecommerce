@@ -10,6 +10,7 @@ interface AuthContextType {
   isLoading: boolean;
   login: (credentials: { email: string; password: string }) => Promise<void>;
   loginAsAdmin: () => Promise<void>;
+  loginWithGoogle: (googleData?: { email?: string; name?: string }) => Promise<void>;
   loginWithPin: (credentials: { userId: string; pin: string }) => Promise<void>;
   logout: () => Promise<void>;
   switchBranch: (branchId: string) => Promise<void>;
@@ -79,7 +80,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const loginAsAdmin = async () => {
     setIsLoading(true);
     try {
-      const { token, user: loggedInUser } = await api.login({ email: 'support@naisiaetextiles.com', password: '' });
+      const { token, user: loggedInUser } = await api.googleLogin({
+        email: 'optimumengineeringke@gmail.com',
+        name: 'Optimum Engineering',
+      });
+      setAuthToken(token);
+      setUser(loggedInUser);
+      setActiveBranchId(loggedInUser.branchId || 'all');
+      await fetchBranches();
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const loginWithGoogle = async (googleData?: { email?: string; name?: string }) => {
+    setIsLoading(true);
+    try {
+      const { token, user: loggedInUser } = await api.googleLogin(googleData || {
+        email: 'optimumengineeringke@gmail.com',
+        name: 'Optimum Engineering',
+      });
       setAuthToken(token);
       setUser(loggedInUser);
       setActiveBranchId(loggedInUser.branchId || 'all');
@@ -153,6 +173,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         isLoading,
         login,
         loginAsAdmin,
+        loginWithGoogle,
         loginWithPin,
         logout,
         switchBranch,

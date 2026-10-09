@@ -443,22 +443,6 @@ class DatabaseEngine {
         const raw = fs.readFileSync(DB_FILE, 'utf-8');
         const parsed: DatabaseSchema = JSON.parse(raw);
         let updated = false;
-        if (parsed.users && Array.isArray(parsed.users)) {
-          const defaultPins: Record<string, string> = {
-            'usr-pos-nbi': '123456',
-            'usr-pos-wst': '654321',
-            'usr-pos-msa': '112233',
-            'usr-pos-ksm': '334455',
-            'usr-admin-01': '888888',
-            'usr-acc-01': '555555',
-          };
-          for (const u of parsed.users) {
-            if (!u.pin) {
-              u.pin = defaultPins[u.id] || '123456';
-              updated = true;
-            }
-          }
-        }
         if (parsed.products && Array.isArray(parsed.products)) {
           // Backfill sector and add products from all 7 categories
           for (const p of parsed.products) {
@@ -483,6 +467,7 @@ class DatabaseEngine {
             }
           }
         }
+
         if (updated) {
           this.data = parsed;
           this.saveDataDirect(parsed);
@@ -545,133 +530,23 @@ class DatabaseEngine {
   private generateInitialSeed(): DatabaseSchema {
     const now = new Date().toISOString();
 
-    // 1. Physical Branches in Kenya
+    // 1. Physical Branches in Kenya (Initially Uhuru Market only, with capacity to add more)
     const branches: Branch[] = [
       {
         id: 'branch-nbi-cbd',
-        code: 'NBI-UHR',
-        name: 'Nairobi Uhuru Market Flagship (HQ)',
+        code: 'UHR-MKT',
+        name: 'Uhuru Market (HQ)',
         location: 'Uhuru Market, Nairobi',
-        address: 'Naisia Textiles Complex, Stall / Unit 2, Uhuru Market, P.O. Box 48291-00100 Nairobi',
+        address: 'Naisia Textiles Complex, Stall / Unit 2, Uhuru Market, Jogoo Road, P.O. Box 48291-00100 Nairobi',
         phone: '+254 722 001 100',
         email: 'uhuru@naisiaetextiles.com',
         isHQ: true,
         createdAt: now,
       },
-      {
-        id: 'branch-nbi-west',
-        code: 'NBI-WST',
-        name: 'Nairobi Westlands Branch',
-        location: 'Sarit Centre Arcade, Westlands',
-        address: 'Shop 14B, Mezzanine 1, Sarit Centre, Nairobi',
-        phone: '+254 733 002 200',
-        email: 'westlands@naisiaetextiles.com',
-        isHQ: false,
-        createdAt: now,
-      },
-      {
-        id: 'branch-msa-nyl',
-        code: 'MSA-NYL',
-        name: 'Mombasa Nyali Branch',
-        location: 'Links Road, Nyali, Mombasa',
-        address: 'City Mall Nyali, Ground Flr Suite 9, Mombasa',
-        phone: '+254 720 003 300',
-        email: 'mombasa@naisiaetextiles.com',
-        isHQ: false,
-        createdAt: now,
-      },
-      {
-        id: 'branch-ksm-cpt',
-        code: 'KSM-CEN',
-        name: 'Kisumu Mega Plaza Branch',
-        location: 'Oginga Odinga Street, Kisumu',
-        address: 'Mega Plaza Mall, 1st Floor, Kisumu',
-        phone: '+254 725 004 400',
-        email: 'kisumu@naisiaetextiles.com',
-        isHQ: false,
-        createdAt: now,
-      },
     ];
 
-    // 2. Default Users with secure bcrypt hashes
-    // Admin: AdminPassword2026!
-    // Accountant: Accountant2026!
-    // Staff: StaffNairobi2026! / StaffWestlands2026! / StaffMombasa2026!
-    const salt = bcrypt.genSaltSync(10);
-    const users: User[] = [
-      {
-        id: 'usr-admin-01',
-        name: 'Mercy Chebet',
-        email: 'support@naisiaetextiles.com',
-        passwordHash: bcrypt.hashSync('AdminPassword2026!', salt),
-        role: 'ADMIN',
-        branchId: 'all',
-        phone: '+254 711 990 001',
-        pin: '888888',
-        status: 'ACTIVE',
-        createdAt: now,
-      },
-      {
-        id: 'usr-acc-01',
-        name: 'David Omondi',
-        email: 'accountant@naisiaetextiles.com',
-        passwordHash: bcrypt.hashSync('Accountant2026!', salt),
-        role: 'ACCOUNTANT',
-        branchId: 'all',
-        phone: '+254 722 880 002',
-        pin: '555555',
-        status: 'ACTIVE',
-        createdAt: now,
-      },
-      {
-        id: 'usr-pos-nbi',
-        name: 'Faith Muthoni',
-        email: 'staff.nairobi@naisiaetextiles.com',
-        passwordHash: bcrypt.hashSync('StaffNairobi2026!', salt),
-        role: 'STAFF',
-        branchId: 'branch-nbi-cbd',
-        phone: '+254 733 770 003',
-        pin: '123456',
-        status: 'ACTIVE',
-        createdAt: now,
-      },
-      {
-        id: 'usr-pos-wst',
-        name: 'Brian Kiprop',
-        email: 'staff.westlands@naisiaetextiles.com',
-        passwordHash: bcrypt.hashSync('StaffWestlands2026!', salt),
-        role: 'STAFF',
-        branchId: 'branch-nbi-west',
-        phone: '+254 714 660 004',
-        pin: '654321',
-        status: 'ACTIVE',
-        createdAt: now,
-      },
-      {
-        id: 'usr-pos-msa',
-        name: 'Amina Salim',
-        email: 'staff.mombasa@naisiaetextiles.com',
-        passwordHash: bcrypt.hashSync('StaffMombasa2026!', salt),
-        role: 'STAFF',
-        branchId: 'branch-msa-nyl',
-        phone: '+254 728 550 005',
-        pin: '112233',
-        status: 'ACTIVE',
-        createdAt: now,
-      },
-      {
-        id: 'usr-pos-ksm',
-        name: 'Kevin Otieno',
-        email: 'staff.kisumu@naisiaetextiles.com',
-        passwordHash: bcrypt.hashSync('StaffKisumu2026!', salt),
-        role: 'STAFF',
-        branchId: 'branch-ksm-cpt',
-        phone: '+254 729 440 006',
-        pin: '334455',
-        status: 'ACTIVE',
-        createdAt: now,
-      },
-    ];
+    // 2. Users (No mock or demo users seeded)
+    const users: User[] = [];
 
     // 3. Suppliers
     const suppliers: Supplier[] = [
@@ -819,23 +694,23 @@ class DatabaseEngine {
       stockDist: { cbd: number; wst: number; msa: number; ksm: number },
       reorder: number = 10
     ): ProductVariant[] => {
-      return sizes.map((size) => ({
-        id: `var-${prefix}-${size}`,
-        sku: `${baseSku}-${size}`,
-        barcode: `616${Math.floor(100000000 + Math.random() * 900000000)}`,
-        size,
-        color,
-        costPrice: cost,
-        sellingPrice: price,
-        branchStock: {
-          'branch-nbi-cbd': Math.max(0, stockDist.cbd + Math.floor(Math.random() * 5) - 2),
-          'branch-nbi-west': Math.max(0, stockDist.wst + Math.floor(Math.random() * 4) - 2),
-          'branch-msa-nyl': Math.max(0, stockDist.msa + Math.floor(Math.random() * 3) - 1),
-          'branch-ksm-cpt': Math.max(0, stockDist.ksm + Math.floor(Math.random() * 3) - 1),
-        },
-        reorderLevel: reorder,
-        reorderQuantity: 30,
-      }));
+      return sizes.map((size) => {
+        const totalAllocated = stockDist.cbd + stockDist.wst + stockDist.msa + stockDist.ksm;
+        return {
+          id: `var-${prefix}-${size}`,
+          sku: `${baseSku}-${size}`,
+          barcode: `616${Math.floor(100000000 + Math.random() * 900000000)}`,
+          size,
+          color,
+          costPrice: cost,
+          sellingPrice: price,
+          branchStock: {
+            'branch-nbi-cbd': Math.max(0, totalAllocated + Math.floor(Math.random() * 5) - 2),
+          },
+          reorderLevel: reorder,
+          reorderQuantity: 30,
+        };
+      });
     };
 
     // 5. Products Catalog (School Uniforms)

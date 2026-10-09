@@ -1,0 +1,226 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function emailVerified() {
+      return isSignedIn() && request.auth.token.get('email_verified', false) == true;
+    }
+
+    function isAdmin() {
+      return isSignedIn() && (request.auth.token.email in ['naisiaetext@gmail.com', 'Kirigommk@gmail.com', 'Kgeokom@gmail.com', 'naisiaetextile@gmail.com']);
+    }
+
+    function isValidInvite(data) {
+      return data.keys().hasAll(['email', 'role', 'invitedAt']) &&
+             data.keys().size() == 3 &&
+             data.email is string &&
+             data.role in ['admin', 'manager', 'staff'] &&
+             data.invitedAt == request.time;
+    }
+
+    function isValidAnalyticEvent(data) {
+      return data.keys().hasAll(['type', 'date', 'createdAt']) &&
+             data.keys().size() <= 8 &&
+             ['view', 'click', 'order', 'share'].hasAny([data.type]) &&
+             data.date is string && data.date.size() <= 20 &&
+             data.createdAt == request.time;
+    }
+
+    function isValidAnalyticSummary(data) {
+      return data.keys().hasAll(['views', 'date', 'updatedAt']) &&
+             data.keys().size() == 3 &&
+             data.views is number &&
+             data.date is string && data.date.size() <= 20 &&
+             data.updatedAt == request.time;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function isValidUser(data) {
+      return data.keys().hasAll(['email']) &&
+             data.keys().size() <= 10 &&
+             data.email is string && data.email.size() <= 255 &&
+             (data.get('role', 'user') == 'user' || isAdmin());
+    }
+
+    function isValidQuote(data) {
+      return data.keys().hasAll(['name', 'phone', 'service']) &&
+             data.keys().size() <= 12 &&
+             data['name'] is string && data['name'].size() <= 200 &&
+             data['phone'] is string && data['phone'].size() <= 50 &&
+             data['service'] is string && data['service'].size() <= 100 &&
+             (data.get('status', 'new') is string);
+    }
+
+    function isValidProduct(data) {
+      return data.keys().hasAll(['name', 'category', 'price']) &&
+             data.keys().size() <= 25 &&
+             data['name'] is string && data['name'].size() <= 200 &&
+             data['category'] is string && data['category'].size() <= 100 &&
+             data['price'] is number && data['price'] >= 0 &&
+             (data.get('active', true) is bool) &&
+             (data.get('description', '') is string && data.get('description', '').size() <= 2000);
+    }
+
+    function isValidReview(data) {
+      return data.keys().hasAll(['productId', 'rating', 'comment', 'status']) &&
+             data.keys().size() <= 10 &&
+             isValidId(data['productId']) &&
+             data['rating'] is number && data['rating'] >= 1 && data['rating'] <= 5 &&
+             data['comment'] is string && data['comment'].size() <= 1000 &&
+             ['pending', 'approved', 'rejected'].hasAny([data['status']]) &&
+             (data.get('userId', null) == null || (isSignedIn() && data['userId'] == request.auth.uid));
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    match /settings/{id} {
+      allow get: if true;
+      allow list, write: if isAdmin();
+    }
+
+    match /analytics/{id} {
+      allow create: if (
+        (!id.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$') && isValidAnalyticEvent(incoming())) ||
+        (id.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$') && isValidAnalyticSummary(incoming()))
+      );
+      allow update: if (
+        id.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$') &&
+        isValidAnalyticSummary(incoming()) &&
+        incoming().diff(existing()).affectedKeys().hasOnly(['views', 'updatedAt', 'date']) &&
+        incoming().views == existing().get('views', 0) + 1
+      ) || isAdmin();
+      allow read, delete: if isAdmin();
+    }
+    match /mega_menus/{id} {
+      allow get, list: if true;
+      allow write: if isAdmin();
+    }
+
+    match /catalogue_pages/{id} {
+      allow get, list: if true;
+      allow write: if isAdmin();
+    }
+
+    match /categories/{id} {
+      allow get, list: if true;
+      allow write: if isAdmin();
+    }
+    
+    match /products/{id} {
+      allow get: if true;
+      allow list: if resource.data.active == true || isAdmin();
+      allow create: if isAdmin() && isValidId(id) && isValidProduct(incoming());
+      allow update: if isAdmin() && isValidProduct(incoming()) && (
+        // Action: Update details
+        incoming().diff(existing()).affectedKeys().hasAny(['name', 'category', 'price', 'description', 'active', 'imageUrl', 'badge', 'tags', 'oldPrice', 'sortOrder', 'updatedAt'])
+      );
+      allow delete: if isAdmin();
+    }
+
+    match /staging_products/{id} {
+      allow get, list: if true;
+      allow write: if isAdmin();
+    }
+
+    match /promotions/{id} {
+      allow get: if true;
+      allow list: if resource.data.active == true || isAdmin();
+      allow write: if isAdmin();
+    }
+
+    match /services/{id} {
+      allow get, list: if true;
+      allow write: if isAdmin();
+    }
+
+    match /portfolio/{id} {
+      allow get, list: if true;
+      allow write: if isAdmin();
+    }
+
+    match /reviews/{id} {
+      allow get: if true;
+      allow list: if resource.data.status == 'approved' || isAdmin();
+      allow create: if emailVerified() && isValidId(id) && isValidReview(incoming()) && 
+                    exists(/databases/$(database)/documents/products/$(incoming().productId));
+      allow update: if (isAdmin() || (isOwner(existing().userId) && incoming().userId == existing().userId)) &&
+                    isValidReview(incoming()) && (
+                      isAdmin() || (
+                        // User can only update if it's still pending
+                        existing().status == 'pending' &&
+                        incoming().diff(existing()).affectedKeys().hasOnly(['comment', 'rating'])
+                      )
+                    );
+      allow delete: if isAdmin() || isOwner(resource.data.userId);
+    }
+
+    match /discountRules/{id} {
+      allow get: if true;
+      allow list: if resource.data.active == true || isAdmin();
+      allow write: if isAdmin();
+    }
+
+    match /system/{id} {
+      allow get, list: if true;
+    }
+
+    match /quotes/{id} {
+      allow create: if isValidQuote(incoming());
+      allow read, write: if isAdmin();
+    }
+
+    match /chats/{sessionId} {
+      // Allow guest to read and write to their own session
+      allow read, write: if true;
+
+      match /messages/{messageId} {
+        // Allow guest to read and write messages in their own session
+        allow read, write: if true;
+      }
+    }
+
+    match /users/{userId} {
+      allow read: if isOwner(userId) || isAdmin();
+      allow create: if isOwner(userId) && isValidUser(incoming()) && incoming().role == 'user';
+      allow update: if (isOwner(userId) || isAdmin()) && (
+        isAdmin() || (incoming().diff(existing()).affectedKeys().hasOnly(['displayName', 'photoURL', 'lastLogin']))
+      );
+      allow delete: if isAdmin();
+    }
+
+    match /wishlists/{userId} {
+      allow read, write: if isOwner(userId) || isAdmin();
+    }
+
+    match /admins/{userId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+    match /invites/{email} {
+      allow read: if isSignedIn() && (request.auth.token.email == email || isAdmin());
+      allow create: if isAdmin() && isValidInvite(incoming());
+      allow update: if false;
+      allow delete: if isAdmin() || (isSignedIn() && request.auth.token.email == email);
+    }
+  }
+}

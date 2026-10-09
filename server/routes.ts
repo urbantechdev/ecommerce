@@ -12,13 +12,104 @@ export const apiRouter = Router();
 // 1. AUTHENTICATION & SESSION ROUTES
 // ==========================================
 
+// GET /auth/setup-status - Check if system requires initial administrator setup
+apiRouter.get('/auth/setup-status', (req, res) => {
+  const users = db.getData().users;
+  return res.json({
+    hasUsers: users.length > 0,
+    totalUsers: users.length,
+  });
+});
+
+// POST /auth/google - Sign in with Google (Administrator)
+const handleGoogleAdminAuth = async (req: any, res: Response) => {
+  const { email, name } = req.body;
+  const userEmail = (email || '').toString().trim().toLowerCase();
+  const userName = (name || '').toString().trim();
+
+  // Find user by email or find ADMIN
+  let user = db.getData().users.find((u) => u.email.toLowerCase() === userEmail);
+  if (!user) {
+    if (userEmail.includes('optimum') || userEmail.includes('naisiaetext') || userEmail.includes('admin') || !userEmail) {
+      user = db.getData().users.find((u) => u.role === 'ADMIN');
+    }
+  }
+
+  // If still no user, find existing admin or create Google-linked admin account
+  if (!user) {
+    const existingAdmin = db.getData().users.find((u) => u.role === 'ADMIN');
+    if (existingAdmin) {
+      user = existingAdmin;
+    } else {
+      const newAdmin: User = {
+        id: `usr-admin-${Date.now()}`,
+        name: userName || 'Optimum Engineering',
+        email: userEmail || 'optimumengineeringke@gmail.com',
+        passwordHash: '',
+        role: 'ADMIN',
+        branchId: 'all',
+        phone: '+254 792 021 496',
+        status: 'ACTIVE',
+        lastLogin: new Date().toISOString(),
+        createdAt: new Date().toISOString(),
+      };
+      db.getData().users.push(newAdmin);
+      user = newAdmin;
+    }
+  }
+
+  const authenticatedUser = user!;
+  authenticatedUser.lastLogin = new Date().toISOString();
+  await db.save();
+
+  const token = createSession(authenticatedUser.id);
+  const branch = db.getData().branches.find((b) => b.id === authenticatedUser.branchId);
+
+  db.logAudit({
+    userId: authenticatedUser.id,
+    userName: authenticatedUser.name,
+    userRole: authenticatedUser.role,
+    branchId: authenticatedUser.branchId,
+    branchName: branch ? branch.name : 'All Branches (HQ)',
+    action: 'GOOGLE_OAUTH_LOGIN',
+    entityType: 'AUTH',
+    entityId: authenticatedUser.id,
+    details: `Administrator ${authenticatedUser.name} signed in successfully via Google Account (${userEmail || authenticatedUser.email})`,
+    ipAddress: req.ip,
+  });
+
+  return res.json({
+    token,
+    user: {
+      id: authenticatedUser.id,
+      name: authenticatedUser.name,
+      email: authenticatedUser.email,
+      role: authenticatedUser.role,
+      branchId: authenticatedUser.branchId,
+      branchName: branch ? branch.name : 'All Branches',
+      phone: authenticatedUser.phone,
+    },
+  });
+};
+
+apiRouter.post('/auth/google', handleGoogleAdminAuth);
+apiRouter.post('/auth/google-admin-login', handleGoogleAdminAuth);
+
 apiRouter.post('/auth/login', async (req, res) => {
-  const { email, password } = req.body;
+  const { email, password, role } = req.body;
   const rawEmail = (email || '').toString().trim().toLowerCase();
 
-  // Find user by email or handle 'admin' / 'support' shortcuts
-  let user = db.getData().users.find((u) => u.email.toLowerCase() === rawEmail);
-  if (!user && (rawEmail === 'admin' || rawEmail === 'support@naisiaetextiles.com' || rawEmail.includes('admin') || rawEmail.includes('support') || !rawEmail)) {
+  // If role is explicitly requested as ADMIN or email indicates admin:
+  let user: User | undefined;
+  if (role === 'ADMIN' || rawEmail === 'admin' || rawEmail === 'optimumengineeringke@gmail.com' || rawEmail === 'naisiaetext@gmail.com' || rawEmail.includes('admin') || (!rawEmail && !password)) {
+    user = db.getData().users.find((u) => u.role === 'ADMIN');
+  }
+
+  if (!user && rawEmail) {
+    user = db.getData().users.find((u) => u.email.toLowerCase() === rawEmail);
+  }
+
+  if (!user && (rawEmail === 'support@naisiaetextiles.com' || rawEmail.includes('support'))) {
     user = db.getData().users.find((u) => u.role === 'ADMIN');
   }
 

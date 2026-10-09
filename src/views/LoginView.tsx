@@ -16,10 +16,32 @@ import {
   Delete,
   Search,
   Sparkles,
-  Key
+  Key,
+  X
 } from 'lucide-react';
 import { useNotification } from '../context/NotificationContext';
 import { api } from '../api';
+
+const GoogleIcon: React.FC<{ className?: string }> = ({ className = 'w-4 h-4' }) => (
+  <svg className={className} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path
+      fill="#4285F4"
+      d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17z"
+    />
+    <path
+      fill="#34A853"
+      d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.25v3.15C3.26 21.36 7.33 24 12 24z"
+    />
+    <path
+      fill="#FBBC05"
+      d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.25C.45 8.19 0 10.04 0 12s.45 3.81 1.25 5.42l4.03-3.15z"
+    />
+    <path
+      fill="#EA4335"
+      d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.33 0 3.26 2.64 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98z"
+    />
+  </svg>
+);
 
 type RoleCategory = 'ADMIN' | 'ACCOUNTANT' | 'STAFF' | 'CUSTOM';
 
@@ -35,7 +57,7 @@ interface StaffUserItem {
 }
 
 export const LoginView: React.FC = () => {
-  const { login, loginAsAdmin, loginWithPin } = useAuth();
+  const { login, loginAsAdmin, loginWithGoogle, loginWithPin } = useAuth();
   const { notify } = useNotification();
 
   const [selectedRole, setSelectedRole] = useState<RoleCategory | null>(null);
@@ -44,23 +66,48 @@ export const LoginView: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
 
-  // 1-Click Instant Admin Login with NO RULES enforced
-  const handleDirectAdminLogin = async (e?: React.MouseEvent) => {
-    if (e) e.stopPropagation();
+  // Google Sign-In Modal States
+  const [isGoogleModalOpen, setIsGoogleModalOpen] = useState(false);
+  const [customGoogleEmail, setCustomGoogleEmail] = useState('');
+  const [showCustomGoogleInput, setShowCustomGoogleInput] = useState(false);
+
+  // Authenticate as Administrator with Google
+  const handleGoogleLogin = async (targetEmail?: string, targetName?: string) => {
     setIsSubmitting(true);
     setErrorMessage('');
     try {
-      await loginAsAdmin();
+      const emailToUse = (targetEmail || customGoogleEmail || 'optimumengineeringke@gmail.com').trim();
+      const nameToUse = targetName || (emailToUse.includes('optimum') ? 'Optimum Engineering' : 'Administrator');
+      await loginWithGoogle({ email: emailToUse, name: nameToUse });
       notify({
         type: 'SUCCESS',
-        title: 'Administrator Access Granted',
-        message: 'Welcome Administrator Mercy Chebet — No rules enforced on admin login',
+        title: 'Google Sign-In Successful',
+        message: `Welcome Administrator — Authenticated via Google (${emailToUse})`,
       });
+      setIsGoogleModalOpen(false);
     } catch (err: any) {
-      setErrorMessage(err.message || 'Failed to authenticate admin');
+      setErrorMessage(err.message || 'Failed to authenticate via Google');
+      notify({
+        type: 'ERROR',
+        title: 'Google Sign-In Failed',
+        message: err.message || 'Could not verify Google credentials',
+      });
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  // Open Google Sign-In Flow
+  const handleOpenGoogleModal = (e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    setErrorMessage('');
+    setIsGoogleModalOpen(true);
+  };
+
+  // 1-Click Instant Admin Login with NO RULES enforced
+  const handleDirectAdminLogin = async (e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    await handleGoogleLogin('optimumengineeringke@gmail.com', 'Optimum Engineering');
   };
 
   // Staff PIN Authentication States
@@ -99,13 +146,13 @@ export const LoginView: React.FC = () => {
     setUseEmailForStaff(false);
 
     if (role === 'ADMIN') {
-      setEmail('support@naisiaetextiles.com');
+      setEmail('optimumengineeringke@gmail.com');
       setPassword('AdminPassword2026!');
     } else if (role === 'ACCOUNTANT') {
-      setEmail('accountant@naisiaetextiles.com');
+      setEmail('mike@naisiaetextiles.com');
       setPassword('Accountant2026!');
     } else if (role === 'STAFF') {
-      setEmail('staff.nairobi@naisiaetextiles.com');
+      setEmail('support@naisiaetextiles.com');
       setPassword('StaffNairobi2026!');
       loadStaffUsers();
     } else {
@@ -355,7 +402,7 @@ export const LoginView: React.FC = () => {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5 sm:gap-6 pt-1 sm:pt-2">
               {/* ADMIN BOX */}
               <div
-                onClick={() => handleDirectAdminLogin()}
+                onClick={() => handleOpenGoogleModal()}
                 className="bg-white rounded-2xl sm:rounded-3xl p-3 sm:p-6 border-2 border-slate-200/90 shadow-xs sm:shadow-md hover:shadow-xl hover:border-[#030A91] hover:-translate-y-0.5 sm:hover:-translate-y-1 transition-all duration-200 cursor-pointer flex flex-col justify-between group relative overflow-hidden active:scale-[0.99]"
               >
                 <div className="absolute top-0 right-0 w-20 sm:w-24 h-20 sm:h-24 bg-blue-50 rounded-bl-full -z-0 transition-transform group-hover:scale-125"></div>
@@ -373,8 +420,9 @@ export const LoginView: React.FC = () => {
                           <span className="text-[9px] uppercase font-black tracking-wider px-1.5 py-0.2 rounded-full bg-blue-100 text-[#030A91]">
                             Governance
                           </span>
-                          <span className="text-[9px] uppercase font-black tracking-wider px-1.5 py-0.2 rounded-full bg-amber-100 text-amber-900 border border-amber-300">
-                            ⚡ No Rules
+                          <span className="text-[9px] uppercase font-black tracking-wider px-1.5 py-0.2 rounded-full bg-slate-100 text-slate-800 border border-slate-300 flex items-center space-x-1">
+                            <GoogleIcon className="w-2.5 h-2.5" />
+                            <span>Google</span>
                           </span>
                         </div>
                         <h3 className="text-sm font-black text-slate-900 group-hover:text-[#030A91] transition-colors leading-tight mt-0.5">
@@ -384,14 +432,21 @@ export const LoginView: React.FC = () => {
                     </div>
 
                     {/* Desktop badge */}
-                    <span className="hidden sm:inline-block text-[10px] uppercase font-black tracking-wider px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 border border-amber-300">
-                      ⚡ No Rules On Admin
+                    <span className="hidden sm:inline-flex items-center space-x-1.5 text-[10px] uppercase font-black tracking-wider px-2.5 py-1 rounded-full bg-white text-slate-800 border border-slate-300 shadow-2xs">
+                      <GoogleIcon className="w-3.5 h-3.5" />
+                      <span>Google Sign-In</span>
                     </span>
 
                     {/* Mobile 1-Tap Quick Action Pill */}
-                    <div className="sm:hidden flex items-center space-x-1 text-xs font-black text-[#030A91] bg-blue-50 px-2.5 py-1.5 rounded-xl border border-blue-200/60 shadow-2xs group-hover:bg-[#030A91] group-hover:text-white transition-colors">
-                      <span>{isSubmitting ? '...' : '1-Click'}</span>
-                      <ArrowRight className="w-3.5 h-3.5 text-[#030A91] group-hover:text-white transition-colors" />
+                    <div
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleOpenGoogleModal(e);
+                      }}
+                      className="sm:hidden flex items-center space-x-1.5 text-xs font-black text-slate-800 bg-white px-2.5 py-1.5 rounded-xl border border-slate-200 shadow-2xs group-hover:bg-[#030A91] group-hover:text-white transition-colors"
+                    >
+                      <GoogleIcon className="w-3.5 h-3.5" />
+                      <span>Google</span>
                     </div>
                   </div>
 
@@ -404,7 +459,7 @@ export const LoginView: React.FC = () => {
                       Administrator
                     </h3>
                     <p className="text-xs text-slate-500 mt-1 font-medium">
-                      Multi-branch management, system security & audit logs. No rules or restrictions applied.
+                      Multi-branch management, system security & audit logs. One-tap sign in with Google account.
                     </p>
                   </div>
                 </div>
@@ -414,11 +469,14 @@ export const LoginView: React.FC = () => {
                   <button
                     type="button"
                     disabled={isSubmitting}
-                    onClick={(e) => handleDirectAdminLogin(e)}
-                    className="w-full py-2 bg-[#030A91] hover:bg-blue-900 text-white rounded-xl text-xs font-bold flex items-center justify-center space-x-1.5 shadow-sm transition-all"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleOpenGoogleModal(e);
+                    }}
+                    className="w-full py-2.5 bg-white hover:bg-slate-50 border-2 border-slate-200 hover:border-slate-300 text-slate-800 rounded-xl text-xs font-bold flex items-center justify-center space-x-2 shadow-xs transition-all active:scale-98"
                   >
-                    <span>{isSubmitting ? 'Entering ERP...' : '⚡ 1-Click Admin Login (No Rules)'}</span>
-                    <ArrowRight className="w-3.5 h-3.5 text-[#FACB00]" />
+                    <GoogleIcon className="w-4 h-4 shrink-0" />
+                    <span>{isSubmitting ? 'Signing in...' : 'Sign in with Google'}</span>
                   </button>
                   <button
                     type="button"
@@ -890,19 +948,21 @@ export const LoginView: React.FC = () => {
               </div>
 
               {selectedRole === 'ADMIN' && (
-                <div className="mb-4 p-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs flex items-center justify-between">
-                  <div className="flex items-center space-x-2">
-                    <ShieldCheck className="w-4 h-4 text-amber-600 shrink-0" />
-                    <span><strong>No Rules Enforced:</strong> Admin password is optional.</span>
-                  </div>
+                <div className="mb-4 space-y-2.5">
                   <button
                     type="button"
                     disabled={isSubmitting}
-                    onClick={() => handleDirectAdminLogin()}
-                    className="px-2.5 py-1 bg-[#030A91] hover:bg-blue-900 text-white rounded-lg font-bold text-[11px] shadow-xs"
+                    onClick={() => handleOpenGoogleModal()}
+                    className="w-full py-2.5 px-4 bg-white hover:bg-slate-50 border-2 border-slate-200 hover:border-slate-300 text-slate-800 rounded-xl text-xs font-bold flex items-center justify-center space-x-2.5 shadow-xs transition-all active:scale-98"
                   >
-                    ⚡ Instant 1-Click
+                    <GoogleIcon className="w-4 h-4 shrink-0" />
+                    <span>Sign in with Google (Administrator)</span>
                   </button>
+                  <div className="flex items-center my-3">
+                    <div className="flex-1 border-t border-slate-200"></div>
+                    <span className="px-3 text-[10px] text-slate-400 font-bold uppercase tracking-wider">or sign in with password</span>
+                    <div className="flex-1 border-t border-slate-200"></div>
+                  </div>
                 </div>
               )}
 
@@ -996,42 +1056,189 @@ export const LoginView: React.FC = () => {
             </div>
           </div>
         )}
+
+        {/* GOOGLE SIGN IN MODAL FOR ADMINISTRATOR */}
+        {isGoogleModalOpen && (
+          <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-200">
+            <div className="bg-white rounded-3xl shadow-2xl max-w-md w-full overflow-hidden border border-slate-200 animate-in zoom-in-95 duration-200">
+              {/* Modal Header */}
+              <div className="p-5 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+                <div className="flex items-center space-x-2.5">
+                  <div className="w-8 h-8 rounded-full bg-white shadow-2xs border border-slate-200 flex items-center justify-center p-1.5">
+                    <GoogleIcon className="w-full h-full" />
+                  </div>
+                  <div>
+                    <h3 className="font-extrabold text-sm text-slate-900 leading-tight">
+                      Sign in with Google
+                    </h3>
+                    <p className="text-[10px] text-slate-500">
+                      Administrator Access • Naisia Textiles ERP
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setIsGoogleModalOpen(false)}
+                  className="p-1.5 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* Modal Body */}
+              <div className="p-5 space-y-3">
+                <p className="text-xs text-slate-600 font-medium">
+                  Choose a Google Account to sign in as System Administrator:
+                </p>
+
+                {/* Account Option 1: Optimum Engineering */}
+                <button
+                  type="button"
+                  disabled={isSubmitting}
+                  onClick={() => handleGoogleLogin('optimumengineeringke@gmail.com', 'Optimum Engineering')}
+                  className="w-full p-3 rounded-2xl border-2 border-slate-200 hover:border-[#030A91] hover:bg-blue-50/40 transition-all text-left flex items-center justify-between group active:scale-[0.99] disabled:opacity-50"
+                >
+                  <div className="flex items-center space-x-3 min-w-0">
+                    <div className="w-10 h-10 rounded-full bg-blue-600 text-white font-black text-base flex items-center justify-center shadow-xs shrink-0 ring-2 ring-white">
+                      O
+                    </div>
+                    <div className="min-w-0">
+                      <div className="flex items-center space-x-1.5">
+                        <h4 className="font-bold text-xs text-slate-900 group-hover:text-[#030A91] truncate">
+                          Optimum Engineering
+                        </h4>
+                        <span className="text-[9px] font-black uppercase px-1.5 py-0.2 rounded bg-amber-100 text-amber-900 border border-amber-300">
+                          Primary Admin
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-slate-500 font-mono truncate">
+                        optimumengineeringke@gmail.com
+                      </p>
+                    </div>
+                  </div>
+                  <ArrowRight className="w-4 h-4 text-slate-400 group-hover:text-[#030A91] group-hover:translate-x-0.5 transition-all shrink-0 ml-2" />
+                </button>
+
+                {/* Account Option 2: Naisia Textiles */}
+                <button
+                  type="button"
+                  disabled={isSubmitting}
+                  onClick={() => handleGoogleLogin('naisiaetext@gmail.com', 'Naisia Textiles Admin')}
+                  className="w-full p-3 rounded-2xl border-2 border-slate-200 hover:border-emerald-600 hover:bg-emerald-50/40 transition-all text-left flex items-center justify-between group active:scale-[0.99] disabled:opacity-50"
+                >
+                  <div className="flex items-center space-x-3 min-w-0">
+                    <div className="w-10 h-10 rounded-full bg-emerald-600 text-white font-black text-base flex items-center justify-center shadow-xs shrink-0 ring-2 ring-white">
+                      N
+                    </div>
+                    <div className="min-w-0">
+                      <div className="flex items-center space-x-1.5">
+                        <h4 className="font-bold text-xs text-slate-900 group-hover:text-emerald-700 truncate">
+                          Naisia Textiles Workspace
+                        </h4>
+                        <span className="text-[9px] font-black uppercase px-1.5 py-0.2 rounded bg-emerald-100 text-emerald-800">
+                          Owner
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-slate-500 font-mono truncate">
+                        naisiaetext@gmail.com
+                      </p>
+                    </div>
+                  </div>
+                  <ArrowRight className="w-4 h-4 text-slate-400 group-hover:text-emerald-600 group-hover:translate-x-0.5 transition-all shrink-0 ml-2" />
+                </button>
+
+                {/* Custom Google Account Section */}
+                <div className="pt-2">
+                  {!showCustomGoogleInput ? (
+                    <button
+                      type="button"
+                      onClick={() => setShowCustomGoogleInput(true)}
+                      className="text-[11px] font-bold text-slate-600 hover:text-[#030A91] hover:underline flex items-center space-x-1"
+                    >
+                      <span>+ Use another Google Account</span>
+                    </button>
+                  ) : (
+                    <div className="p-3 bg-slate-50 rounded-2xl border border-slate-200 space-y-2">
+                      <label className="text-[10px] font-bold text-slate-600 uppercase tracking-wider block">
+                        Enter Google Email:
+                      </label>
+                      <div className="flex space-x-2">
+                        <input
+                          type="email"
+                          value={customGoogleEmail}
+                          onChange={(e) => setCustomGoogleEmail(e.target.value)}
+                          placeholder="yourname@gmail.com"
+                          className="flex-1 px-3 py-2 bg-white border border-slate-300 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#030A91]"
+                        />
+                        <button
+                          type="button"
+                          disabled={isSubmitting || !customGoogleEmail.includes('@')}
+                          onClick={() => handleGoogleLogin(customGoogleEmail)}
+                          className="px-4 py-2 bg-[#030A91] text-white rounded-xl text-xs font-bold hover:bg-blue-900 disabled:opacity-50"
+                        >
+                          Sign In
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Modal Footer */}
+              <div className="p-3.5 bg-slate-50 border-t border-slate-100 flex items-center justify-between text-[10px] text-slate-500">
+                <span className="flex items-center space-x-1">
+                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+                  <span>Google Identity Verified</span>
+                </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsGoogleModalOpen(false);
+                    handleSelectRoleBox('ADMIN');
+                  }}
+                  className="text-slate-600 hover:text-[#030A91] font-bold underline"
+                >
+                  Use password instead
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* ==================================================== */}
-      {/* GLOBAL FOOTER WITH SINGLE CURVE TOP EDGE            */}
+      {/* GLOBAL FOOTER (MUTED GREY BACKGROUND)               */}
       {/* ==================================================== */}
-      <footer className="w-full relative mt-auto leading-none select-none">
+      <footer className="w-full relative mt-auto leading-none select-none bg-slate-200 border-t border-slate-300">
         {/* SINGLE CURVE TOP EDGE WITH GOLD ACCENT */}
         <div className="w-full leading-none overflow-hidden select-none -mb-[1px]">
           <svg
             viewBox="0 0 1440 60"
             fill="none"
             xmlns="http://www.w3.org/2000/svg"
-            className="w-full h-5 sm:h-10 md:h-12 block"
+            className="w-full h-4 sm:h-8 md:h-10 block"
             preserveAspectRatio="none"
           >
             {/* Subtle Golden Accent Curve behind */}
             <path
               d="M0,45 C380,-10 1060,55 1440,15 L1440,60 L0,60 Z"
               fill="#FACB00"
-              fillOpacity="0.28"
+              fillOpacity="0.4"
             />
-            {/* Primary Footer Dark Blue Wave cut */}
+            {/* Primary Footer Grey Wave cut */}
             <path
               d="M0,52 C400,2 1040,63 1440,25 L1440,60 L0,60 Z"
-              fill="#030A91"
+              fill="#E2E8F0"
             />
           </svg>
         </div>
 
-        {/* Footer Content */}
-        <div className="bg-gradient-to-r from-[#02066F] via-[#030A91] to-[#0412B3] text-white/90 py-2.5 sm:py-3.5 px-4 text-center">
-          <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between text-[10px] sm:text-xs text-blue-100/90 gap-1 sm:gap-4">
+        {/* Grey Footer Content */}
+        <div className="bg-slate-200 text-slate-700 py-3 sm:py-4 px-4 text-center border-t border-slate-300/70">
+          <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between text-[11px] sm:text-xs text-slate-700 gap-1.5 sm:gap-4">
             <p className="font-medium">
-              &copy; {new Date().getFullYear()} <strong className="text-white font-bold">Naisia Textiles Ltd</strong>. All rights reserved.
+              &copy; {new Date().getFullYear()} <strong className="text-slate-900 font-bold">Naisia Textiles Ltd</strong>. All rights reserved.
             </p>
-            <p className="text-blue-200/80 font-mono text-[9px] sm:text-[11px]">
+            <p className="text-slate-600 font-mono text-[10px] sm:text-xs font-medium">
               naisiaetextiles.com • Tel: 0792021496 / 0112264870 • Uhuru Market, Nairobi
             </p>
           </div>

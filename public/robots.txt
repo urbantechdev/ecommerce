@@ -1,0 +1,14 @@
+User-agent: *
+Allow: /
+Allow: /privacy/
+Allow: /terms/
+Allow: /shipping/
+Allow: /returns/
+Disallow: /admin/
+Disallow: /admin
+Disallow: /checkout/
+Disallow: /checkout
+Disallow: /login/
+Disallow: /login
+
+Sitemap: https://naisiaetextiles.com/sitemap.xml

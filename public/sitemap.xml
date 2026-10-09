@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
+  <url>
+    <loc>https://naisiaetextiles.com/</loc>
+    <changefreq>daily</changefreq>
+    <priority>1.00</priority>
+  </url>
+  <url>
+    <loc>https://naisiaetextiles.com/about/</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.60</priority>
+  </url>
+  <url>
+    <loc>https://naisiaetextiles.com/services/</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.90</priority>
+  </url>
+  <url>
+    <loc>https://naisiaetextiles.com/products/</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.90</priority>
+  </url>
+  <url>
+    <loc>https://naisiaetextiles.com/categories/</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.85</priority>
+    <image:image>
+      <image:loc>https://naisiaetextiles.com/src/assets/images/category_school_1782334810884.jpg</image:loc>
+      <image:title>School Uniforms - Naisiae Textiles</image:title>
+      <image:caption>Premium high-performance custom-tailored primary and secondary school uniforms manufactured at Uhuru Market, Nairobi, Kenya.</image:caption>
+    </image:image>
+    <image:image>
+      <image:loc>https://naisiaetextiles.com/src/assets/images/category_corporate_1782334824455.jpg</image:loc>
+      <image:title>Corporate Wear - Naisiae Textiles</image:title>
+      <image:caption>Expertly crafted corporate office wear, executive suits, custom blazers, and staff shirts.</image:caption>
+    </image:image>
+    <image:image>
+      <image:loc>https://naisiaetextiles.com/src/assets/images/category_medical_1782334767056.jpg</image:loc>
+      <image:title>Healthcare &amp; Medical Scrubs - Naisiae Textiles</image:title>
+      <image:caption>Comfortable and antibacterial medical scrubs, laboratory coats, and hospital uniform supply.</image:caption>
+    </image:image>
+    <image:image>
+      <image:loc>https://naisiaetextiles.com/src/assets/images/category_hospitality_1782334781502.jpg</image:loc>
+      <image:title>Hospitality &amp; Catering Uniforms - Naisiae Textiles</image:title>
+      <image:caption>Elegant hotel staff wear, chef coats, catering vests, and apron sets.</image:caption>
+    </image:image>
+    <image:image>
+      <image:loc>https://naisiaetextiles.com/src/assets/images/category_industrial_1782334796806.jpg</image:loc>
+      <image:title>Industrial &amp; Workwear Uniforms - Naisiae Textiles</image:title>
+      <image:caption>Heavy-duty dust coats, industrial overalls, security uniforms, and high-visibility safety clothing.</image:caption>
+    </image:image>
+    <image:image>
+      <image:loc>https://naisiaetextiles.com/src/assets/images/category_sports_1782334837561.jpg</image:loc>
+      <image:title>Sports Kits &amp; Branded Games Kits - Naisiae Textiles</image:title>
+      <image:caption>Custom-designed sublimation sports jerseys, school physical education kits, and tracksuits.</image:caption>
+    </image:image>
+  </url>
+  <url>
+    <loc>https://naisiaetextiles.com/portfolio/</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.80</priority>
+  </url>
+  <url>
+    <loc>https://naisiaetextiles.com/wholesale/</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.85</priority>
+  </url>
+  <url>
+    <loc>https://naisiaetextiles.com/contact/</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.80</priority>
+  </url>
+  <url>
+    <loc>https://naisiaetextiles.com/faq/</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.50</priority>
+  </url>
+  <url>
+    <loc>https://naisiaetextiles.com/blog/</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.60</priority>
+  </url>
+  <url>
+    <loc>https://naisiaetextiles.com/careers/</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.40</priority>
+  </url>
+  <url>
+    <loc>https://naisiaetextiles.com/privacy/</loc>
+    <changefreq>yearly</changefreq>
+    <priority>0.10</priority>
+  </url>
+  <url>
+    <loc>https://naisiaetextiles.com/terms/</loc>
+    <changefreq>yearly</changefreq>
+    <priority>0.10</priority>
+  </url>
+  <url>
+    <loc>https://naisiaetextiles.com/shipping/</loc>
+    <changefreq>yearly</changefreq>
+    <priority>0.10</priority>
+  </url>
+  <url>
+    <loc>https://naisiaetextiles.com/returns/</loc>
+    <changefreq>yearly</changefreq>
+    <priority>0.10</priority>
+  </url>
+  <url>
+    <loc>https://naisiaetextiles.com/fabric-gallery/</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.85</priority>
+  </url>
+  <url>
+    <loc>https://naisiaetextiles.com/uniform-simulator/</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.50</priority>
+  </url>
+  <url>
+    <loc>https://naisiaetextiles.com/tanzania/</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://naisiaetextiles.com/dr-congo/</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://naisiaetextiles.com/uganda/</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://naisiaetextiles.com/ethiopia/</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
+  </url>
+</urlset>

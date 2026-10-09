@@ -43,10 +43,15 @@ async function request<T>(endpoint: string, options: RequestInit = {}): Promise<
 
 export const api = {
   // Auth
-  login: (credentials: { email: string; password: string }) =>
+  login: (credentials: { email: string; password: string; role?: string }) =>
     request<{ token: string; user: any }>('/auth/login', {
       method: 'POST',
       body: JSON.stringify(credentials),
+    }),
+  googleLogin: (payload?: { email?: string; name?: string }) =>
+    request<{ token: string; user: any }>('/auth/google', {
+      method: 'POST',
+      body: JSON.stringify(payload || {}),
     }),
   pinLogin: (credentials: { userId: string; pin: string }) =>
     request<{ token: string; user: any }>('/auth/pin-login', {
