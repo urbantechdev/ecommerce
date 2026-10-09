@@ -35,6 +35,7 @@ import {
 } from 'lucide-react';
 import { StatusBadge } from '../components/StatusBadge';
 import { ProductPriceSetModal } from '../components/ProductPriceSetModal';
+import { SkuImageManagerModal } from '../components/SkuImageManagerModal';
 import {
   INVENTORY_SECTORS,
   COLLEGE_INSTITUTIONS,
@@ -145,6 +146,10 @@ export const ProductsView: React.FC = () => {
   // Single Product Price Set Modal
   const [isSinglePriceSetModalOpen, setIsSinglePriceSetModalOpen] = useState(false);
   const [priceSetSelectedProduct, setPriceSetSelectedProduct] = useState<Product | null>(null);
+
+  // SKU Image Manager Modal
+  const [isSkuImageModalOpen, setIsSkuImageModalOpen] = useState(false);
+  const [skuModalInitialSku, setSkuModalInitialSku] = useState<string | undefined>(undefined);
 
   // Single Product Quick Price Set state inside Edit Modal
   const [quickSetPriceInput, setQuickSetPriceInput] = useState<string>('');
@@ -506,6 +511,17 @@ export const ProductsView: React.FC = () => {
         {canAccessFinancials && (
           <div className="flex flex-wrap items-center gap-2">
             <button
+              onClick={() => {
+                setSkuModalInitialSku(undefined);
+                setIsSkuImageModalOpen(true);
+              }}
+              className="inline-flex items-center px-3.5 py-2 bg-gradient-to-r from-blue-700 to-[#030A91] hover:from-blue-800 hover:to-blue-950 text-white rounded-xl text-xs font-bold transition-all shadow-xs"
+            >
+              <ImageIcon className="w-4 h-4 mr-1.5 text-[#FACB00]" />
+              <span>SKU Image Files & Categories</span>
+            </button>
+
+            <button
               onClick={() => setIsPriceSetModalOpen(true)}
               className="inline-flex items-center px-3.5 py-2 bg-white hover:bg-slate-50 text-[#030A91] border-2 border-[#030A91] rounded-xl text-xs font-bold transition-all shadow-xs"
             >
@@ -671,6 +687,19 @@ export const ProductsView: React.FC = () => {
 
               {canAccessFinancials && (
                 <div className="flex items-center space-x-1.5">
+                  <button
+                    onClick={() => {
+                      const firstSku = prod.variants?.[0]?.sku;
+                      setSkuModalInitialSku(firstSku);
+                      setIsSkuImageModalOpen(true);
+                    }}
+                    className="inline-flex items-center space-x-1 font-bold text-amber-900 bg-amber-50 hover:bg-amber-100 px-2.5 py-1.5 rounded-xl transition-all shadow-xs border border-amber-200/80"
+                    title="Manage SKU Images & Categories"
+                  >
+                    <ImageIcon className="w-3.5 h-3.5 text-amber-700" />
+                    <span>SKU Photos</span>
+                  </button>
+
                   <button
                     onClick={() => {
                       setPriceSetSelectedProduct(prod);
@@ -929,6 +958,24 @@ export const ProductsView: React.FC = () => {
                     )}
                   </div>
                 )}
+
+                <div className="pt-2 flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-t border-slate-200">
+                  <span className="text-[11px] text-slate-500 font-medium">
+                    Upload photos for individual sizes or assign image categories (Front, Fabric, Badge):
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const firstSku = editingProduct.variants?.[0]?.sku;
+                      setSkuModalInitialSku(firstSku);
+                      setIsSkuImageModalOpen(true);
+                    }}
+                    className="inline-flex items-center space-x-1 px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-[#030A91] border border-blue-200 rounded-xl text-xs font-bold shadow-2xs self-start sm:self-auto"
+                  >
+                    <ImageIcon className="w-3.5 h-3.5 text-[#030A91]" />
+                    <span>Manage Variant SKU Photos</span>
+                  </button>
+                </div>
               </div>
 
               {/* Description */}
@@ -1771,6 +1818,17 @@ export const ProductsView: React.FC = () => {
           );
         }}
       />
+
+      {/* SKU Image Files & Category Uploader Modal */}
+      {isSkuImageModalOpen && (
+        <SkuImageManagerModal
+          isOpen={isSkuImageModalOpen}
+          onClose={() => setIsSkuImageModalOpen(false)}
+          products={products}
+          onRefresh={fetchProducts}
+          initialSku={skuModalInitialSku}
+        />
+      )}
     </div>
   );
 };

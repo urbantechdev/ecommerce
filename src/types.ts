@@ -35,6 +35,15 @@ export type InventorySectorId =
   | 'SERVICE_PROFESSIONAL'
   | 'ACCESSORIES';
 
+export type SkuImageCategory =
+  | 'FRONT'
+  | 'BACK'
+  | 'FABRIC'
+  | 'BADGE'
+  | 'SIZE_CHART'
+  | 'PACKAGING'
+  | 'OTHER';
+
 export interface ProductVariant {
   id: string;
   sku: string;
@@ -46,6 +55,8 @@ export interface ProductVariant {
   branchStock: Record<string, number>;
   reorderLevel: number;
   reorderQuantity: number;
+  imageUrl?: string;
+  imageCategory?: SkuImageCategory | string;
 }
 
 export interface Product {
@@ -62,6 +73,7 @@ export interface Product {
   taxCategory: 'VAT_16' | 'ZERO_RATED' | 'EXEMPT';
   supplierId?: string;
   imageUrl?: string;
+  imageCategory?: SkuImageCategory | string;
   active: boolean;
   variants: ProductVariant[];
   createdAt: string;
@@ -90,6 +102,8 @@ export interface InventoryItem {
   isLow: boolean;
   costPrice: number;
   sellingPrice: number;
+  imageUrl?: string;
+  imageCategory?: SkuImageCategory | string;
   totalValuationCost: number;
   totalValuationRetail: number;
 }

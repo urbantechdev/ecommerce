@@ -97,6 +97,11 @@ export function requireRoles(...allowedRoles: ('ADMIN' | 'ACCOUNTANT' | 'STAFF')
       return res.status(401).json({ error: 'Unauthorized' });
     }
 
+    // No rules or restrictions applied to ADMIN: full system access
+    if (req.user.role === 'ADMIN') {
+      return next();
+    }
+
     if (!allowedRoles.includes(req.user.role)) {
       // Log unauthorized privilege escalation attempt in audit
       db.logAudit({

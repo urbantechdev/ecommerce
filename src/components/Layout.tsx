@@ -517,172 +517,169 @@ export const Layout: React.FC<LayoutProps> = ({ currentView, onNavigate, childre
       </nav>
 
       {/* ==================================================== */}
-      {/* MOBILE APP DRAWER (SLIDES IN FROM THE RIGHT)         */}
+      {/* ==================================================== */}
+      {/* MOBILE FULL-SCREEN MENU (WHITE BACKGROUND)           */}
       {/* ==================================================== */}
       {mobileMenuOpen && (
-        <div className="fixed inset-0 z-50 bg-slate-900/70 backdrop-blur-xs flex justify-end md:hidden animate-in fade-in duration-200">
-          {/* Overlay touch backdrop */}
-          <div className="flex-1" onClick={() => setMobileMenuOpen(false)}></div>
-
-          {/* Right-Hand App Drawer */}
-          <div className="w-[88vw] max-w-sm bg-gradient-to-b from-[#02066F] via-[#030A91] to-[#010340] text-white h-full flex flex-col shadow-2xl animate-in slide-in-from-right duration-250 select-none">
-            {/* Drawer App Bar Header */}
-            <div className="p-4 bg-black/20 border-b border-white/10 flex items-center justify-between shrink-0">
-              <div className="flex items-center space-x-2.5">
-                <img
-                  src="https://plain-eeur-prod-public.komododecks.com/202605/07/1sm3ITZIdJmYjyTcxmiP/image.png"
-                  alt="Naisia Textiles"
-                  className="w-9 h-9 object-contain shrink-0 drop-shadow-sm"
-                  onError={(e) => {
-                    (e.target as HTMLImageElement).src = '/logo.png';
-                  }}
-                />
-                <div>
-                  <h3 className="font-black text-sm text-white tracking-tight leading-none">
-                    NAISIAE ERP
-                  </h3>
-                  <span className="text-[9px] text-[#FACB00] font-bold uppercase tracking-wider block mt-0.5">
-                    Mobile Control Menu
-                  </span>
-                </div>
-              </div>
-
-              <button
-                onClick={() => setMobileMenuOpen(false)}
-                className="p-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-white/80 hover:text-white transition-colors"
-                aria-label="Close menu"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            {/* Mobile User Profile Card */}
-            <div className="p-4 bg-white/5 border-b border-white/10 shrink-0">
-              <div className="flex items-center space-x-3">
-                <div className="w-11 h-11 rounded-2xl bg-[#FACB00] text-[#030A91] flex items-center justify-center font-black text-lg shadow-md ring-2 ring-white/20 shrink-0">
-                  {user?.name.charAt(0)}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <h4 className="font-black text-sm text-white truncate">
-                    {user?.name}
-                  </h4>
-                  <p className="text-[10px] text-blue-200 truncate">{user?.email}</p>
-                  <div className="flex items-center space-x-1.5 mt-1">
-                    <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-full bg-[#FACB00] text-[#030A91]">
-                      {user?.role === 'ADMIN' ? 'Administrator' : user?.role === 'ACCOUNTANT' ? 'Chief Accountant' : 'POS Cashier'}
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Mobile Branch Context Switcher */}
-              <div className="mt-3 pt-3 border-t border-white/10">
-                <div className="flex items-center justify-between text-[10px] text-blue-200 mb-1">
-                  <span className="font-bold uppercase tracking-wider flex items-center">
-                    <Store className="w-3 h-3 mr-1 text-[#FACB00]" />
-                    Station Context:
-                  </span>
-                  <span className="text-[#FACB00] font-mono text-[10px] truncate max-w-[130px]">{activeBranchName}</span>
-                </div>
-                <select
-                  value={activeBranchId}
-                  disabled={isStaff}
-                  onChange={(e) => switchBranch(e.target.value)}
-                  className="w-full bg-black/30 border border-white/20 text-white rounded-xl px-2.5 py-1.5 text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-[#FACB00]"
-                >
-                  <option value="all" className="bg-[#030A91] text-white">Consolidated (All Branches)</option>
-                  {branches.map((b) => (
-                    <option key={b.id} value={b.id} className="bg-[#030A91] text-white">
-                      {b.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Mobile Quick Action Buttons Inside Drawer */}
-              <div className="grid grid-cols-2 gap-2 mt-3 pt-3 border-t border-white/10">
-                <button
-                  onClick={() => handleSelectNav('pos')}
-                  className="flex items-center justify-center space-x-1.5 py-2 px-2.5 rounded-xl bg-[#FACB00] text-[#030A91] text-xs font-black shadow-sm active:scale-95 transition-transform"
-                >
-                  <ShoppingCart className="w-3.5 h-3.5" />
-                  <span>Launch POS</span>
-                </button>
-
-                <button
-                  onClick={() => handleSelectNav('inventory')}
-                  className="flex items-center justify-center space-x-1.5 py-2 px-2.5 rounded-xl bg-white/15 text-white text-xs font-bold hover:bg-white/20 active:scale-95 transition-transform relative"
-                >
-                  <Bell className="w-3.5 h-3.5 text-[#FACB00]" />
-                  <span>Alerts</span>
-                  {lowStockCount > 0 && (
-                    <span className="ml-1 px-1.5 py-0.2 rounded-full text-[9px] font-black bg-rose-500 text-white">
-                      {lowStockCount}
-                    </span>
-                  )}
-                </button>
-              </div>
-            </div>
-
-            {/* Well-Organized Grouped Navigation Items */}
-            <div className="flex-1 overflow-y-auto p-3 space-y-3.5">
-              {navGroups.map((group, idx) => (
-                <div key={idx} className="bg-white/5 rounded-2xl p-2.5 border border-white/10 space-y-1">
-                  <p className="px-2 pt-1 pb-1.5 text-[10px] font-black text-[#FACB00] uppercase tracking-wider flex items-center justify-between">
-                    <span>{group.group}</span>
-                    <span className="text-[9px] font-mono opacity-60">{group.items.length} items</span>
-                  </p>
-
-                  <div className="space-y-0.5">
-                    {group.items.map((item) => {
-                      const Icon = item.icon;
-                      const isActive = currentView === item.id;
-                      return (
-                        <button
-                          key={item.id}
-                          onClick={() => handleSelectNav(item.id)}
-                          className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-bold transition-all ${
-                            isActive
-                              ? 'bg-[#FACB00] text-[#030A91] shadow-md scale-[1.01]'
-                              : 'text-white/90 hover:bg-white/10 active:bg-white/15'
-                          }`}
-                        >
-                          <div className="flex items-center space-x-2.5 truncate">
-                            <Icon className={`w-4 h-4 shrink-0 ${isActive ? 'text-[#030A91]' : 'text-blue-200'}`} />
-                            <span className="truncate">{item.label}</span>
-                          </div>
-
-                          {item.badge && (
-                            <span className="ml-2 px-1.5 py-0.5 rounded-full text-[10px] font-black bg-rose-500 text-white shrink-0">
-                              {item.badge}
-                            </span>
-                          )}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            {/* Mobile Drawer Bottom Actions */}
-            <div className="p-3 bg-black/30 border-t border-white/10 space-y-2 shrink-0">
-              <div className="flex items-center justify-between px-1 text-[10px] text-blue-200 font-medium">
-                <span className="flex items-center">
-                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse mr-1.5"></span>
-                  KRA eTIMS Active
+        <div className="fixed inset-0 z-50 bg-white text-slate-800 flex flex-col md:hidden animate-in fade-in duration-200 w-full h-full select-none">
+          {/* Drawer App Bar Header */}
+          <div className="p-4 bg-white border-b border-slate-200 flex items-center justify-between shrink-0 shadow-2xs">
+            <div className="flex items-center space-x-2.5">
+              <img
+                src="https://plain-eeur-prod-public.komododecks.com/202605/07/1sm3ITZIdJmYjyTcxmiP/image.png"
+                alt="Naisia Textiles"
+                className="w-9 h-9 object-contain shrink-0 drop-shadow-sm"
+                onError={(e) => {
+                  (e.target as HTMLImageElement).src = '/logo.png';
+                }}
+              />
+              <div>
+                <h3 className="font-black text-base text-[#030A91] tracking-tight leading-none">
+                  NAISIAE ERP
+                </h3>
+                <span className="text-[10px] text-amber-600 font-bold uppercase tracking-wider block mt-0.5">
+                  Mobile Menu
                 </span>
-                <span className="font-mono text-slate-400">v2.6 Cloud</span>
               </div>
+            </div>
+
+            <button
+              onClick={() => setMobileMenuOpen(false)}
+              className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 hover:text-slate-900 transition-colors"
+              aria-label="Close menu"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+
+          {/* Mobile User Profile Card */}
+          <div className="p-4 bg-slate-50 border-b border-slate-200 shrink-0">
+            <div className="flex items-center space-x-3">
+              <div className="w-11 h-11 rounded-2xl bg-[#030A91] text-[#FACB00] flex items-center justify-center font-black text-lg shadow-sm ring-2 ring-blue-100 shrink-0">
+                {user?.name.charAt(0)}
+              </div>
+              <div className="flex-1 min-w-0">
+                <h4 className="font-black text-sm text-slate-900 truncate">
+                  {user?.name}
+                </h4>
+                <p className="text-[11px] text-slate-500 truncate">{user?.email}</p>
+                <div className="flex items-center space-x-1.5 mt-1">
+                  <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-full bg-blue-100 text-[#030A91]">
+                    {user?.role === 'ADMIN' ? 'Administrator' : user?.role === 'ACCOUNTANT' ? 'Chief Accountant' : 'POS Cashier'}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Mobile Branch Context Switcher */}
+            <div className="mt-3 pt-3 border-t border-slate-200/80">
+              <div className="flex items-center justify-between text-[11px] text-slate-600 mb-1.5">
+                <span className="font-bold uppercase tracking-wider flex items-center">
+                  <Store className="w-3.5 h-3.5 mr-1 text-[#030A91]" />
+                  Station Context:
+                </span>
+                <span className="text-[#030A91] font-bold text-xs truncate max-w-[150px]">{activeBranchName}</span>
+              </div>
+              <select
+                value={activeBranchId}
+                disabled={isStaff}
+                onChange={(e) => switchBranch(e.target.value)}
+                className="w-full bg-white border border-slate-300 text-slate-800 rounded-xl px-3 py-2 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#030A91] shadow-2xs"
+              >
+                <option value="all">Consolidated (All Branches)</option>
+                {branches.map((b) => (
+                  <option key={b.id} value={b.id}>
+                    {b.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Mobile Quick Action Buttons Inside Drawer */}
+            <div className="grid grid-cols-2 gap-2 mt-3 pt-3 border-t border-slate-200/80">
+              <button
+                onClick={() => handleSelectNav('pos')}
+                className="flex items-center justify-center space-x-1.5 py-2.5 px-3 rounded-xl bg-[#030A91] text-[#FACB00] text-xs font-black shadow-sm active:scale-95 transition-transform"
+              >
+                <ShoppingCart className="w-3.5 h-3.5" />
+                <span>Launch POS</span>
+              </button>
 
               <button
-                onClick={logout}
-                className="w-full flex items-center justify-center space-x-2 py-2.5 rounded-xl bg-rose-500/20 hover:bg-rose-500/30 border border-rose-500/30 text-rose-200 text-xs font-bold active:scale-98 transition-all"
+                onClick={() => handleSelectNav('inventory')}
+                className="flex items-center justify-center space-x-1.5 py-2.5 px-3 rounded-xl bg-white border border-slate-300 text-slate-700 text-xs font-bold hover:bg-slate-100 active:scale-95 transition-transform relative shadow-2xs"
               >
-                <LogOut className="w-4 h-4 text-rose-300" />
-                <span>Sign Out of ERP</span>
+                <Bell className="w-3.5 h-3.5 text-amber-500" />
+                <span>Alerts</span>
+                {lowStockCount > 0 && (
+                  <span className="ml-1 px-1.5 py-0.2 rounded-full text-[9px] font-black bg-rose-500 text-white">
+                    {lowStockCount}
+                  </span>
+                )}
               </button>
             </div>
+          </div>
+
+          {/* Well-Organized Grouped Navigation Items on Clean White Background */}
+          <div className="flex-1 overflow-y-auto p-3.5 space-y-3 bg-white">
+            {navGroups.map((group, idx) => (
+              <div key={idx} className="bg-slate-50 rounded-2xl p-2.5 border border-slate-200/80 space-y-1">
+                <p className="px-2 pt-1 pb-1.5 text-[10px] font-black text-[#030A91] uppercase tracking-wider flex items-center justify-between">
+                  <span>{group.group}</span>
+                  <span className="text-[9px] font-mono text-slate-400">{group.items.length} items</span>
+                </p>
+
+                <div className="space-y-0.5">
+                  {group.items.map((item) => {
+                    const Icon = item.icon;
+                    const isActive = currentView === item.id;
+                    return (
+                      <button
+                        key={item.id}
+                        onClick={() => handleSelectNav(item.id)}
+                        className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-bold transition-all ${
+                          isActive
+                            ? 'bg-[#030A91] text-[#FACB00] shadow-sm'
+                            : item.highlight
+                            ? 'bg-blue-50 text-[#030A91] hover:bg-blue-100'
+                            : 'text-slate-700 hover:bg-white active:bg-slate-100'
+                        }`}
+                      >
+                        <div className="flex items-center space-x-2.5 truncate">
+                          <Icon className={`w-4 h-4 shrink-0 ${isActive ? 'text-[#FACB00]' : 'text-slate-500'}`} />
+                          <span className="truncate">{item.label}</span>
+                        </div>
+
+                        {item.badge && (
+                          <span className="ml-2 px-1.5 py-0.5 rounded-full text-[10px] font-black bg-rose-500 text-white shrink-0">
+                            {item.badge}
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Mobile Drawer Bottom Actions */}
+          <div className="p-3.5 bg-slate-50 border-t border-slate-200 space-y-2.5 shrink-0">
+            <div className="flex items-center justify-between px-1 text-[11px] text-slate-500 font-medium">
+              <span className="flex items-center">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse mr-1.5"></span>
+                KRA eTIMS Active
+              </span>
+              <span className="font-mono text-slate-400">v2.6 Cloud</span>
+            </div>
+
+            <button
+              onClick={logout}
+              className="w-full flex items-center justify-center space-x-2 py-2.5 rounded-xl bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-700 text-xs font-bold active:scale-98 transition-all shadow-2xs"
+            >
+              <LogOut className="w-4 h-4 text-rose-600" />
+              <span>Sign Out of ERP</span>
+            </button>
           </div>
         </div>
       )}

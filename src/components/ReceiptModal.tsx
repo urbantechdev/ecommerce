@@ -244,7 +244,7 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({
     const divider = '------------------------------------------';
     let text = `NAISIA TEXTILES LTD\n`;
     text += `SCHOOL UNIFORMS & APPAREL ERP\n`;
-    text += `Biashara Street, Nairobi\n`;
+    text += `Uhuru Market, Nairobi\n`;
     text += `Tel: 0792021496 / 0112264870 • support@naisiaetextiles.com\n`;
     text += `${divider}\n`;
     text += `RECEIPT #: ${receiptNumber}\n`;
@@ -477,7 +477,7 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({
                   SCHOOL UNIFORMS & APPAREL ERP
                 </p>
                 <p className="text-[10px] text-slate-600 mt-1">
-                  Biashara Street, Nairobi CBD • P.O. Box 48291
+                  Uhuru Market, Nairobi • P.O. Box 48291
                 </p>
                 <p className="text-[10px] text-slate-600">
                   Tel: 0792021496 / 0112264870 • support@naisiaetextiles.com • naisiaetextiles.com

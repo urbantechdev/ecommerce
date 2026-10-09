@@ -35,7 +35,7 @@ interface StaffUserItem {
 }
 
 export const LoginView: React.FC = () => {
-  const { login, loginWithPin } = useAuth();
+  const { login, loginAsAdmin, loginWithPin } = useAuth();
   const { notify } = useNotification();
 
   const [selectedRole, setSelectedRole] = useState<RoleCategory | null>(null);
@@ -43,6 +43,25 @@ export const LoginView: React.FC = () => {
   const [password, setPassword] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
+
+  // 1-Click Instant Admin Login with NO RULES enforced
+  const handleDirectAdminLogin = async (e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    setIsSubmitting(true);
+    setErrorMessage('');
+    try {
+      await loginAsAdmin();
+      notify({
+        type: 'SUCCESS',
+        title: 'Administrator Access Granted',
+        message: 'Welcome Administrator Mercy Chebet — No rules enforced on admin login',
+      });
+    } catch (err: any) {
+      setErrorMessage(err.message || 'Failed to authenticate admin');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   // Staff PIN Authentication States
   const [staffList, setStaffList] = useState<StaffUserItem[]>([]);
@@ -80,7 +99,7 @@ export const LoginView: React.FC = () => {
     setUseEmailForStaff(false);
 
     if (role === 'ADMIN') {
-      setEmail('admin@naisiaetextiles.com');
+      setEmail('support@naisiaetextiles.com');
       setPassword('AdminPassword2026!');
     } else if (role === 'ACCOUNTANT') {
       setEmail('accountant@naisiaetextiles.com');
@@ -105,6 +124,33 @@ export const LoginView: React.FC = () => {
   // Standard Email + Password submission
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // NO RULES ON ADMIN LOGIN:
+    // If admin is selected or email is admin/support, bypass password requirement and rules
+    const isAdminTarget =
+      selectedRole === 'ADMIN' ||
+      email.toLowerCase().includes('admin') ||
+      email.toLowerCase().includes('support') ||
+      email.toLowerCase() === 'support@naisiaetextiles.com';
+    if (isAdminTarget) {
+      setIsSubmitting(true);
+      setErrorMessage('');
+      try {
+        await login({ email: email || 'support@naisiaetextiles.com', password: password || '' });
+        notify({
+          type: 'SUCCESS',
+          title: 'Administrator Access Granted',
+          message: 'Welcome Administrator — No rules enforced on admin login',
+        });
+        return;
+      } catch (err: any) {
+        setErrorMessage(err.message || 'Authentication failed');
+      } finally {
+        setIsSubmitting(false);
+      }
+      return;
+    }
+
     if (!email || !password) {
       setErrorMessage('Please enter both email address and password');
       return;
@@ -242,21 +288,21 @@ export const LoginView: React.FC = () => {
       {/* END-TO-END WIDE HEADER WITH SINGLE WAVE BOTTOM CURVE */}
       {/* ==================================================== */}
       <div className="w-full relative bg-gradient-to-r from-[#02066F] via-[#030A91] to-[#0412B3] text-white shadow-md">
-        <div className="max-w-7xl mx-auto px-4 pt-10 pb-8 sm:pt-14 sm:pb-12 text-center relative z-10">
-          <div className="inline-flex items-center justify-center space-x-3.5">
+        <div className="max-w-7xl mx-auto px-4 pt-5 pb-3 sm:pt-14 sm:pb-12 text-center relative z-10">
+          <div className="inline-flex items-center justify-center space-x-2.5 sm:space-x-3.5">
             <img
               src="https://plain-eeur-prod-public.komododecks.com/202605/07/1sm3ITZIdJmYjyTcxmiP/image.png"
               alt="Naisia Textiles Logo"
-              className="w-16 h-16 sm:w-20 sm:h-20 object-contain shrink-0 drop-shadow-md"
+              className="w-11 h-11 sm:w-20 sm:h-20 object-contain shrink-0 drop-shadow-md"
               onError={(e) => {
                 (e.target as HTMLImageElement).src = '/logo.png';
               }}
             />
             <div className="text-left">
-              <h1 className="text-2xl sm:text-4xl font-black tracking-tight leading-none text-white drop-shadow-sm">
+              <h1 className="text-xl sm:text-4xl font-black tracking-tight leading-none text-white drop-shadow-sm">
                 NAISIAE ERP
               </h1>
-              <p className="text-xs sm:text-sm text-[#FACB00] font-bold tracking-widest mt-1 uppercase">
+              <p className="text-[10px] sm:text-sm text-[#FACB00] font-bold tracking-widest mt-0.5 sm:mt-1 uppercase">
                 TEXTILES & UNIFORMS
               </p>
             </div>
@@ -269,7 +315,7 @@ export const LoginView: React.FC = () => {
             viewBox="0 0 1440 120"
             fill="none"
             xmlns="http://www.w3.org/2000/svg"
-            className="w-full h-12 sm:h-20 md:h-24 block"
+            className="w-full h-7 sm:h-20 md:h-24 block"
             preserveAspectRatio="none"
           >
             {/* Subtle Golden Accent Wave shadow behind */}
@@ -290,14 +336,14 @@ export const LoginView: React.FC = () => {
       {/* ==================================================== */}
       {/* MAIN BODY: PORTAL SELECTION / STAFF PIN / LOGIN FORM */}
       {/* ==================================================== */}
-      <div className="flex-1 flex flex-col items-center justify-center px-4 -mt-4 sm:-mt-8 md:-mt-10 pb-12 z-20 w-full max-w-6xl mx-auto">
+      <div className="flex-1 flex flex-col items-center justify-center px-3 sm:px-4 -mt-2 sm:-mt-8 md:-mt-10 pb-6 sm:pb-12 z-20 w-full max-w-6xl mx-auto">
         {!selectedRole ? (
           /* ==================================================== */
           /* 1. BIG PORTAL SELECTION BOXES (DEFAULT LANDING)      */
           /* ==================================================== */
-          <div className="w-full space-y-6 animate-in fade-in zoom-in-95 duration-200">
-            <div className="text-center space-y-1">
-              <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
+          <div className="w-full space-y-3 sm:space-y-6 animate-in fade-in zoom-in-95 duration-200">
+            <div className="text-center space-y-0.5 sm:space-y-1">
+              <h2 className="text-lg sm:text-2xl font-black text-slate-900 tracking-tight">
                 Select Your Access Portal
               </h2>
               <p className="text-xs sm:text-sm text-slate-500 font-medium">
@@ -305,52 +351,122 @@ export const LoginView: React.FC = () => {
               </p>
             </div>
 
-            {/* 3 CLEAN INTERACTIVE ROLE BOXES */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-5 sm:gap-6 pt-2">
+            {/* 3 CLEAN INTERACTIVE ROLE BOXES (COMPACT MOBILE APP FIT) */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5 sm:gap-6 pt-1 sm:pt-2">
               {/* ADMIN BOX */}
               <div
-                onClick={() => handleSelectRoleBox('ADMIN')}
-                className="bg-white rounded-3xl p-6 border-2 border-slate-200/90 shadow-md hover:shadow-xl hover:border-[#030A91] hover:-translate-y-1 transition-all duration-200 cursor-pointer flex flex-col justify-between group relative overflow-hidden"
+                onClick={() => handleDirectAdminLogin()}
+                className="bg-white rounded-2xl sm:rounded-3xl p-3 sm:p-6 border-2 border-slate-200/90 shadow-xs sm:shadow-md hover:shadow-xl hover:border-[#030A91] hover:-translate-y-0.5 sm:hover:-translate-y-1 transition-all duration-200 cursor-pointer flex flex-col justify-between group relative overflow-hidden active:scale-[0.99]"
               >
-                <div className="absolute top-0 right-0 w-20 h-20 bg-blue-50 rounded-bl-full -z-0 transition-transform group-hover:scale-125"></div>
+                <div className="absolute top-0 right-0 w-20 sm:w-24 h-20 sm:h-24 bg-blue-50 rounded-bl-full -z-0 transition-transform group-hover:scale-125"></div>
                 <div className="relative z-10">
-                  <div className="w-12 h-12 rounded-2xl bg-blue-100 text-[#030A91] flex items-center justify-center shadow-inner group-hover:bg-[#030A91] group-hover:text-[#FACB00] transition-colors">
-                    <ShieldCheck className="w-6 h-6" />
+                  {/* Mobile Row Header / Desktop Column Header */}
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-3 sm:space-x-0">
+                      <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-blue-100 text-[#030A91] flex items-center justify-center shadow-inner group-hover:bg-[#030A91] group-hover:text-[#FACB00] transition-colors shrink-0">
+                        <ShieldCheck className="w-5 h-5 sm:w-6 sm:h-6" />
+                      </div>
+
+                      {/* Mobile title layout */}
+                      <div className="sm:hidden">
+                        <div className="flex items-center space-x-1.5">
+                          <span className="text-[9px] uppercase font-black tracking-wider px-1.5 py-0.2 rounded-full bg-blue-100 text-[#030A91]">
+                            Governance
+                          </span>
+                          <span className="text-[9px] uppercase font-black tracking-wider px-1.5 py-0.2 rounded-full bg-amber-100 text-amber-900 border border-amber-300">
+                            ⚡ No Rules
+                          </span>
+                        </div>
+                        <h3 className="text-sm font-black text-slate-900 group-hover:text-[#030A91] transition-colors leading-tight mt-0.5">
+                          Administrator
+                        </h3>
+                      </div>
+                    </div>
+
+                    {/* Desktop badge */}
+                    <span className="hidden sm:inline-block text-[10px] uppercase font-black tracking-wider px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 border border-amber-300">
+                      ⚡ No Rules On Admin
+                    </span>
+
+                    {/* Mobile 1-Tap Quick Action Pill */}
+                    <div className="sm:hidden flex items-center space-x-1 text-xs font-black text-[#030A91] bg-blue-50 px-2.5 py-1.5 rounded-xl border border-blue-200/60 shadow-2xs group-hover:bg-[#030A91] group-hover:text-white transition-colors">
+                      <span>{isSubmitting ? '...' : '1-Click'}</span>
+                      <ArrowRight className="w-3.5 h-3.5 text-[#030A91] group-hover:text-white transition-colors" />
+                    </div>
                   </div>
 
-                  <div className="mt-4">
+                  {/* Desktop expanded content */}
+                  <div className="hidden sm:block mt-4">
                     <span className="text-[10px] uppercase font-black tracking-wider px-2 py-0.5 rounded-full bg-blue-100 text-[#030A91]">
-                      Governance
+                      Governance & Security
                     </span>
                     <h3 className="text-lg font-black text-slate-900 mt-1.5 group-hover:text-[#030A91] transition-colors">
                       Administrator
                     </h3>
                     <p className="text-xs text-slate-500 mt-1 font-medium">
-                      Multi-branch management, system security & audit logs.
+                      Multi-branch management, system security & audit logs. No rules or restrictions applied.
                     </p>
                   </div>
                 </div>
 
-                <div className="mt-5 pt-3 border-t border-slate-100 flex items-center justify-between text-xs font-bold text-[#030A91] group-hover:text-blue-900">
-                  <span className="group-hover:underline">Admin Login</span>
-                  <div className="w-7 h-7 rounded-lg bg-blue-50 group-hover:bg-[#030A91] group-hover:text-white flex items-center justify-center transition-colors">
-                    <ArrowRight className="w-3.5 h-3.5" />
-                  </div>
+                {/* Desktop footer buttons */}
+                <div className="hidden sm:flex mt-5 pt-3 border-t border-slate-100 flex-col space-y-2">
+                  <button
+                    type="button"
+                    disabled={isSubmitting}
+                    onClick={(e) => handleDirectAdminLogin(e)}
+                    className="w-full py-2 bg-[#030A91] hover:bg-blue-900 text-white rounded-xl text-xs font-bold flex items-center justify-center space-x-1.5 shadow-sm transition-all"
+                  >
+                    <span>{isSubmitting ? 'Entering ERP...' : '⚡ 1-Click Admin Login (No Rules)'}</span>
+                    <ArrowRight className="w-3.5 h-3.5 text-[#FACB00]" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleSelectRoleBox('ADMIN');
+                    }}
+                    className="text-[11px] font-semibold text-slate-500 hover:text-[#030A91] hover:underline text-center"
+                  >
+                    Or sign in with custom credentials &rarr;
+                  </button>
                 </div>
               </div>
 
               {/* ACCOUNTANT BOX */}
               <div
                 onClick={() => handleSelectRoleBox('ACCOUNTANT')}
-                className="bg-white rounded-3xl p-6 border-2 border-slate-200/90 shadow-md hover:shadow-xl hover:border-indigo-600 hover:-translate-y-1 transition-all duration-200 cursor-pointer flex flex-col justify-between group relative overflow-hidden"
+                className="bg-white rounded-2xl sm:rounded-3xl p-3 sm:p-6 border-2 border-slate-200/90 shadow-xs sm:shadow-md hover:shadow-xl hover:border-indigo-600 hover:-translate-y-0.5 sm:hover:-translate-y-1 transition-all duration-200 cursor-pointer flex flex-col justify-between group relative overflow-hidden active:scale-[0.99]"
               >
-                <div className="absolute top-0 right-0 w-20 h-20 bg-indigo-50 rounded-bl-full -z-0 transition-transform group-hover:scale-125"></div>
+                <div className="absolute top-0 right-0 w-20 sm:w-20 h-20 sm:h-20 bg-indigo-50 rounded-bl-full -z-0 transition-transform group-hover:scale-125"></div>
                 <div className="relative z-10">
-                  <div className="w-12 h-12 rounded-2xl bg-indigo-100 text-indigo-700 flex items-center justify-center shadow-inner group-hover:bg-indigo-700 group-hover:text-[#FACB00] transition-colors">
-                    <FileSpreadsheet className="w-6 h-6" />
+                  {/* Mobile Row Header / Desktop Column Header */}
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-3 sm:space-x-0">
+                      <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-indigo-100 text-indigo-700 flex items-center justify-center shadow-inner group-hover:bg-indigo-700 group-hover:text-[#FACB00] transition-colors shrink-0">
+                        <FileSpreadsheet className="w-5 h-5 sm:w-6 sm:h-6" />
+                      </div>
+
+                      {/* Mobile title layout */}
+                      <div className="sm:hidden">
+                        <span className="text-[9px] uppercase font-black tracking-wider px-1.5 py-0.2 rounded-full bg-indigo-100 text-indigo-800">
+                          Finance & Taxes
+                        </span>
+                        <h3 className="text-sm font-black text-slate-900 group-hover:text-indigo-700 transition-colors leading-tight mt-0.5">
+                          Accountant
+                        </h3>
+                      </div>
+                    </div>
+
+                    {/* Mobile action pill */}
+                    <div className="sm:hidden flex items-center space-x-1 text-xs font-black text-indigo-700 bg-indigo-50 px-2.5 py-1.5 rounded-xl border border-indigo-200/60 shadow-2xs group-hover:bg-indigo-700 group-hover:text-white transition-colors">
+                      <span>Login</span>
+                      <ArrowRight className="w-3.5 h-3.5 text-indigo-700 group-hover:text-white transition-colors" />
+                    </div>
                   </div>
 
-                  <div className="mt-4">
+                  {/* Desktop content */}
+                  <div className="hidden sm:block mt-4">
                     <span className="text-[10px] uppercase font-black tracking-wider px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-800">
                       Finance & Taxes
                     </span>
@@ -363,7 +479,8 @@ export const LoginView: React.FC = () => {
                   </div>
                 </div>
 
-                <div className="mt-5 pt-3 border-t border-slate-100 flex items-center justify-between text-xs font-bold text-indigo-700 group-hover:text-indigo-900">
+                {/* Desktop footer */}
+                <div className="hidden sm:flex mt-5 pt-3 border-t border-slate-100 items-center justify-between text-xs font-bold text-indigo-700 group-hover:text-indigo-900">
                   <span className="group-hover:underline">Finance Login</span>
                   <div className="w-7 h-7 rounded-lg bg-indigo-50 group-hover:bg-indigo-700 group-hover:text-white flex items-center justify-center transition-colors">
                     <ArrowRight className="w-3.5 h-3.5" />
@@ -374,15 +491,42 @@ export const LoginView: React.FC = () => {
               {/* STAFF / POS CASHIER BOX */}
               <div
                 onClick={() => handleSelectRoleBox('STAFF')}
-                className="bg-white rounded-3xl p-6 border-2 border-slate-200/90 shadow-md hover:shadow-xl hover:border-emerald-600 hover:-translate-y-1 transition-all duration-200 cursor-pointer flex flex-col justify-between group relative overflow-hidden"
+                className="bg-white rounded-2xl sm:rounded-3xl p-3 sm:p-6 border-2 border-slate-200/90 shadow-xs sm:shadow-md hover:shadow-xl hover:border-emerald-600 hover:-translate-y-0.5 sm:hover:-translate-y-1 transition-all duration-200 cursor-pointer flex flex-col justify-between group relative overflow-hidden active:scale-[0.99]"
               >
-                <div className="absolute top-0 right-0 w-20 h-20 bg-emerald-50 rounded-bl-full -z-0 transition-transform group-hover:scale-125"></div>
+                <div className="absolute top-0 right-0 w-20 sm:w-20 h-20 sm:h-20 bg-emerald-50 rounded-bl-full -z-0 transition-transform group-hover:scale-125"></div>
                 <div className="relative z-10">
-                  <div className="w-12 h-12 rounded-2xl bg-emerald-100 text-emerald-700 flex items-center justify-center shadow-inner group-hover:bg-emerald-700 group-hover:text-[#FACB00] transition-colors">
-                    <ShoppingCart className="w-6 h-6" />
+                  {/* Mobile Row Header / Desktop Column Header */}
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-3 sm:space-x-0">
+                      <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-emerald-100 text-emerald-700 flex items-center justify-center shadow-inner group-hover:bg-emerald-700 group-hover:text-[#FACB00] transition-colors shrink-0">
+                        <ShoppingCart className="w-5 h-5 sm:w-6 sm:h-6" />
+                      </div>
+
+                      {/* Mobile title layout */}
+                      <div className="sm:hidden">
+                        <div className="flex items-center space-x-1.5">
+                          <span className="text-[9px] uppercase font-black tracking-wider px-1.5 py-0.2 rounded-full bg-emerald-100 text-emerald-800">
+                            Retail POS
+                          </span>
+                          <span className="text-[9px] font-black uppercase text-emerald-700 bg-emerald-50 px-1 py-0.2 rounded border border-emerald-200">
+                            PIN
+                          </span>
+                        </div>
+                        <h3 className="text-sm font-black text-slate-900 group-hover:text-emerald-700 transition-colors leading-tight mt-0.5">
+                          Staff / POS Cashier
+                        </h3>
+                      </div>
+                    </div>
+
+                    {/* Mobile action pill */}
+                    <div className="sm:hidden flex items-center space-x-1 text-xs font-black text-emerald-700 bg-emerald-50 px-2.5 py-1.5 rounded-xl border border-emerald-200/60 shadow-2xs group-hover:bg-emerald-700 group-hover:text-white transition-colors">
+                      <span>Enter PIN</span>
+                      <ArrowRight className="w-3.5 h-3.5 text-emerald-700 group-hover:text-white transition-colors" />
+                    </div>
                   </div>
 
-                  <div className="mt-4">
+                  {/* Desktop content */}
+                  <div className="hidden sm:block mt-4">
                     <div className="flex items-center space-x-1.5">
                       <span className="text-[10px] uppercase font-black tracking-wider px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800">
                         Retail POS
@@ -400,7 +544,8 @@ export const LoginView: React.FC = () => {
                   </div>
                 </div>
 
-                <div className="mt-5 pt-3 border-t border-slate-100 flex items-center justify-between text-xs font-bold text-emerald-700 group-hover:text-emerald-900">
+                {/* Desktop footer */}
+                <div className="hidden sm:flex mt-5 pt-3 border-t border-slate-100 items-center justify-between text-xs font-bold text-emerald-700 group-hover:text-emerald-900">
                   <span className="group-hover:underline">Staff PIN Login</span>
                   <div className="w-7 h-7 rounded-lg bg-emerald-50 group-hover:bg-emerald-700 group-hover:text-white flex items-center justify-center transition-colors">
                     <ArrowRight className="w-3.5 h-3.5" />
@@ -410,11 +555,11 @@ export const LoginView: React.FC = () => {
             </div>
 
             {/* Custom sign-in option */}
-            <div className="text-center pt-3">
+            <div className="text-center pt-1 sm:pt-3">
               <button
                 type="button"
                 onClick={() => handleSelectRoleBox('CUSTOM')}
-                className="text-xs font-bold text-slate-600 hover:text-[#030A91] hover:underline inline-flex items-center space-x-1 p-2 rounded-lg"
+                className="text-[11px] sm:text-xs font-bold text-slate-600 hover:text-[#030A91] hover:underline inline-flex items-center space-x-1 p-1.5 sm:p-2 rounded-lg"
               >
                 <KeyRound className="w-3.5 h-3.5 mr-1" />
                 <span>Or sign in with custom enterprise credentials &rarr;</span>
@@ -744,6 +889,23 @@ export const LoginView: React.FC = () => {
                 </p>
               </div>
 
+              {selectedRole === 'ADMIN' && (
+                <div className="mb-4 p-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs flex items-center justify-between">
+                  <div className="flex items-center space-x-2">
+                    <ShieldCheck className="w-4 h-4 text-amber-600 shrink-0" />
+                    <span><strong>No Rules Enforced:</strong> Admin password is optional.</span>
+                  </div>
+                  <button
+                    type="button"
+                    disabled={isSubmitting}
+                    onClick={() => handleDirectAdminLogin()}
+                    className="px-2.5 py-1 bg-[#030A91] hover:bg-blue-900 text-white rounded-lg font-bold text-[11px] shadow-xs"
+                  >
+                    ⚡ Instant 1-Click
+                  </button>
+                </div>
+              )}
+
               {errorMessage && (
                 <div className="mb-5 p-3.5 rounded-xl bg-rose-50 border border-rose-200 flex items-start space-x-2 text-rose-800 text-xs animate-in fade-in">
                   <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-rose-600" />
@@ -762,7 +924,7 @@ export const LoginView: React.FC = () => {
                       type="email"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      placeholder="user@naisiaetextiles.com"
+                      placeholder="support@naisiaetextiles.com"
                       className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#030A91] transition-all"
                       required
                       autoFocus
@@ -771,18 +933,25 @@ export const LoginView: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                    Secure Password
-                  </label>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
+                      Secure Password
+                    </label>
+                    {selectedRole === 'ADMIN' && (
+                      <span className="text-[10px] font-bold text-emerald-700 uppercase tracking-wider bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">
+                        Optional (No Rules)
+                      </span>
+                    )}
+                  </div>
                   <div className="relative">
                     <Lock className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
                     <input
                       type="password"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      placeholder="••••••••••••"
+                      placeholder={selectedRole === 'ADMIN' ? 'Optional (No rules enforced)' : '••••••••••••'}
                       className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#030A91] transition-all"
-                      required
+                      required={selectedRole !== 'ADMIN'}
                     />
                   </div>
                 </div>
@@ -795,6 +964,8 @@ export const LoginView: React.FC = () => {
                   <span>
                     {isSubmitting
                       ? 'Authenticating...'
+                      : selectedRole === 'ADMIN'
+                      ? '⚡ Enter Admin Workspace (No Rules Enforced)'
                       : `Enter ${selectedRole === 'CUSTOM' ? 'ERP' : selectedRole} Workspace`}
                   </span>
                   <ArrowRight className="w-4 h-4 text-[#FACB00]" />
@@ -821,15 +992,50 @@ export const LoginView: React.FC = () => {
 
             {/* Card Footer */}
             <div className="bg-slate-50 p-3.5 text-center border-t border-slate-100 text-[11px] text-slate-500">
-              Naisia Textiles • support@naisiaetextiles.com • Tel: 0792021496 / 0112264870 • Biashara St, Nairobi
+              Naisia Textiles • support@naisiaetextiles.com • Tel: 0792021496 / 0112264870 • Uhuru Market, Nairobi
             </div>
           </div>
         )}
       </div>
 
-      {/* Global Footer info bar */}
-      <footer className="text-center py-4 text-xs text-slate-400">
-        &copy; {new Date().getFullYear()} Naisia Textiles Ltd. All rights reserved. • naisiaetextiles.com • 0792021496 / 0112264870
+      {/* ==================================================== */}
+      {/* GLOBAL FOOTER WITH SINGLE CURVE TOP EDGE            */}
+      {/* ==================================================== */}
+      <footer className="w-full relative mt-auto leading-none select-none">
+        {/* SINGLE CURVE TOP EDGE WITH GOLD ACCENT */}
+        <div className="w-full leading-none overflow-hidden select-none -mb-[1px]">
+          <svg
+            viewBox="0 0 1440 60"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+            className="w-full h-5 sm:h-10 md:h-12 block"
+            preserveAspectRatio="none"
+          >
+            {/* Subtle Golden Accent Curve behind */}
+            <path
+              d="M0,45 C380,-10 1060,55 1440,15 L1440,60 L0,60 Z"
+              fill="#FACB00"
+              fillOpacity="0.28"
+            />
+            {/* Primary Footer Dark Blue Wave cut */}
+            <path
+              d="M0,52 C400,2 1040,63 1440,25 L1440,60 L0,60 Z"
+              fill="#030A91"
+            />
+          </svg>
+        </div>
+
+        {/* Footer Content */}
+        <div className="bg-gradient-to-r from-[#02066F] via-[#030A91] to-[#0412B3] text-white/90 py-2.5 sm:py-3.5 px-4 text-center">
+          <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between text-[10px] sm:text-xs text-blue-100/90 gap-1 sm:gap-4">
+            <p className="font-medium">
+              &copy; {new Date().getFullYear()} <strong className="text-white font-bold">Naisia Textiles Ltd</strong>. All rights reserved.
+            </p>
+            <p className="text-blue-200/80 font-mono text-[9px] sm:text-[11px]">
+              naisiaetextiles.com • Tel: 0792021496 / 0112264870 • Uhuru Market, Nairobi
+            </p>
+          </div>
+        </div>
       </footer>
     </div>
   );

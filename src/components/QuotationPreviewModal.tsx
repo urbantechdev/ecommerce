@@ -151,7 +151,7 @@ export const QuotationPreviewModal: React.FC<QuotationPreviewModalProps> = ({
                   Institutional & School Uniforms Manufacturers
                 </p>
                 <p className="text-[10px] text-slate-500 mt-1">
-                  Biashara Street, Nairobi CBD • P.O. Box 48291 - 00100 GPO
+                  Uhuru Market, Nairobi • P.O. Box 48291 - 00100 GPO
                 </p>
                 <p className="text-[10px] text-slate-500">
                   Tel: 0792021496 / 0112264870 • support@naisiaetextiles.com • naisiaetextiles.com

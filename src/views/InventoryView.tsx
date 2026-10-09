@@ -14,9 +14,11 @@ import {
   ArrowDownRight,
   ArrowUpRight,
   X,
-  CheckCircle2
+  CheckCircle2,
+  Image as ImageIcon
 } from 'lucide-react';
 import { StatusBadge } from '../components/StatusBadge';
+import { SkuImageManagerModal } from '../components/SkuImageManagerModal';
 
 export const InventoryView: React.FC = () => {
   const { branches, activeBranchId, canAccessFinancials, user } = useAuth();
@@ -40,6 +42,24 @@ export const InventoryView: React.FC = () => {
   const [adjustReason, setAdjustReason] = useState<string>('PHYSICAL_COUNT');
   const [adjustNotes, setAdjustNotes] = useState<string>('');
   const [isSubmittingAdjust, setIsSubmittingAdjust] = useState(false);
+
+  // SKU Image Files Modal
+  const [isSkuImageModalOpen, setIsSkuImageModalOpen] = useState(false);
+  const [selectedSkuForModal, setSelectedSkuForModal] = useState<string | undefined>(undefined);
+  const [allProducts, setAllProducts] = useState<any[]>([]);
+
+  const handleOpenSkuModal = async (sku?: string) => {
+    setSelectedSkuForModal(sku);
+    if (allProducts.length === 0) {
+      try {
+        const prods = await api.getProducts();
+        setAllProducts(prods);
+      } catch (e) {
+        // fallback
+      }
+    }
+    setIsSkuImageModalOpen(true);
+  };
 
   const fetchInventory = async () => {
     setIsLoading(true);
@@ -130,43 +150,54 @@ export const InventoryView: React.FC = () => {
           </p>
         </div>
 
-        {/* Tab Switcher */}
-        <div className="flex items-center bg-white border border-slate-200 p-1 rounded-xl shadow-xs text-xs font-bold">
+        {/* Header Actions & Tab Switcher */}
+        <div className="flex flex-wrap items-center gap-2">
           <button
-            onClick={() => setActiveTab('STOCK')}
-            className={`px-3 py-1.5 rounded-lg transition-colors flex items-center space-x-1.5 ${
-              activeTab === 'STOCK'
-                ? 'bg-[#030A91] text-white shadow-xs'
-                : 'text-slate-600 hover:text-slate-900'
-            }`}
+            onClick={() => handleOpenSkuModal()}
+            className="inline-flex items-center px-3.5 py-2 bg-gradient-to-r from-blue-700 to-[#030A91] hover:from-blue-800 hover:to-blue-950 text-white rounded-xl text-xs font-bold transition-all shadow-xs"
           >
-            <Layers className="w-3.5 h-3.5" />
-            <span>Stock Levels ({filteredInventory.length})</span>
+            <ImageIcon className="w-3.5 h-3.5 mr-1.5 text-[#FACB00]" />
+            <span>SKU Image Files & Categories</span>
           </button>
 
-          <button
-            onClick={() => setActiveTab('ALERTS')}
-            className={`px-3 py-1.5 rounded-lg transition-colors flex items-center space-x-1.5 ${
-              activeTab === 'ALERTS'
-                ? 'bg-[#030A91] text-white shadow-xs'
-                : 'text-slate-600 hover:text-slate-900'
-            }`}
-          >
-            <AlertTriangle className="w-3.5 h-3.5 text-amber-400" />
-            <span>Low Stock Alerts ({alerts.length})</span>
-          </button>
+          {/* Tab Switcher */}
+          <div className="flex items-center bg-white border border-slate-200 p-1 rounded-xl shadow-xs text-xs font-bold">
+            <button
+              onClick={() => setActiveTab('STOCK')}
+              className={`px-3 py-1.5 rounded-lg transition-colors flex items-center space-x-1.5 ${
+                activeTab === 'STOCK'
+                  ? 'bg-[#030A91] text-white shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              <Layers className="w-3.5 h-3.5" />
+              <span>Stock Levels ({filteredInventory.length})</span>
+            </button>
 
-          <button
-            onClick={() => setActiveTab('MOVEMENTS')}
-            className={`px-3 py-1.5 rounded-lg transition-colors flex items-center space-x-1.5 ${
-              activeTab === 'MOVEMENTS'
-                ? 'bg-[#030A91] text-white shadow-xs'
-                : 'text-slate-600 hover:text-slate-900'
-            }`}
-          >
-            <History className="w-3.5 h-3.5" />
-            <span>Stock Ledger</span>
-          </button>
+            <button
+              onClick={() => setActiveTab('ALERTS')}
+              className={`px-3 py-1.5 rounded-lg transition-colors flex items-center space-x-1.5 ${
+                activeTab === 'ALERTS'
+                  ? 'bg-[#030A91] text-white shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              <AlertTriangle className="w-3.5 h-3.5 text-amber-400" />
+              <span>Low Stock Alerts ({alerts.length})</span>
+            </button>
+
+            <button
+              onClick={() => setActiveTab('MOVEMENTS')}
+              className={`px-3 py-1.5 rounded-lg transition-colors flex items-center space-x-1.5 ${
+                activeTab === 'MOVEMENTS'
+                  ? 'bg-[#030A91] text-white shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              <History className="w-3.5 h-3.5" />
+              <span>Stock Ledger</span>
+            </button>
+          </div>
         </div>
       </div>
 
@@ -237,10 +268,31 @@ export const InventoryView: React.FC = () => {
                   {filteredInventory.map((item) => (
                     <tr key={`${item.variantId}-${item.branchId}`} className="hover:bg-slate-50/80">
                       <td className="py-3 px-4">
-                        <span className="font-bold text-slate-900 block">{item.productName}</span>
-                        <span className="text-[10px] text-slate-500 uppercase font-semibold">
-                          {item.school} • {item.category}
-                        </span>
+                        <div className="flex items-center space-x-3">
+                          <div
+                            onClick={() => handleOpenSkuModal(item.sku)}
+                            className="relative w-10 h-10 rounded-xl overflow-hidden bg-slate-100 border border-slate-200 shrink-0 cursor-pointer group hover:border-[#030A91]"
+                            title="Click to view/change SKU photo"
+                          >
+                            {item.imageUrl ? (
+                              <img
+                                src={item.imageUrl}
+                                alt={item.sku}
+                                className="w-full h-full object-cover transition-transform group-hover:scale-105"
+                              />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center text-slate-300 group-hover:text-amber-600 group-hover:bg-amber-50">
+                                <ImageIcon className="w-4 h-4" />
+                              </div>
+                            )}
+                          </div>
+                          <div>
+                            <span className="font-bold text-slate-900 block">{item.productName}</span>
+                            <span className="text-[10px] text-slate-500 uppercase font-semibold">
+                              {item.school} • {item.category}
+                            </span>
+                          </div>
+                        </div>
                       </td>
                       <td className="py-3 px-3">
                         <span className="font-black text-slate-800 bg-slate-100 px-1.5 py-0.5 rounded text-[11px]">
@@ -563,6 +615,20 @@ export const InventoryView: React.FC = () => {
             </form>
           </div>
         </div>
+      )}
+      {/* SKU Image Files & Category Uploader Modal */}
+      {isSkuImageModalOpen && (
+        <SkuImageManagerModal
+          isOpen={isSkuImageModalOpen}
+          onClose={() => setIsSkuImageModalOpen(false)}
+          products={allProducts}
+          onRefresh={async () => {
+            const prods = await api.getProducts();
+            setAllProducts(prods);
+            await fetchInventory();
+          }}
+          initialSku={selectedSkuForModal}
+        />
       )}
     </div>
   );

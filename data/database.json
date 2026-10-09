@@ -2,12 +2,12 @@
   "branches": [
     {
       "id": "branch-nbi-cbd",
-      "code": "NBI-CBD",
-      "name": "Nairobi CBD Flagship (HQ)",
-      "location": "Biashara Street, Nairobi CBD",
-      "address": "Naisia Textiles Complex, 2nd Flr, Biashara St, P.O. Box 48291-00100 Nairobi",
+      "code": "NBI-UHR",
+      "name": "Nairobi Uhuru Market Flagship (HQ)",
+      "location": "Uhuru Market, Nairobi",
+      "address": "Naisia Textiles Complex, Stall / Unit 2, Uhuru Market, P.O. Box 48291-00100 Nairobi",
       "phone": "+254 722 001 100",
-      "email": "cbd@naisiaetextiles.com",
+      "email": "uhuru@naisiaetextiles.com",
       "isHQ": true,
       "createdAt": "2026-10-05T04:16:55.899Z"
     },
@@ -49,7 +49,7 @@
     {
       "id": "usr-admin-01",
       "name": "Mercy Chebet",
-      "email": "admin@naisiaetextiles.com",
+      "email": "support@naisiaetextiles.com",
       "passwordHash": "$2b$10$1zXx86umuXUMuwwAPUevRenFK5MbZj8KAA2X18qF9lloJNbEnA2c6",
       "role": "ADMIN",
       "branchId": "all",
@@ -57,7 +57,7 @@
       "pin": "888888",
       "status": "ACTIVE",
       "createdAt": "2026-10-05T04:16:55.899Z",
-      "lastLogin": "2026-10-08T11:29:49.878Z"
+      "lastLogin": "2026-10-09T05:17:03.820Z"
     },
     {
       "id": "usr-acc-01",
@@ -69,7 +69,8 @@
       "phone": "+254 722 880 002",
       "pin": "555555",
       "status": "ACTIVE",
-      "createdAt": "2026-10-05T04:16:55.899Z"
+      "createdAt": "2026-10-05T04:16:55.899Z",
+      "lastLogin": "2026-10-09T05:05:26.212Z"
     },
     {
       "id": "usr-pos-nbi",
@@ -147,7 +148,9 @@
             "branch-ksm-cpt": 10
           },
           "reorderLevel": 15,
-          "reorderQuantity": 30
+          "reorderQuantity": 30,
+          "imageUrl": "https://images.unsplash.com/photo-1594938298603-c8148c4dae35?w=500",
+          "imageCategory": "FRONT"
         },
         {
           "id": "var-ns-shirt-28",
@@ -236,7 +239,7 @@
         }
       ],
       "createdAt": "2026-10-05T04:16:55.899Z",
-      "updatedAt": "2026-10-08T11:17:42.557Z",
+      "updatedAt": "2026-10-09T05:17:22.808Z",
       "imageUrl": "https://images.unsplash.com/photo-1598033129183-c4f50c736f10?w=500&q=80",
       "sector": "SECONDARY",
       "garmentType": "Shirts"
@@ -387,7 +390,9 @@
             "branch-ksm-cpt": 3
           },
           "reorderLevel": 8,
-          "reorderQuantity": 30
+          "reorderQuantity": 30,
+          "imageUrl": "https://images.unsplash.com/photo-1594938298603-c8148c4dae35?w=500",
+          "imageCategory": "FRONT"
         },
         {
           "id": "var-ns-blazer-30",
@@ -404,7 +409,9 @@
             "branch-ksm-cpt": 3
           },
           "reorderLevel": 8,
-          "reorderQuantity": 30
+          "reorderQuantity": 30,
+          "imageUrl": "https://images.unsplash.com/photo-1594938298603-c8148c4dae35?w=500",
+          "imageCategory": "FRONT"
         },
         {
           "id": "var-ns-blazer-32",
@@ -421,7 +428,9 @@
             "branch-ksm-cpt": 3
           },
           "reorderLevel": 8,
-          "reorderQuantity": 30
+          "reorderQuantity": 30,
+          "imageUrl": "https://images.unsplash.com/photo-1594938298603-c8148c4dae35?w=500",
+          "imageCategory": "FRONT"
         },
         {
           "id": "var-ns-blazer-34",
@@ -438,7 +447,9 @@
             "branch-ksm-cpt": 4
           },
           "reorderLevel": 8,
-          "reorderQuantity": 30
+          "reorderQuantity": 30,
+          "imageUrl": "https://images.unsplash.com/photo-1594938298603-c8148c4dae35?w=500",
+          "imageCategory": "FRONT"
         },
         {
           "id": "var-ns-blazer-36",
@@ -455,7 +466,9 @@
             "branch-ksm-cpt": 3
           },
           "reorderLevel": 8,
-          "reorderQuantity": 30
+          "reorderQuantity": 30,
+          "imageUrl": "https://images.unsplash.com/photo-1594938298603-c8148c4dae35?w=500",
+          "imageCategory": "FRONT"
         },
         {
           "id": "var-ns-blazer-38",
@@ -472,14 +485,16 @@
             "branch-ksm-cpt": 3
           },
           "reorderLevel": 8,
-          "reorderQuantity": 30
+          "reorderQuantity": 30,
+          "imageUrl": "https://images.unsplash.com/photo-1594938298603-c8148c4dae35?w=500",
+          "imageCategory": "FRONT"
         }
       ],
       "createdAt": "2026-10-05T04:16:55.899Z",
-      "updatedAt": "2026-10-08T11:17:42.557Z",
+      "updatedAt": "2026-10-09T05:17:28.971Z",
       "sector": "SECONDARY",
       "garmentType": "Blazers",
-      "imageUrl": "https://images.unsplash.com/photo-1594938298603-c8148c4dae35?w=500&q=80"
+      "imageUrl": "https://images.unsplash.com/photo-1594938298603-c8148c4dae35?w=500"
     },
     {
       "id": "prod-ns-sweater",
@@ -3544,8 +3559,8 @@
       "branchId": "branch-nbi-cbd",
       "branchName": "Nairobi CBD Flagship (HQ)",
       "category": "RENT",
-      "title": "Monthly Store Rent - Biashara St Flagship",
-      "description": "Payment to Biashara Plaza Management for October 2026 occupancy.",
+      "title": "Monthly Store Rent - Uhuru Market Flagship",
+      "description": "Payment to Uhuru Market Management for October 2026 occupancy.",
       "amount": 85000,
       "paymentMethod": "BANK_TRANSFER",
       "paymentReference": "RENT-OCT-2026",
@@ -3572,6 +3587,174 @@
     }
   ],
   "auditLogs": [
+    {
+      "id": "a8cfcfca-9f0d-48ce-93b4-e8de7d7c9442",
+      "timestamp": "2026-10-09T05:17:28.973Z",
+      "userId": "usr-admin-01",
+      "userName": "Mercy Chebet",
+      "userRole": "ADMIN",
+      "branchId": "all",
+      "branchName": "N/A",
+      "action": "CATEGORY_SKU_IMAGE_ASSIGNED",
+      "entityType": "PRODUCT",
+      "entityId": "Blazers-Nairobi School",
+      "details": "Assigned category image to 6 SKUs across category 'Blazers' / school 'Nairobi School'",
+      "ipAddress": "127.0.0.1"
+    },
+    {
+      "id": "23131c04-d89e-4310-b30c-bd0617d99a1a",
+      "timestamp": "2026-10-09T05:17:22.809Z",
+      "userId": "usr-admin-01",
+      "userName": "Mercy Chebet",
+      "userRole": "ADMIN",
+      "branchId": "all",
+      "branchName": "N/A",
+      "action": "SKU_IMAGE_UPDATED",
+      "entityType": "PRODUCT",
+      "entityId": "NS-SH-WHT-26",
+      "details": "Updated image file for SKU NS-SH-WHT-26 (Nairobi School Official Poplin Shirt (Short Sleeve) - Size 26) [Category: FRONT]",
+      "ipAddress": "127.0.0.1"
+    },
+    {
+      "id": "6fc05ec2-2455-47a2-932c-c466e2605516",
+      "timestamp": "2026-10-09T05:17:03.821Z",
+      "userId": "usr-admin-01",
+      "userName": "Mercy Chebet",
+      "userRole": "ADMIN",
+      "branchId": "all",
+      "branchName": "All Branches (HQ)",
+      "action": "ADMIN_LOGIN_NO_RULE",
+      "entityType": "AUTH",
+      "entityId": "usr-admin-01",
+      "details": "Administrator Mercy Chebet logged in without restriction rules (no password rule enforced)",
+      "ipAddress": "127.0.0.1"
+    },
+    {
+      "id": "243e9122-bf35-46a1-b420-ba746f93f4e6",
+      "timestamp": "2026-10-09T05:05:26.214Z",
+      "userId": "usr-acc-01",
+      "userName": "David Omondi",
+      "userRole": "ACCOUNTANT",
+      "branchId": "all",
+      "branchName": "All Branches (HQ)",
+      "action": "USER_LOGIN_SUCCESS",
+      "entityType": "AUTH",
+      "entityId": "usr-acc-01",
+      "details": "User David Omondi (ACCOUNTANT) logged in successfully",
+      "ipAddress": "127.0.0.1"
+    },
+    {
+      "id": "10b297ce-c123-4a05-a160-029c5a83ced4",
+      "timestamp": "2026-10-09T04:51:49.787Z",
+      "userId": "usr-admin-01",
+      "userName": "Mercy Chebet",
+      "userRole": "ADMIN",
+      "branchId": "all",
+      "branchName": "All Branches (HQ)",
+      "action": "ADMIN_LOGIN_NO_RULE",
+      "entityType": "AUTH",
+      "entityId": "usr-admin-01",
+      "details": "Administrator Mercy Chebet logged in without restriction rules (no password rule enforced)",
+      "ipAddress": "127.0.0.1"
+    },
+    {
+      "id": "bb4496f3-5a03-4e13-ac2c-b9c2f10cc09d",
+      "timestamp": "2026-10-09T04:49:05.148Z",
+      "userId": "usr-admin-01",
+      "userName": "Mercy Chebet",
+      "userRole": "ADMIN",
+      "branchId": "all",
+      "branchName": "All Branches (HQ)",
+      "action": "ADMIN_LOGIN_NO_RULE",
+      "entityType": "AUTH",
+      "entityId": "usr-admin-01",
+      "details": "Administrator Mercy Chebet logged in without restriction rules (no password rule enforced)",
+      "ipAddress": "127.0.0.1"
+    },
+    {
+      "id": "3441cae6-1986-4964-844f-12157c8e2286",
+      "timestamp": "2026-10-09T04:45:37.821Z",
+      "userId": "usr-admin-01",
+      "userName": "Mercy Chebet",
+      "userRole": "ADMIN",
+      "branchId": "all",
+      "branchName": "N/A",
+      "action": "USER_LOGOUT",
+      "entityType": "AUTH",
+      "entityId": "usr-admin-01",
+      "details": "User Mercy Chebet logged out",
+      "ipAddress": "127.0.0.1"
+    },
+    {
+      "id": "d90b7139-0abb-4cdc-99b4-3a3008f99f06",
+      "timestamp": "2026-10-09T04:41:21.074Z",
+      "userId": "usr-admin-01",
+      "userName": "Mercy Chebet",
+      "userRole": "ADMIN",
+      "branchId": "all",
+      "branchName": "All Branches (HQ)",
+      "action": "ADMIN_LOGIN_NO_RULE",
+      "entityType": "AUTH",
+      "entityId": "usr-admin-01",
+      "details": "Administrator Mercy Chebet logged in without restriction rules (no password rule enforced)",
+      "ipAddress": "127.0.0.1"
+    },
+    {
+      "id": "46ad7d11-9259-43f5-8011-f5bdb265ba31",
+      "timestamp": "2026-10-08T12:23:26.291Z",
+      "userId": "usr-admin-01",
+      "userName": "Mercy Chebet",
+      "userRole": "ADMIN",
+      "branchId": "all",
+      "branchName": "All Branches (HQ)",
+      "action": "ADMIN_LOGIN_NO_RULE",
+      "entityType": "AUTH",
+      "entityId": "usr-admin-01",
+      "details": "Administrator Mercy Chebet logged in without restriction rules (no password rule enforced)",
+      "ipAddress": "127.0.0.1"
+    },
+    {
+      "id": "a434eed2-efdc-45c2-894f-131da4b5154a",
+      "timestamp": "2026-10-08T12:23:21.897Z",
+      "userId": "usr-admin-01",
+      "userName": "Mercy Chebet",
+      "userRole": "ADMIN",
+      "branchId": "all",
+      "branchName": "All Branches (HQ)",
+      "action": "ADMIN_LOGIN_NO_RULE",
+      "entityType": "AUTH",
+      "entityId": "usr-admin-01",
+      "details": "Administrator Mercy Chebet logged in without restriction rules (no password rule enforced)",
+      "ipAddress": "127.0.0.1"
+    },
+    {
+      "id": "6b1202ef-f810-4802-85b3-57ddc09ae81d",
+      "timestamp": "2026-10-08T12:23:15.841Z",
+      "userId": "usr-admin-01",
+      "userName": "Mercy Chebet",
+      "userRole": "ADMIN",
+      "branchId": "all",
+      "branchName": "All Branches (HQ)",
+      "action": "ADMIN_LOGIN_NO_RULE",
+      "entityType": "AUTH",
+      "entityId": "usr-admin-01",
+      "details": "Administrator Mercy Chebet logged in without restriction rules (no password rule enforced)",
+      "ipAddress": "127.0.0.1"
+    },
+    {
+      "id": "b5957721-d6e0-4159-a272-a23a4ad8c1f7",
+      "timestamp": "2026-10-08T12:18:38.035Z",
+      "userId": "usr-admin-01",
+      "userName": "Mercy Chebet",
+      "userRole": "ADMIN",
+      "branchId": "all",
+      "branchName": "All Branches (HQ)",
+      "action": "USER_LOGIN_SUCCESS",
+      "entityType": "AUTH",
+      "entityId": "usr-admin-01",
+      "details": "User Mercy Chebet (ADMIN) logged in successfully",
+      "ipAddress": "127.0.0.1"
+    },
     {
       "id": "713c3b2b-8ed8-4896-b67a-2f894db7ba52",
       "timestamp": "2026-10-08T11:29:49.880Z",
@@ -4040,7 +4223,7 @@
     "companyDomain": "naisiaetextiles.com",
     "companyEmail": "support@naisiaetextiles.com",
     "companyPhone": "0792021496 / 0112264870",
-    "companyAddress": "Naisia Textiles Complex, Biashara Street, P.O. Box 48291-00100 Nairobi, Kenya",
+    "companyAddress": "Naisia Textiles Complex, Uhuru Market, P.O. Box 48291-00100 Nairobi, Kenya",
     "kraPin": "P051839281Z",
     "currency": "KES",
     "taxRateStandard": 0.16,

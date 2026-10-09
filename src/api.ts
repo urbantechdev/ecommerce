@@ -103,6 +103,21 @@ export const api = {
     request<any>('/products', { method: 'POST', body: JSON.stringify(data) }),
   updateProduct: (id: string, data: any) =>
     request<any>(`/products/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  updateSkuImage: (skuOrVariantId: { sku?: string; variantId?: string; imageUrl: string; imageCategory?: string }) =>
+    request<{ success: boolean; sku: string; variantId: string; imageUrl?: string; imageCategory?: string; productName: string }>('/products/sku-image', {
+      method: 'POST',
+      body: JSON.stringify(skuOrVariantId),
+    }),
+  bulkUpdateSkuImages: (items: Array<{ sku?: string; filename?: string; imageUrl: string; imageCategory?: string }>, defaultCategory?: string) =>
+    request<{ success: boolean; matchedCount: number; updatedSkus: string[]; unmatched: string[] }>('/products/bulk-sku-images', {
+      method: 'POST',
+      body: JSON.stringify({ items, defaultCategory }),
+    }),
+  applyCategorySkuImages: (data: { school?: string; category?: string; garmentType?: string; sector?: string; imageUrl: string; imageCategory?: string }) =>
+    request<{ success: boolean; count: number; updatedSkus: string[] }>('/products/category-sku-images', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
   applyPriceSet: (data: {
     school?: string;
     category?: string;

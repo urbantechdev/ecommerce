@@ -9,6 +9,7 @@ interface AuthContextType {
   activeBranchName: string;
   isLoading: boolean;
   login: (credentials: { email: string; password: string }) => Promise<void>;
+  loginAsAdmin: () => Promise<void>;
   loginWithPin: (credentials: { userId: string; pin: string }) => Promise<void>;
   logout: () => Promise<void>;
   switchBranch: (branchId: string) => Promise<void>;
@@ -75,6 +76,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const loginAsAdmin = async () => {
+    setIsLoading(true);
+    try {
+      const { token, user: loggedInUser } = await api.login({ email: 'support@naisiaetextiles.com', password: '' });
+      setAuthToken(token);
+      setUser(loggedInUser);
+      setActiveBranchId(loggedInUser.branchId || 'all');
+      await fetchBranches();
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const loginWithPin = async (credentials: { userId: string; pin: string }) => {
     setIsLoading(true);
     try {
@@ -117,6 +131,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const hasRole = (...roles: UserRole[]) => {
     if (!user) return false;
+    if (user.role === 'ADMIN') return true; // Admin has no rule restrictions
     return roles.includes(user.role);
   };
 
@@ -137,6 +152,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         activeBranchName,
         isLoading,
         login,
+        loginAsAdmin,
         loginWithPin,
         logout,
         switchBranch,

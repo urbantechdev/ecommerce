@@ -41,6 +41,8 @@ export interface ProductVariant {
   branchStock: Record<string, number>;
   reorderLevel: number;
   reorderQuantity: number;
+  imageUrl?: string;
+  imageCategory?: string;
 }
 
 export interface Product {
@@ -57,6 +59,7 @@ export interface Product {
   taxCategory: 'VAT_16' | 'ZERO_RATED' | 'EXEMPT';
   supplierId?: string;
   imageUrl?: string;
+  imageCategory?: string;
   active: boolean;
   variants: ProductVariant[];
   createdAt: string;
@@ -546,12 +549,12 @@ class DatabaseEngine {
     const branches: Branch[] = [
       {
         id: 'branch-nbi-cbd',
-        code: 'NBI-CBD',
-        name: 'Nairobi CBD Flagship (HQ)',
-        location: 'Biashara Street, Nairobi CBD',
-        address: 'Naisia Textiles Complex, 2nd Flr, Biashara St, P.O. Box 48291-00100 Nairobi',
+        code: 'NBI-UHR',
+        name: 'Nairobi Uhuru Market Flagship (HQ)',
+        location: 'Uhuru Market, Nairobi',
+        address: 'Naisia Textiles Complex, Stall / Unit 2, Uhuru Market, P.O. Box 48291-00100 Nairobi',
         phone: '+254 722 001 100',
-        email: 'cbd@naisiaetextiles.com',
+        email: 'uhuru@naisiaetextiles.com',
         isHQ: true,
         createdAt: now,
       },
@@ -599,7 +602,7 @@ class DatabaseEngine {
       {
         id: 'usr-admin-01',
         name: 'Mercy Chebet',
-        email: 'admin@naisiaetextiles.com',
+        email: 'support@naisiaetextiles.com',
         passwordHash: bcrypt.hashSync('AdminPassword2026!', salt),
         role: 'ADMIN',
         branchId: 'all',
@@ -1738,8 +1741,8 @@ class DatabaseEngine {
         branchId: 'branch-nbi-cbd',
         branchName: 'Nairobi CBD Flagship (HQ)',
         category: 'RENT',
-        title: 'Monthly Store Rent - Biashara St Flagship',
-        description: 'Payment to Biashara Plaza Management for October 2026 occupancy.',
+        title: 'Monthly Store Rent - Uhuru Market Flagship',
+        description: 'Payment to Uhuru Market Management for October 2026 occupancy.',
         amount: 85000,
         paymentMethod: 'BANK_TRANSFER',
         paymentReference: 'RENT-OCT-2026',
@@ -1812,7 +1815,7 @@ class DatabaseEngine {
       logoUrl: 'https://plain-eeur-prod-public.komododecks.com/202605/07/1sm3ITZIdJmYjyTcxmiP/image.png',
       companyEmail: 'support@naisiaetextiles.com',
       companyPhone: '0792021496 / 0112264870',
-      companyAddress: 'Naisia Textiles Complex, Biashara Street, P.O. Box 48291-00100 Nairobi, Kenya',
+      companyAddress: 'Naisia Textiles Complex, Uhuru Market, P.O. Box 48291-00100 Nairobi, Kenya',
       kraPin: 'P051839281Z',
       currency: 'KES',
       taxRateStandard: 0.16,

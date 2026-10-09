@@ -138,7 +138,7 @@ export const InvoicePreviewModal: React.FC<InvoicePreviewModalProps> = ({
                   Institutional Apparel & School Uniform Manufacturers
                 </p>
                 <p className="text-[10px] text-slate-500 mt-1">
-                  Biashara Street, Nairobi CBD • P.O. Box 48291 - 00100 GPO
+                  Uhuru Market, Nairobi • P.O. Box 48291 - 00100 GPO
                 </p>
                 <p className="text-[10px] text-slate-500">
                   Tel: 0792021496 / 0112264870 • support@naisiaetextiles.com • naisiaetextiles.com
@@ -307,7 +307,7 @@ export const InvoicePreviewModal: React.FC<InvoicePreviewModalProps> = ({
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-1">
               <div>
                 <p>Bank: <strong>Kenya Commercial Bank (KCB)</strong></p>
-                <p>Branch: <strong>Biashara Street Branch</strong></p>
+                <p>Branch: <strong>Uhuru Market Branch</strong></p>
                 <p>Account Number: <strong className="font-mono text-slate-900">1102938475</strong></p>
               </div>
               <div>

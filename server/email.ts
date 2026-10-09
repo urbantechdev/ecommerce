@@ -103,13 +103,13 @@ export function generateInvoiceEmailHtml(invoice: any, settings: any): string {
 
         <div style="border-top: 1px solid #E2E8F0; padding-top: 15px; font-size: 12px; color: #64748B;">
           <p><strong>Payment Instructions:</strong></p>
-          <p>Bank: KCB Bank | Branch: Biashara Street | Account: 1102938475</p>
+          <p>Bank: KCB Bank | Branch: Uhuru Market | Account: 1102938475</p>
           <p>M-PESA Paybill: <strong>522522</strong> | Account: <strong>${invoice.invoiceNumber}</strong></p>
           <p>KRA PIN: ${settings.kraPin} | eTIMS Control: ${invoice.kraControlCode || 'OSCU-VERIFIED'}</p>
         </div>
       </div>
       <div style="background-color: #030A91; padding: 10px; border-radius: 6px; text-align: center; color: white; font-size: 12px;">
-        Naisia Textiles Ltd • Biashara St, Nairobi • Phone: 0792021496 / 0112264870 • support@naisiaetextiles.com • naisiaetextiles.com
+        Naisia Textiles Ltd • Uhuru Market, Nairobi • Phone: 0792021496 / 0112264870 • support@naisiaetextiles.com • naisiaetextiles.com
       </div>
     </div>
   `;
@@ -167,7 +167,7 @@ export function generateQuotationEmailHtml(quote: any, settings: any): string {
         </div>
       </div>
       <div style="background-color: #030A91; padding: 10px; border-radius: 6px; text-align: center; color: white; font-size: 12px;">
-        Naisia Textiles Ltd • Biashara St, Nairobi • Phone: 0792021496 / 0112264870 • support@naisiaetextiles.com • naisiaetextiles.com
+        Naisia Textiles Ltd • Uhuru Market, Nairobi • Phone: 0792021496 / 0112264870 • support@naisiaetextiles.com • naisiaetextiles.com
       </div>
     </div>
   `;
