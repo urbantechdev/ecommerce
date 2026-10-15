@@ -31,8 +31,14 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
     try {
       const data = await api.getDashboardMetrics(activeBranchId);
       setMetrics(data);
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to load dashboard metrics:', err);
+      if (err.message.includes('Unauthorized') || err.message.includes('401')) {
+        // Simple fix: force re-authentication by clearing token if session expired
+        // In a real production app, we'd navigate to /login
+        localStorage.removeItem('nais_auth_token');
+        window.location.reload();
+      }
     } finally {
       setIsLoading(false);
     }
