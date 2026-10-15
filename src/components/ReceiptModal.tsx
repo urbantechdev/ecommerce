@@ -13,10 +13,12 @@ import {
   Sliders,
   QrCode,
   ShieldCheck,
-  Store
+  Store,
+  Loader2
 } from 'lucide-react';
 import { api } from '../api';
 import { useNotification } from '../context/NotificationContext';
+import { downloadElementAsPdf } from '../utils/pdfGenerator';
 
 interface ReceiptModalProps {
   sale?: Sale | null;
@@ -298,6 +300,33 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({
     }
   };
 
+  const [isDownloadingPdf, setIsDownloadingPdf] = useState(false);
+
+  const handleDownloadPdf = async () => {
+    if (!receiptRef.current) return;
+    setIsDownloadingPdf(true);
+    try {
+      await downloadElementAsPdf(receiptRef.current, `Receipt-${receiptNumber}.pdf`, {
+        type: 'receipt',
+        rollWidth: rollWidth,
+        title: `Naisiae Textiles Receipt ${receiptNumber}`,
+      });
+      notify({
+        type: 'SUCCESS',
+        title: 'PDF Downloaded',
+        message: `Receipt ${receiptNumber} downloaded as PDF successfully`,
+      });
+    } catch (err: any) {
+      notify({
+        type: 'ERROR',
+        title: 'PDF Download Failed',
+        message: err.message || 'Could not generate receipt PDF',
+      });
+    } finally {
+      setIsDownloadingPdf(false);
+    }
+  };
+
   const handleDownloadHtml = () => {
     const text = generateTextSlip();
     const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
@@ -425,12 +454,22 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({
             </button>
 
             <button
-              onClick={handleDownloadHtml}
-              className="inline-flex items-center px-3 py-1.5 rounded-xl bg-white border border-slate-300 text-slate-700 text-xs font-bold hover:bg-slate-50 transition-colors shadow-2xs"
-              title="Save receipt slip file"
+              onClick={handleDownloadPdf}
+              disabled={isDownloadingPdf}
+              className="inline-flex items-center px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition-all shadow-xs active:scale-95 disabled:opacity-50 cursor-pointer"
+              title="Download official receipt as PDF file"
             >
-              <Download className="w-3.5 h-3.5 mr-1 text-slate-500" />
-              <span className="hidden sm:inline">Save</span>
+              {isDownloadingPdf ? (
+                <>
+                  <Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" />
+                  <span>Generating PDF...</span>
+                </>
+              ) : (
+                <>
+                  <Download className="w-3.5 h-3.5 mr-1" />
+                  <span>Download PDF</span>
+                </>
+              )}
             </button>
           </div>
 
@@ -483,7 +522,7 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({
                   Tel: 0792021496 / 0112264870 • support@naisiaetextiles.com • naisiaetextiles.com
                 </p>
                 <div className="mt-1.5 text-[9.5px] font-bold text-black">
-                  PIN: P051839281Z • VAT REGISTERED
+                  PIN: P051839281Z
                 </div>
                 <div className="text-[9px] text-slate-500">
                   ETR OSCU SERIAL: NAISIAE-OSCU-001

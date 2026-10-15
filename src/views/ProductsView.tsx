@@ -36,6 +36,7 @@ import {
 import { StatusBadge } from '../components/StatusBadge';
 import { ProductPriceSetModal } from '../components/ProductPriceSetModal';
 import { SkuImageManagerModal } from '../components/SkuImageManagerModal';
+import { ProductDetailsModal } from '../components/ProductDetailsModal';
 import {
   INVENTORY_SECTORS,
   COLLEGE_INSTITUTIONS,
@@ -150,6 +151,10 @@ export const ProductsView: React.FC = () => {
   // SKU Image Manager Modal
   const [isSkuImageModalOpen, setIsSkuImageModalOpen] = useState(false);
   const [skuModalInitialSku, setSkuModalInitialSku] = useState<string | undefined>(undefined);
+  
+  // Product Details Modal for Mobile
+  const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
 
   // Single Product Quick Price Set state inside Edit Modal
   const [quickSetPriceInput, setQuickSetPriceInput] = useState<string>('');
@@ -582,12 +587,19 @@ export const ProductsView: React.FC = () => {
         </div>
       </div>
 
+
       {/* Products Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
         {filtered.map((prod) => (
           <div
             key={prod.id}
-            className="bg-white rounded-3xl border border-slate-200 shadow-xs hover:shadow-md transition-all overflow-hidden flex flex-col justify-between group"
+            onClick={() => {
+              if (window.innerWidth < 768) {
+                setSelectedProduct(prod);
+                setIsDetailsModalOpen(true);
+              }
+            }}
+            className="cursor-pointer bg-white rounded-3xl border border-slate-200 shadow-xs hover:shadow-md transition-all overflow-hidden flex flex-col justify-between group"
           >
             <div>
               {/* Product Image Banner */}
@@ -1827,6 +1839,13 @@ export const ProductsView: React.FC = () => {
           products={products}
           onRefresh={fetchProducts}
           initialSku={skuModalInitialSku}
+        />
+      )}
+      {selectedProduct && (
+        <ProductDetailsModal
+          product={selectedProduct}
+          isOpen={isDetailsModalOpen}
+          onClose={() => setIsDetailsModalOpen(false)}
         />
       )}
     </div>

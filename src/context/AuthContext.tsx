@@ -11,7 +11,8 @@ interface AuthContextType {
   login: (credentials: { email: string; password: string }) => Promise<void>;
   loginAsAdmin: () => Promise<void>;
   loginWithGoogle: (googleData?: { email?: string; name?: string }) => Promise<void>;
-  loginWithPin: (credentials: { userId: string; pin: string }) => Promise<void>;
+  loginWithPin: (credentials: { userId?: string; pin: string }) => Promise<void>;
+  loginAdminWithPin: (pin?: string) => Promise<void>;
   logout: () => Promise<void>;
   switchBranch: (branchId: string) => Promise<void>;
   hasRole: (...roles: UserRole[]) => boolean;
@@ -109,10 +110,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const loginWithPin = async (credentials: { userId: string; pin: string }) => {
+  const loginWithPin = async (credentials: { userId?: string; pin: string }) => {
     setIsLoading(true);
     try {
       const { token, user: loggedInUser } = await api.pinLogin(credentials);
+      setAuthToken(token);
+      setUser(loggedInUser);
+      setActiveBranchId(loggedInUser.branchId || 'all');
+      await fetchBranches();
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const loginAdminWithPin = async (pin: string = '202020') => {
+    setIsLoading(true);
+    try {
+      const { token, user: loggedInUser } = await api.adminPinLogin(pin);
       setAuthToken(token);
       setUser(loggedInUser);
       setActiveBranchId(loggedInUser.branchId || 'all');
@@ -175,6 +189,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         loginAsAdmin,
         loginWithGoogle,
         loginWithPin,
+        loginAdminWithPin,
         logout,
         switchBranch,
         hasRole,

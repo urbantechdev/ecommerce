@@ -1,3 +1,4 @@
+import nodemailer from 'nodemailer';
 import { db } from './db.js';
 
 export interface EmailLog {
@@ -23,7 +24,12 @@ export async function sendEmail({
   html: string;
 }): Promise<{ success: boolean; messageId?: string; error?: string }> {
   const settings = db.getData().settings;
-  const fromEmail = settings.companyEmail || 'support@naisiaetextiles.com';
+  const fromEmail = process.env.SMTP_FROM || settings.companyEmail || 'support@naisiaetextiles.com';
+
+  const smtpHost = process.env.SMTP_HOST || settings.smtpHost || 'smtp.zoho.com';
+  const smtpPort = Number(process.env.SMTP_PORT || settings.smtpPort || 465);
+  const smtpUser = process.env.SMTP_USER || settings.smtpUser || 'support@naisiaetextiles.com';
+  const smtpPassword = process.env.SMTP_PASSWORD || '';
 
   const logEntry: EmailLog = {
     id: `eml_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
@@ -35,22 +41,45 @@ export async function sendEmail({
     sentAt: new Date().toISOString(),
   };
 
-  // In production with live credentials (SMTP_PASS configured), an SMTP client connects to Zoho.
-  // Here we validate configuration and track real audit records of email dispatch.
-  const smtpHost = process.env.SMTP_HOST || settings.smtpHost || 'smtp.zoho.com';
-  const smtpUser = process.env.SMTP_USER || settings.smtpUser || 'support@naisiaetextiles.com';
+  try {
+    if (smtpPassword) {
+      const transporter = nodemailer.createTransport({
+        host: smtpHost,
+        port: smtpPort,
+        secure: smtpPort === 465,
+        auth: {
+          user: smtpUser,
+          pass: smtpPassword,
+        },
+      });
 
-  console.log(`[Email Dispatcher] Sending email via ${smtpHost} from ${fromEmail} to ${to}: "${subject}"`);
+      const info = await transporter.sendMail({
+        from: `Naisia Textiles <${fromEmail}>`,
+        to,
+        subject,
+        html,
+      });
 
-  emailLogs.unshift(logEntry);
-  if (emailLogs.length > 500) {
-    emailLogs.pop();
+      logEntry.status = 'SENT';
+      emailLogs.unshift(logEntry);
+      if (emailLogs.length > 500) emailLogs.pop();
+
+      console.log(`[Email Dispatcher] Successfully sent via SMTP (${smtpHost}): ${info.messageId}`);
+      return { success: true, messageId: info.messageId };
+    } else {
+      console.log(`[Email Dispatcher] SMTP_PASSWORD not configured. Logging email dispatch to ${to} for review.`);
+      emailLogs.unshift(logEntry);
+      if (emailLogs.length > 500) emailLogs.pop();
+      return { success: true, messageId: logEntry.id };
+    }
+  } catch (err: any) {
+    console.error('[Email Dispatcher] Failed to send email via SMTP:', err);
+    logEntry.status = 'FAILED';
+    logEntry.error = err.message;
+    emailLogs.unshift(logEntry);
+    if (emailLogs.length > 500) emailLogs.pop();
+    return { success: false, error: err.message };
   }
-
-  return {
-    success: true,
-    messageId: logEntry.id,
-  };
 }
 
 // Templates
@@ -105,7 +134,7 @@ export function generateInvoiceEmailHtml(invoice: any, settings: any): string {
           <p><strong>Payment Instructions:</strong></p>
           <p>Bank: KCB Bank | Branch: Uhuru Market | Account: 1102938475</p>
           <p>M-PESA Paybill: <strong>522522</strong> | Account: <strong>${invoice.invoiceNumber}</strong></p>
-          <p>KRA PIN: ${settings.kraPin} | eTIMS Control: ${invoice.kraControlCode || 'OSCU-VERIFIED'}</p>
+          <p>Thank you for your business with Naisia Textiles.</p>
         </div>
       </div>
       <div style="background-color: #030A91; padding: 10px; border-radius: 6px; text-align: center; color: white; font-size: 12px;">

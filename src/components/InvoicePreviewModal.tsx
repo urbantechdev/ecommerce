@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Invoice } from '../types';
 import { useAuth } from '../context/AuthContext';
 import {
@@ -10,11 +10,14 @@ import {
   Building,
   CreditCard,
   QrCode,
-  ShieldCheck
+  ShieldCheck,
+  FileDown,
+  Loader2
 } from 'lucide-react';
 import { api } from '../api';
 import { useNotification } from '../context/NotificationContext';
 import { StatusBadge } from './StatusBadge';
+import { downloadElementAsPdf } from '../utils/pdfGenerator';
 
 interface InvoicePreviewModalProps {
   invoice: Invoice | null;
@@ -31,6 +34,8 @@ export const InvoicePreviewModal: React.FC<InvoicePreviewModalProps> = ({
   const { user } = useAuth();
   const [emailInput, setEmailInput] = useState('');
   const [isSendingEmail, setIsSendingEmail] = useState(false);
+  const [isDownloadingPdf, setIsDownloadingPdf] = useState(false);
+  const invoiceRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (invoice?.customerEmail) {
@@ -47,6 +52,30 @@ export const InvoicePreviewModal: React.FC<InvoicePreviewModalProps> = ({
     window.print();
   };
 
+  const handleDownloadPdf = async () => {
+    if (!invoiceRef.current) return;
+    setIsDownloadingPdf(true);
+    try {
+      await downloadElementAsPdf(invoiceRef.current, `Invoice-${invoice.invoiceNumber}.pdf`, {
+        type: 'invoice',
+        title: `Naisiae Textiles Invoice ${invoice.invoiceNumber}`,
+      });
+      notify({
+        type: 'SUCCESS',
+        title: 'PDF Downloaded',
+        message: `Invoice ${invoice.invoiceNumber} downloaded as PDF successfully`,
+      });
+    } catch (err: any) {
+      notify({
+        type: 'ERROR',
+        title: 'PDF Download Failed',
+        message: err.message || 'Could not generate invoice PDF',
+      });
+    } finally {
+      setIsDownloadingPdf(false);
+    }
+  };
+
   const handleSendEmail = async () => {
     if (!emailInput || !emailInput.includes('@')) {
       notify({ type: 'WARNING', title: 'Invalid Email', message: 'Please enter a valid customer email address' });
@@ -59,7 +88,7 @@ export const InvoicePreviewModal: React.FC<InvoicePreviewModalProps> = ({
       notify({
         type: 'SUCCESS',
         title: 'Invoice Emailed',
-        message: `Tax Invoice ${invoice.invoiceNumber} sent successfully to ${emailInput}`,
+        message: `Invoice ${invoice.invoiceNumber} sent successfully to ${emailInput}`,
       });
     } catch (err: any) {
       notify({
@@ -89,9 +118,9 @@ export const InvoicePreviewModal: React.FC<InvoicePreviewModalProps> = ({
             <div>
               <div className="flex items-center space-x-1.5">
                 <span className="font-extrabold text-slate-900 text-xs sm:text-sm">
-                  Official KRA eTIMS Tax Invoice
+                  Official Invoice
                 </span>
-                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></span>
               </div>
               <span className="font-mono text-[11px] text-slate-500">
                 {invoice.invoiceNumber} • Served by: <strong className="text-slate-700">{servedByName}</strong>
@@ -101,24 +130,43 @@ export const InvoicePreviewModal: React.FC<InvoicePreviewModalProps> = ({
 
           <div className="flex items-center space-x-2">
             <button
+              onClick={handleDownloadPdf}
+              disabled={isDownloadingPdf}
+              className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition-all shadow-xs inline-flex items-center active:scale-95 disabled:opacity-50 cursor-pointer"
+              title="Download official Invoice as PDF file"
+            >
+              {isDownloadingPdf ? (
+                <>
+                  <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
+                  <span>Generating PDF...</span>
+                </>
+              ) : (
+                <>
+                  <Download className="w-3.5 h-3.5 mr-1.5" />
+                  <span>Download PDF</span>
+                </>
+              )}
+            </button>
+
+            <button
               onClick={handlePrint}
-              className="px-3.5 py-1.5 rounded-xl bg-[#030A91] hover:bg-blue-900 text-white text-xs font-bold transition-all shadow-xs inline-flex items-center"
+              className="px-3 py-1.5 rounded-xl bg-[#030A91] hover:bg-blue-900 text-white text-xs font-bold transition-all shadow-xs inline-flex items-center cursor-pointer"
             >
               <Printer className="w-3.5 h-3.5 mr-1.5 text-[#FACB00]" />
-              <span>Print Tax Invoice</span>
+              <span>Print Invoice</span>
             </button>
 
             <button
               onClick={onClose}
-              className="p-1.5 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-200 transition-colors"
+              className="p-1.5 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-200 transition-colors cursor-pointer"
             >
               <X className="w-5 h-5" />
             </button>
           </div>
         </div>
 
-        {/* Printable Tax Invoice Sheet */}
-        <div className="p-6 sm:p-8 overflow-y-auto flex-1 space-y-6 text-xs text-slate-800 bg-white">
+        {/* Printable Invoice Sheet */}
+        <div ref={invoiceRef} className="p-6 sm:p-8 overflow-y-auto flex-1 space-y-6 text-xs text-slate-800 bg-white">
           {/* Header */}
           <div className="flex justify-between items-start border-b border-slate-200 pb-5">
             <div className="flex items-start space-x-3.5">
@@ -144,14 +192,14 @@ export const InvoicePreviewModal: React.FC<InvoicePreviewModalProps> = ({
                   Tel: 0792021496 / 0112264870 • support@naisiaetextiles.com • naisiaetextiles.com
                 </p>
                 <p className="text-[10px] font-bold text-slate-700 mt-0.5">
-                  KRA PIN: P051839281Z • VAT REGISTERED
+                  KRA PIN: P051839281Z
                 </p>
               </div>
             </div>
 
             <div className="text-right">
               <span className="text-xs uppercase font-black px-2.5 py-1 rounded-md bg-blue-50 text-[#030A91] border border-blue-200">
-                TAX INVOICE
+                INVOICE
               </span>
               <h2 className="text-base font-black text-slate-900 mt-2 font-mono">
                 {invoice.invoiceNumber}
@@ -169,7 +217,7 @@ export const InvoicePreviewModal: React.FC<InvoicePreviewModalProps> = ({
             </div>
           </div>
 
-          {/* Billed To & KRA eTIMS Verification Details */}
+          {/* Billed To & Standard Commercial Details */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200">
               <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider block mb-1">
@@ -190,26 +238,19 @@ export const InvoicePreviewModal: React.FC<InvoicePreviewModalProps> = ({
             </div>
 
             <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 text-right">
-              <div className="inline-flex items-center px-2 py-0.5 rounded text-[9.5px] font-black bg-emerald-100 text-emerald-800 border border-emerald-300 mb-1.5">
-                <CheckCircle2 className="w-3 h-3 mr-1 text-emerald-600" />
-                KRA eTIMS FISCALIZED INVOICE
+              <div className="inline-flex items-center px-2 py-0.5 rounded text-[9.5px] font-black bg-blue-100 text-[#030A91] border border-blue-200 mb-1.5">
+                <ShieldCheck className="w-3 h-3 mr-1 text-[#030A91]" />
+                COMMERCIAL INVOICE
               </div>
               <p className="font-mono text-xs font-bold text-slate-800">
-                CU Invoice No: {invoice.cuInvoiceNumber || '013000000001001'}
+                Invoice Reference: {invoice.invoiceNumber}
               </p>
               <p className="font-mono text-[10px] text-slate-500">
-                Internal Hash: {invoice.kraControlCode || 'A98F-21BC-77E0-4491'}
+                Issue Date: {new Date(invoice.createdAt).toLocaleDateString()}
               </p>
-
-              {invoice.kraQrCodeUrl && (
-                <div className="flex justify-end mt-2">
-                  <img
-                    src={invoice.kraQrCodeUrl}
-                    alt="KRA eTIMS QR"
-                    className="w-16 h-16 border border-slate-300 rounded p-0.5 bg-white"
-                  />
-                </div>
-              )}
+              <p className="font-mono text-[10px] text-slate-500 mt-0.5">
+                Payment Terms: {invoice.paymentTerms || 'Net 30 Days'}
+              </p>
             </div>
           </div>
 
@@ -294,7 +335,6 @@ export const InvoicePreviewModal: React.FC<InvoicePreviewModalProps> = ({
               </p>
             </div>
             <div className="mt-2 sm:mt-0 text-left sm:text-right font-mono text-[10px] text-slate-500">
-              <p>Document Control: {invoice.kraControlCode || 'A98F-21BC-77E0-4491'}</p>
               <p className="text-emerald-700 font-bold">● Officer Authenticated & Verified</p>
             </div>
           </div>

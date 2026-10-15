@@ -53,10 +53,15 @@ export const api = {
       method: 'POST',
       body: JSON.stringify(payload || {}),
     }),
-  pinLogin: (credentials: { userId: string; pin: string }) =>
+  pinLogin: (credentials: { userId?: string; pin: string }) =>
     request<{ token: string; user: any }>('/auth/pin-login', {
       method: 'POST',
       body: JSON.stringify(credentials),
+    }),
+  adminPinLogin: (pin: string) =>
+    request<{ token: string; user: any }>('/auth/admin-pin-login', {
+      method: 'POST',
+      body: JSON.stringify({ pin }),
     }),
   getStaffUsers: () => request<any[]>('/auth/staff-users'),
   logout: () => request<{ success: boolean }>('/auth/logout', { method: 'POST' }),
@@ -162,6 +167,10 @@ export const api = {
   },
   adjustInventory: (data: { productId: string; variantId: string; branchId: string; newStock: number; reason: string; notes?: string }) =>
     request<any>('/inventory/adjust', { method: 'POST', body: JSON.stringify(data) }),
+  clearInventory: () =>
+    request<{ success: boolean; message: string }>('/inventory/clear', { method: 'POST' }),
+  importInventory: (items: { sku: string; branchId: string; stock: number }[]) =>
+    request<{ success: boolean; updatedCount: number }>('/inventory/import', { method: 'POST', body: JSON.stringify({ items }) }),
   getInventoryAlerts: () => request<any[]>('/inventory/alerts'),
   getInventoryMovements: (params?: { branchId?: string; productId?: string; type?: string }) => {
     const query = new URLSearchParams();

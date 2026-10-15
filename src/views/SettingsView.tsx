@@ -289,6 +289,56 @@ export const SettingsView: React.FC = () => {
           </div>
         </div>
 
+        {/* SMTP Email Configuration */}
+        <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs space-y-4">
+          <div className="flex items-center space-x-2 pb-3 border-b border-slate-100">
+            <Mail className="w-4 h-4 text-[#030A91]" />
+            <h3 className="font-bold text-sm text-slate-900">SMTP Email Gateway & Password Configuration</h3>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div>
+              <label className="text-[11px] font-bold text-slate-500 uppercase block mb-1">
+                SMTP Host:
+              </label>
+              <input
+                type="text"
+                value={settings.smtpHost || 'smtp.zoho.com'}
+                onChange={(e) => setSettings({ ...settings, smtpHost: e.target.value })}
+                placeholder="smtp.zoho.com"
+                className="w-full px-3 py-1.5 text-xs bg-slate-50 border border-slate-300 rounded-xl font-mono"
+              />
+            </div>
+
+            <div>
+              <label className="text-[11px] font-bold text-slate-500 uppercase block mb-1">
+                SMTP Port:
+              </label>
+              <input
+                type="number"
+                value={settings.smtpPort || 465}
+                onChange={(e) => setSettings({ ...settings, smtpPort: Number(e.target.value) })}
+                placeholder="465"
+                className="w-full px-3 py-1.5 text-xs bg-slate-50 border border-slate-300 rounded-xl font-mono"
+              />
+            </div>
+
+            <div>
+              <label className="text-[11px] font-bold text-slate-500 uppercase block mb-1">
+                SMTP User / Email:
+              </label>
+              <input
+                type="text"
+                value={settings.smtpUser || 'support@naisiaetextiles.com'}
+                onChange={(e) => setSettings({ ...settings, smtpUser: e.target.value })}
+                placeholder="support@naisiaetextiles.com"
+                className="w-full px-3 py-1.5 text-xs bg-slate-50 border border-slate-300 rounded-xl font-mono"
+              />
+            </div>
+          </div>
+
+        </div>
+
         {/* Save Bar */}
         <div className="flex justify-end">
           <button

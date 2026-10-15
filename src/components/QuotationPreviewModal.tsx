@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { Quotation } from '../types';
 import { useAuth } from '../context/AuthContext';
 import {
@@ -10,11 +10,13 @@ import {
   CheckCircle2,
   Calendar,
   Building,
-  ArrowRight
+  ArrowRight,
+  Loader2
 } from 'lucide-react';
 import { api } from '../api';
 import { useNotification } from '../context/NotificationContext';
 import { StatusBadge } from './StatusBadge';
+import { downloadElementAsPdf } from '../utils/pdfGenerator';
 
 interface QuotationPreviewModalProps {
   quotation: Quotation | null;
@@ -33,6 +35,8 @@ export const QuotationPreviewModal: React.FC<QuotationPreviewModalProps> = ({
   const { user } = useAuth();
   const [emailInput, setEmailInput] = useState('');
   const [isSendingEmail, setIsSendingEmail] = useState(false);
+  const [isDownloadingPdf, setIsDownloadingPdf] = useState(false);
+  const quotationRef = useRef<HTMLDivElement>(null);
 
   // Sync recipient email when quotation opens
   React.useEffect(() => {
@@ -48,6 +52,30 @@ export const QuotationPreviewModal: React.FC<QuotationPreviewModalProps> = ({
 
   const handlePrint = () => {
     window.print();
+  };
+
+  const handleDownloadPdf = async () => {
+    if (!quotationRef.current) return;
+    setIsDownloadingPdf(true);
+    try {
+      await downloadElementAsPdf(quotationRef.current, `Quotation-${quotation.quotationNumber}.pdf`, {
+        type: 'quotation',
+        title: `Naisiae Textiles Quotation ${quotation.quotationNumber}`,
+      });
+      notify({
+        type: 'SUCCESS',
+        title: 'PDF Downloaded',
+        message: `Quotation ${quotation.quotationNumber} downloaded as PDF successfully`,
+      });
+    } catch (err: any) {
+      notify({
+        type: 'ERROR',
+        title: 'PDF Download Failed',
+        message: err.message || 'Could not generate quotation PDF',
+      });
+    } finally {
+      setIsDownloadingPdf(false);
+    }
   };
 
   const handleSendEmail = async () => {
@@ -114,8 +142,27 @@ export const QuotationPreviewModal: React.FC<QuotationPreviewModalProps> = ({
             )}
 
             <button
+              onClick={handleDownloadPdf}
+              disabled={isDownloadingPdf}
+              className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition-all shadow-xs inline-flex items-center active:scale-95 disabled:opacity-50 cursor-pointer"
+              title="Download Quotation as PDF file"
+            >
+              {isDownloadingPdf ? (
+                <>
+                  <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
+                  <span>Generating PDF...</span>
+                </>
+              ) : (
+                <>
+                  <Download className="w-3.5 h-3.5 mr-1.5" />
+                  <span>Download PDF</span>
+                </>
+              )}
+            </button>
+
+            <button
               onClick={handlePrint}
-              className="px-3 py-1.5 rounded-xl bg-[#030A91] hover:bg-blue-900 text-white text-xs font-bold transition-all shadow-xs inline-flex items-center"
+              className="px-3 py-1.5 rounded-xl bg-[#030A91] hover:bg-blue-900 text-white text-xs font-bold transition-all shadow-xs inline-flex items-center cursor-pointer"
             >
               <Printer className="w-3.5 h-3.5 mr-1.5 text-[#FACB00]" />
               <span>Print Quotation</span>
@@ -123,7 +170,7 @@ export const QuotationPreviewModal: React.FC<QuotationPreviewModalProps> = ({
 
             <button
               onClick={onClose}
-              className="p-1.5 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-200 transition-colors"
+              className="p-1.5 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-200 transition-colors cursor-pointer"
             >
               <X className="w-5 h-5" />
             </button>
@@ -131,7 +178,7 @@ export const QuotationPreviewModal: React.FC<QuotationPreviewModalProps> = ({
         </div>
 
         {/* Printable Quotation Sheet */}
-        <div className="p-6 sm:p-8 overflow-y-auto flex-1 space-y-6 text-xs text-slate-800 bg-white">
+        <div ref={quotationRef} className="p-6 sm:p-8 overflow-y-auto flex-1 space-y-6 text-xs text-slate-800 bg-white">
           {/* Header */}
           <div className="flex justify-between items-start border-b border-slate-200 pb-5">
             <div className="flex items-start space-x-3.5">
@@ -157,7 +204,7 @@ export const QuotationPreviewModal: React.FC<QuotationPreviewModalProps> = ({
                   Tel: 0792021496 / 0112264870 • support@naisiaetextiles.com • naisiaetextiles.com
                 </p>
                 <p className="text-[10px] font-bold text-slate-700 mt-0.5">
-                  KRA PIN: P051839281Z • VAT Registered
+                  KRA PIN: P051839281Z
                 </p>
               </div>
             </div>

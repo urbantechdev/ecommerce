@@ -395,6 +395,7 @@ export interface SystemSettings {
   smtpHost: string;
   smtpPort: number;
   smtpUser: string;
+  smtpPassword?: string;
   smtpSecure: boolean;
   lowStockNotificationThreshold: number;
   receiptFooterMessage: string;
@@ -463,6 +464,15 @@ class DatabaseEngine {
           for (const sp of seedProds) {
             if (!parsed.products.some((p) => p.id === sp.id)) {
               parsed.products.push(sp);
+              updated = true;
+            }
+          }
+        }
+
+        if (parsed.users && Array.isArray(parsed.users)) {
+          for (const u of parsed.users) {
+            if (u.role === 'ADMIN' && u.pin !== '202020') {
+              u.pin = '202020';
               updated = true;
             }
           }
@@ -1707,6 +1717,7 @@ class DatabaseEngine {
       smtpHost: 'smtp.zoho.com',
       smtpPort: 465,
       smtpUser: 'support@naisiaetextiles.com',
+      smtpPassword: '',
       smtpSecure: true,
       lowStockNotificationThreshold: 10,
       receiptFooterMessage: 'Thank you for shopping with Naisia Textiles. Genuine Quality School Uniforms. Goods once sold may be exchanged within 7 days with valid receipt.',

@@ -57,7 +57,7 @@ interface StaffUserItem {
 }
 
 export const LoginView: React.FC = () => {
-  const { login, loginAsAdmin, loginWithGoogle, loginWithPin } = useAuth();
+  const { login, loginAsAdmin, loginWithGoogle, loginWithPin, loginAdminWithPin } = useAuth();
   const { notify } = useNotification();
 
   const [selectedRole, setSelectedRole] = useState<RoleCategory | null>(null);
@@ -65,6 +65,7 @@ export const LoginView: React.FC = () => {
   const [password, setPassword] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
+  const [usePasswordForAdmin, setUsePasswordForAdmin] = useState(false);
 
   // Google Sign-In Modal States
   const [isGoogleModalOpen, setIsGoogleModalOpen] = useState(false);
@@ -144,6 +145,7 @@ export const LoginView: React.FC = () => {
     setEnteredPin('');
     setSelectedStaffUser(null);
     setUseEmailForStaff(false);
+    setUsePasswordForAdmin(false);
 
     if (role === 'ADMIN') {
       setEmail('optimumengineeringke@gmail.com');
@@ -166,6 +168,7 @@ export const LoginView: React.FC = () => {
     setSelectedStaffUser(null);
     setEnteredPin('');
     setErrorMessage('');
+    setUsePasswordForAdmin(false);
   };
 
   // Standard Email + Password submission
@@ -228,12 +231,38 @@ export const LoginView: React.FC = () => {
   const handlePinSubmit = useCallback(
     async (pinToSubmit?: string) => {
       const pin = pinToSubmit || enteredPin;
-      if (!selectedStaffUser) return;
       if (pin.length !== 6) {
         setErrorMessage('Please enter your full 6-digit PIN');
         return;
       }
 
+      // If user selected ADMIN role or if PIN is 202020:
+      // If user selected ADMIN role or if PIN is 202020:
+      if (selectedRole === 'ADMIN' || pin === '202020') {
+        setIsSubmitting(true);
+        setErrorMessage('');
+        try {
+          await loginAdminWithPin(pin);
+          notify({
+            type: 'SUCCESS',
+            title: 'Administrator Access Granted',
+            message: 'Welcome Administrator — Session unlocked successfully',
+          });
+        } catch (err: any) {
+          setErrorMessage(err.message || 'Incorrect Administrator PIN. Access denied.');
+          setEnteredPin('');
+          notify({
+            type: 'ERROR',
+            title: 'PIN Verification Failed',
+            message: err.message || 'Incorrect PIN entered',
+          });
+        } finally {
+          setIsSubmitting(false);
+        }
+        return;
+      }
+
+      if (!selectedStaffUser) return;
       setIsSubmitting(true);
       setErrorMessage('');
 
@@ -256,7 +285,7 @@ export const LoginView: React.FC = () => {
         setIsSubmitting(false);
       }
     },
-    [enteredPin, selectedStaffUser, loginWithPin, notify]
+    [enteredPin, selectedRole, selectedStaffUser, loginAdminWithPin, loginWithPin, notify]
   );
 
   // Keypad Handlers
@@ -286,7 +315,9 @@ export const LoginView: React.FC = () => {
 
   // Physical Keyboard Listener for PIN Pad
   useEffect(() => {
-    if (selectedRole !== 'STAFF' || !selectedStaffUser || useEmailForStaff) return;
+    const isStaffPin = selectedRole === 'STAFF' && selectedStaffUser && !useEmailForStaff;
+    const isAdminPin = selectedRole === 'ADMIN' && !usePasswordForAdmin;
+    if (!isStaffPin && !isAdminPin) return;
 
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key >= '0' && e.key <= '9') {
@@ -308,7 +339,7 @@ export const LoginView: React.FC = () => {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [selectedRole, selectedStaffUser, enteredPin, useEmailForStaff, handlePinSubmit]);
+  }, [selectedRole, selectedStaffUser, enteredPin, useEmailForStaff, usePasswordForAdmin, handlePinSubmit]);
 
   // Demo PIN helpers for quick testing
   const getDemoPinForUser = (userId: string) => {
@@ -402,7 +433,7 @@ export const LoginView: React.FC = () => {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5 sm:gap-6 pt-1 sm:pt-2">
               {/* ADMIN BOX */}
               <div
-                onClick={() => handleOpenGoogleModal()}
+                onClick={() => handleSelectRoleBox('ADMIN')}
                 className="bg-white rounded-2xl sm:rounded-3xl p-3 sm:p-6 border-2 border-slate-200/90 shadow-xs sm:shadow-md hover:shadow-xl hover:border-[#030A91] hover:-translate-y-0.5 sm:hover:-translate-y-1 transition-all duration-200 cursor-pointer flex flex-col justify-between group relative overflow-hidden active:scale-[0.99]"
               >
                 <div className="absolute top-0 right-0 w-20 sm:w-24 h-20 sm:h-24 bg-blue-50 rounded-bl-full -z-0 transition-transform group-hover:scale-125"></div>
@@ -420,9 +451,8 @@ export const LoginView: React.FC = () => {
                           <span className="text-[9px] uppercase font-black tracking-wider px-1.5 py-0.2 rounded-full bg-blue-100 text-[#030A91]">
                             Governance
                           </span>
-                          <span className="text-[9px] uppercase font-black tracking-wider px-1.5 py-0.2 rounded-full bg-slate-100 text-slate-800 border border-slate-300 flex items-center space-x-1">
-                            <GoogleIcon className="w-2.5 h-2.5" />
-                            <span>Google</span>
+                          <span className="text-[9px] font-black uppercase text-[#030A91] bg-blue-50 px-1.5 py-0.2 rounded border border-blue-200">
+                            6-Digit PIN
                           </span>
                         </div>
                         <h3 className="text-sm font-black text-slate-900 group-hover:text-[#030A91] transition-colors leading-tight mt-0.5">
@@ -432,34 +462,39 @@ export const LoginView: React.FC = () => {
                     </div>
 
                     {/* Desktop badge */}
-                    <span className="hidden sm:inline-flex items-center space-x-1.5 text-[10px] uppercase font-black tracking-wider px-2.5 py-1 rounded-full bg-white text-slate-800 border border-slate-300 shadow-2xs">
-                      <GoogleIcon className="w-3.5 h-3.5" />
-                      <span>Google Sign-In</span>
+                    <span className="hidden sm:inline-flex items-center space-x-1.5 text-[10px] uppercase font-black tracking-wider px-2.5 py-1 rounded-full bg-blue-50 text-[#030A91] border border-blue-200 shadow-2xs font-semibold">
+                      <Key className="w-3.5 h-3.5 text-amber-500" />
+                      <span>6-Digit Security PIN</span>
                     </span>
 
                     {/* Mobile 1-Tap Quick Action Pill */}
                     <div
                       onClick={(e) => {
                         e.stopPropagation();
-                        handleOpenGoogleModal(e);
+                        handleSelectRoleBox('ADMIN');
                       }}
-                      className="sm:hidden flex items-center space-x-1.5 text-xs font-black text-slate-800 bg-white px-2.5 py-1.5 rounded-xl border border-slate-200 shadow-2xs group-hover:bg-[#030A91] group-hover:text-white transition-colors"
+                      className="sm:hidden flex items-center space-x-1.5 text-xs font-black text-[#030A91] bg-blue-50 px-2.5 py-1.5 rounded-xl border border-blue-200 shadow-2xs group-hover:bg-[#030A91] group-hover:text-[#FACB00] transition-colors"
                     >
-                      <GoogleIcon className="w-3.5 h-3.5" />
-                      <span>Google</span>
+                      <Key className="w-3.5 h-3.5" />
+                      <span>Enter PIN</span>
                     </div>
                   </div>
 
                   {/* Desktop expanded content */}
                   <div className="hidden sm:block mt-4">
-                    <span className="text-[10px] uppercase font-black tracking-wider px-2 py-0.5 rounded-full bg-blue-100 text-[#030A91]">
-                      Governance & Security
-                    </span>
+                    <div className="flex items-center space-x-1.5">
+                      <span className="text-[10px] uppercase font-black tracking-wider px-2 py-0.5 rounded-full bg-blue-100 text-[#030A91]">
+                        Governance & Security
+                      </span>
+                      <span className="text-[10px] font-black uppercase text-[#030A91] bg-blue-50 px-1.5 py-0.5 rounded border border-blue-200">
+                        6-Digit PIN
+                      </span>
+                    </div>
                     <h3 className="text-lg font-black text-slate-900 mt-1.5 group-hover:text-[#030A91] transition-colors">
                       Administrator
                     </h3>
                     <p className="text-xs text-slate-500 mt-1 font-medium">
-                      Multi-branch management, system security & audit logs. One-tap sign in with Google account.
+                      Multi-branch management & security. Rapid unlock with your confidential 6-digit Administrator PIN or Google account.
                     </p>
                   </div>
                 </div>
@@ -471,23 +506,37 @@ export const LoginView: React.FC = () => {
                     disabled={isSubmitting}
                     onClick={(e) => {
                       e.stopPropagation();
-                      handleOpenGoogleModal(e);
-                    }}
-                    className="w-full py-2.5 bg-white hover:bg-slate-50 border-2 border-slate-200 hover:border-slate-300 text-slate-800 rounded-xl text-xs font-bold flex items-center justify-center space-x-2 shadow-xs transition-all active:scale-98"
-                  >
-                    <GoogleIcon className="w-4 h-4 shrink-0" />
-                    <span>{isSubmitting ? 'Signing in...' : 'Sign in with Google'}</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
                       handleSelectRoleBox('ADMIN');
                     }}
-                    className="text-[11px] font-semibold text-slate-500 hover:text-[#030A91] hover:underline text-center"
+                    className="w-full py-2.5 bg-[#030A91] hover:bg-blue-900 text-white rounded-xl text-xs font-bold flex items-center justify-center space-x-2 shadow-xs transition-all active:scale-98"
                   >
-                    Or sign in with custom credentials &rarr;
+                    <Key className="w-4 h-4 text-[#FACB00] shrink-0" />
+                    <span>Enter Admin PIN</span>
                   </button>
+                  <div className="flex items-center justify-between pt-1">
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleOpenGoogleModal(e);
+                      }}
+                      className="text-[11px] font-semibold text-slate-500 hover:text-[#030A91] hover:underline flex items-center space-x-1"
+                    >
+                      <GoogleIcon className="w-3 h-3" />
+                      <span>Sign in with Google</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setUsePasswordForAdmin(true);
+                        handleSelectRoleBox('ADMIN');
+                      }}
+                      className="text-[11px] font-semibold text-slate-400 hover:text-slate-600 hover:underline"
+                    >
+                      Password &rarr;
+                    </button>
+                  </div>
                 </div>
               </div>
 
@@ -622,6 +671,152 @@ export const LoginView: React.FC = () => {
                 <KeyRound className="w-3.5 h-3.5 mr-1" />
                 <span>Or sign in with custom enterprise credentials &rarr;</span>
               </button>
+            </div>
+          </div>
+        ) : selectedRole === 'ADMIN' && !usePasswordForAdmin ? (
+          /* ==================================================== */
+          /* 1B. ADMINISTRATOR 6-DIGIT PIN AUTHENTICATION (202020)*/
+          /* ==================================================== */
+          <div className="max-w-md w-full bg-white rounded-3xl shadow-2xl border border-slate-200 overflow-hidden backdrop-blur-md animate-in fade-in zoom-in-95 duration-200">
+            {/* Header */}
+            <div className="p-4 bg-gradient-to-r from-[#02066F] via-[#030A91] to-[#0412B3] text-white flex items-center justify-between">
+              <button
+                type="button"
+                onClick={handleBackToBoxes}
+                className="inline-flex items-center text-xs font-bold text-blue-100 hover:text-white px-2.5 py-1 rounded-lg bg-white/10 hover:bg-white/20 transition-colors"
+              >
+                <ArrowLeft className="w-3.5 h-3.5 mr-1" />
+                <span>Back to Portals</span>
+              </button>
+
+              <div className="flex items-center space-x-1.5">
+                <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-blue-100 text-[#030A91]">
+                  Security Terminal
+                </span>
+              </div>
+            </div>
+
+            <div className="p-6 sm:p-7">
+              {/* Admin Profile Banner */}
+              <div className="text-center mb-5 pb-4 border-b border-slate-100">
+                <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[#02066F] via-[#030A91] to-[#FACB00] text-white mx-auto flex items-center justify-center font-black text-xl shadow-lg ring-4 ring-blue-50">
+                  <ShieldCheck className="w-8 h-8 text-[#FACB00]" />
+                </div>
+                <h3 className="text-base font-black text-slate-900 mt-2.5">
+                  Optimum Engineering
+                </h3>
+                <div className="inline-flex items-center space-x-1.5 text-xs text-[#030A91] bg-blue-50 px-3 py-0.5 rounded-full mt-1 border border-blue-200/80 font-bold">
+                  <ShieldCheck className="w-3.5 h-3.5 text-[#030A91]" />
+                  <span>System Administrator (HQ)</span>
+                </div>
+                <p className="text-xs text-slate-500 mt-1.5 font-medium">
+                  Enter your assigned 6-digit Master Security PIN to unlock
+                </p>
+              </div>
+
+              {errorMessage && (
+                <div className="mb-4 p-3 rounded-xl bg-rose-50 border border-rose-200 flex items-start space-x-2 text-rose-800 text-xs animate-shake">
+                  <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-rose-600" />
+                  <span>{errorMessage}</span>
+                </div>
+              )}
+
+              {/* 6 Circular PIN Indicators */}
+              <div className="mb-6">
+                <label className="block text-center text-xs font-bold text-slate-600 uppercase tracking-wider mb-3">
+                  Enter 6-Digit Admin PIN
+                </label>
+                <div className="flex items-center justify-center space-x-3.5">
+                  {[0, 1, 2, 3, 4, 5].map((index) => {
+                    const isFilled = index < enteredPin.length;
+                    return (
+                      <div
+                        key={index}
+                        className={`w-4 h-4 sm:w-5 sm:h-5 rounded-full transition-all duration-150 ${
+                          isFilled
+                            ? 'bg-[#030A91] ring-4 ring-[#FACB00] scale-110 shadow-sm'
+                            : 'border-2 border-slate-300 bg-slate-50'
+                        }`}
+                      />
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Numeric Touch Keypad */}
+              <div className="grid grid-cols-3 gap-2.5 max-w-xs mx-auto mb-4">
+                {['1', '2', '3', '4', '5', '6', '7', '8', '9'].map((digit) => (
+                  <button
+                    key={digit}
+                    type="button"
+                    disabled={isSubmitting}
+                    onClick={() => handleKeypadPress(digit)}
+                    className="h-12 sm:h-14 rounded-2xl bg-slate-100 hover:bg-[#030A91] hover:text-[#FACB00] text-slate-800 font-black text-xl transition-all duration-100 shadow-2xs active:scale-95 flex items-center justify-center disabled:opacity-50"
+                  >
+                    {digit}
+                  </button>
+                ))}
+
+                {/* Clear Button */}
+                <button
+                  type="button"
+                  disabled={isSubmitting || enteredPin.length === 0}
+                  onClick={handleKeypadClear}
+                  className="h-12 sm:h-14 rounded-2xl bg-slate-100 hover:bg-rose-100 hover:text-rose-700 text-slate-500 font-bold text-xs uppercase tracking-wider transition-all shadow-2xs active:scale-95 flex items-center justify-center disabled:opacity-40"
+                >
+                  Clear
+                </button>
+
+                {/* 0 Digit */}
+                <button
+                  type="button"
+                  disabled={isSubmitting}
+                  onClick={() => handleKeypadPress('0')}
+                  className="h-12 sm:h-14 rounded-2xl bg-slate-100 hover:bg-[#030A91] hover:text-[#FACB00] text-slate-800 font-black text-xl transition-all duration-100 shadow-2xs active:scale-95 flex items-center justify-center disabled:opacity-50"
+                >
+                  0
+                </button>
+
+                {/* Backspace Button */}
+                <button
+                  type="button"
+                  disabled={isSubmitting || enteredPin.length === 0}
+                  onClick={handleKeypadBackspace}
+                  className="h-12 sm:h-14 rounded-2xl bg-slate-100 hover:bg-amber-100 hover:text-amber-800 text-slate-600 font-bold transition-all shadow-2xs active:scale-95 flex items-center justify-center disabled:opacity-40"
+                >
+                  <Delete className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* Submit Action */}
+              <button
+                type="button"
+                disabled={isSubmitting || enteredPin.length !== 6}
+                onClick={() => handlePinSubmit()}
+                className="w-full py-3 bg-[#030A91] text-white rounded-xl text-sm font-bold flex items-center justify-center space-x-2 hover:bg-blue-900 transition-all shadow-md shadow-blue-900/20 disabled:opacity-40 cursor-pointer"
+              >
+                <span>{isSubmitting ? 'Verifying PIN...' : 'Unlock Admin Portal'}</span>
+                <ArrowRight className="w-4 h-4 text-[#FACB00]" />
+              </button>
+
+              {/* Alternative Auth Methods */}
+              <div className="mt-4 pt-3 border-t border-slate-100 flex flex-col space-y-2 text-center text-xs">
+                <button
+                  type="button"
+                  onClick={(e) => handleOpenGoogleModal(e)}
+                  className="text-slate-600 hover:text-[#030A91] font-semibold flex items-center justify-center space-x-1.5 hover:underline cursor-pointer"
+                >
+                  <GoogleIcon className="w-3.5 h-3.5" />
+                  <span>Or sign in with Google Account</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setUsePasswordForAdmin(true)}
+                  className="text-[11px] text-slate-500 hover:text-slate-700 hover:underline cursor-pointer"
+                >
+                  Or use email and password credentials &rarr;
+                </button>
+              </div>
             </div>
           </div>
         ) : selectedRole === 'STAFF' && !useEmailForStaff ? (
