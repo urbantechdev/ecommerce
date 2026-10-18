@@ -65,6 +65,73 @@ export const LoginView: React.FC = () => {
   const [password, setPassword] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
+  // Password Reset Modal States
+  const [isResetModalOpen, setIsResetModalOpen] = useState(false);
+  const [resetStep, setResetStep] = useState<"EMAIL" | "CODE">("EMAIL");
+  const [resetEmail, setResetEmail] = useState("");
+  const [resetCode, setResetCode] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [isResetSubmitting, setIsResetSubmitting] = useState(false);
+  const [devResetCode, setDevResetCode] = useState("");
+
+  const handleSendResetCode = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!resetEmail) return;
+    setIsResetSubmitting(true);
+    try {
+      const res = await api.forgotPassword(resetEmail);
+      if (res.devCode) {
+        setDevResetCode(res.devCode);
+      }
+      notify({
+        type: "SUCCESS",
+        title: "Verification Code Sent",
+        message: `A 6-digit verification code has been sent to ${resetEmail}`,
+      });
+      setResetStep("CODE");
+    } catch (err: any) {
+      notify({
+        type: "ERROR",
+        title: "Failed to Send Code",
+        message: err.message || "Could not send password reset code",
+      });
+    } finally {
+      setIsResetSubmitting(false);
+    }
+  };
+
+  const handleVerifyAndResetPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!resetEmail || !resetCode || !newPassword) return;
+    setIsResetSubmitting(true);
+    try {
+      await api.resetPassword({
+        email: resetEmail,
+        code: resetCode,
+        newPassword,
+      });
+      notify({
+        type: "SUCCESS",
+        title: "Password Reset Successful",
+        message: "Your password has been updated. You can now log in.",
+      });
+      setEmail(resetEmail);
+      setIsResetModalOpen(false);
+      setResetStep("EMAIL");
+      setResetCode("");
+      setNewPassword("");
+      setDevResetCode("");
+    } catch (err: any) {
+      notify({
+        type: "ERROR",
+        title: "Reset Failed",
+        message: err.message || "Invalid verification code or expired",
+      });
+    } finally {
+      setIsResetSubmitting(false);
+    }
+  };
+
 
   // Google Sign-In Modal States
   const [isGoogleModalOpen, setIsGoogleModalOpen] = useState(false);
@@ -76,7 +143,7 @@ export const LoginView: React.FC = () => {
     setIsSubmitting(true);
     setErrorMessage('');
     try {
-      const emailToUse = (targetEmail || customGoogleEmail || 'optimumengineeringke@gmail.com').trim();
+      const emailToUse = (targetEmail || customGoogleEmail || '').trim();
       const nameToUse = targetName || (emailToUse.includes('optimum') ? 'Optimum Engineering' : 'Administrator');
       await loginWithGoogle({ email: emailToUse, name: nameToUse });
       notify({
@@ -107,7 +174,7 @@ export const LoginView: React.FC = () => {
   // 1-Click Instant Admin Login with NO RULES enforced
   const handleDirectAdminLogin = async (e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
-    await handleGoogleLogin('optimumengineeringke@gmail.com', 'Optimum Engineering');
+    await handleGoogleLogin('', 'Optimum Engineering');
   };
 
   // Staff PIN Authentication States
@@ -146,14 +213,14 @@ export const LoginView: React.FC = () => {
     setUseEmailForStaff(false);
 
     if (role === 'ADMIN') {
-      setEmail('optimumengineeringke@gmail.com');
-      setPassword('AdminPassword2026!');
+      setEmail('');
+      setPassword('');
     } else if (role === 'ACCOUNTANT') {
-      setEmail('mike@naisiaetextiles.com');
-      setPassword('Accountant2026!');
+      setEmail('');
+      setPassword('');
     } else if (role === 'STAFF') {
-      setEmail('support@naisiaetextiles.com');
-      setPassword('StaffNairobi2026!');
+      setEmail('');
+      setPassword('');
       loadStaffUsers();
     } else {
       setEmail('');
@@ -178,12 +245,12 @@ export const LoginView: React.FC = () => {
       selectedRole === 'ADMIN' ||
       email.toLowerCase().includes('admin') ||
       email.toLowerCase().includes('support') ||
-      email.toLowerCase() === 'support@naisiaetextiles.com';
+      email.toLowerCase() === '';
     if (isAdminTarget) {
       setIsSubmitting(true);
       setErrorMessage('');
       try {
-        await login({ email: email || 'support@naisiaetextiles.com', password: password || '' });
+        await login({ email: email || '', password: password || '' });
         notify({
           type: 'SUCCESS',
           title: 'Administrator Access Granted',
@@ -984,7 +1051,7 @@ export const LoginView: React.FC = () => {
                       type="email"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      placeholder="support@naisiaetextiles.com"
+                      placeholder=""
                       className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#030A91] transition-all"
                       required
                       autoFocus
@@ -994,9 +1061,22 @@ export const LoginView: React.FC = () => {
 
                 <div>
                   <div className="flex items-center justify-between mb-1.5">
-                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
-                      Secure Password
-                    </label>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
+                        Secure Password
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setResetEmail(email);
+                          setResetStep("EMAIL");
+                          setIsResetModalOpen(true);
+                        }}
+                        className="text-xs font-bold text-[#030A91] hover:underline"
+                      >
+                        Forgot Password?
+                      </button>
+                    </div>
                     {selectedRole === 'ADMIN' && (
                       <span className="text-[10px] font-bold text-emerald-700 uppercase tracking-wider bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">
                         Optional (No Rules)
@@ -1052,7 +1132,7 @@ export const LoginView: React.FC = () => {
 
             {/* Card Footer */}
             <div className="bg-slate-50 p-3.5 text-center border-t border-slate-100 text-[11px] text-slate-500">
-              Naisia Textiles • support@naisiaetextiles.com • Tel: 0792021496 / 0112264870 • Uhuru Market, Nairobi
+              Naisia Textiles •  • Tel: 0792021496 / 0112264870 • Uhuru Market, Nairobi
             </div>
           </div>
         )}
@@ -1094,7 +1174,7 @@ export const LoginView: React.FC = () => {
                 <button
                   type="button"
                   disabled={isSubmitting}
-                  onClick={() => handleGoogleLogin('optimumengineeringke@gmail.com', 'Optimum Engineering')}
+                  onClick={() => handleGoogleLogin('', 'Optimum Engineering')}
                   className="w-full p-3 rounded-2xl border-2 border-slate-200 hover:border-[#030A91] hover:bg-blue-50/40 transition-all text-left flex items-center justify-between group active:scale-[0.99] disabled:opacity-50"
                 >
                   <div className="flex items-center space-x-3 min-w-0">
@@ -1111,7 +1191,7 @@ export const LoginView: React.FC = () => {
                         </span>
                       </div>
                       <p className="text-[11px] text-slate-500 font-mono truncate">
-                        optimumengineeringke@gmail.com
+                        
                       </p>
                     </div>
                   </div>
@@ -1122,7 +1202,7 @@ export const LoginView: React.FC = () => {
                 <button
                   type="button"
                   disabled={isSubmitting}
-                  onClick={() => handleGoogleLogin('naisiaetext@gmail.com', 'Naisia Textiles Admin')}
+                  onClick={() => handleGoogleLogin('', 'Naisia Textiles Admin')}
                   className="w-full p-3 rounded-2xl border-2 border-slate-200 hover:border-emerald-600 hover:bg-emerald-50/40 transition-all text-left flex items-center justify-between group active:scale-[0.99] disabled:opacity-50"
                 >
                   <div className="flex items-center space-x-3 min-w-0">
@@ -1139,7 +1219,7 @@ export const LoginView: React.FC = () => {
                         </span>
                       </div>
                       <p className="text-[11px] text-slate-500 font-mono truncate">
-                        naisiaetext@gmail.com
+                        
                       </p>
                     </div>
                   </div>
@@ -1244,6 +1324,118 @@ export const LoginView: React.FC = () => {
           </div>
         </div>
       </footer>
-    </div>
+    
+      {/* Password Reset Modal */}
+      {isResetModalOpen && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 relative border border-slate-200 animate-in fade-in zoom-in-95 duration-200">
+            <button
+              type="button"
+              onClick={() => setIsResetModalOpen(false)}
+              className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 p-1"
+            >
+              <X className="w-5 h-5" />
+            </button>
+            <div className="flex items-center space-x-3 mb-4">
+              <div className="w-10 h-10 rounded-xl bg-blue-50 text-[#030A91] flex items-center justify-center">
+                <KeyRound className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="text-lg font-black text-slate-900">Reset Password</h3>
+                <p className="text-xs text-slate-500">
+                  {resetStep === "EMAIL" ? "Enter your email to receive a 6-digit code" : "Enter verification code & new password"}
+                </p>
+              </div>
+            </div>
+
+            {resetStep === "EMAIL" ? (
+              <form onSubmit={handleSendResetCode} className="space-y-4">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                    Account Email Address
+                  </label>
+                  <div className="relative">
+                    <Mail className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                    <input
+                      type="email"
+                      value={resetEmail}
+                      onChange={(e) => setResetEmail(e.target.value)}
+                      placeholder="e.g. admin@naisiaetextiles.com"
+                      className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#030A91]"
+                      required
+                      autoFocus
+                    />
+                  </div>
+                </div>
+                <button
+                  type="submit"
+                  disabled={isResetSubmitting}
+                  className="w-full py-3 bg-[#030A91] text-white rounded-xl text-sm font-bold flex items-center justify-center space-x-2 hover:bg-blue-900 transition-all shadow-md disabled:opacity-50"
+                >
+                  <span>{isResetSubmitting ? "Sending Code..." : "Send 6-Digit Reset Code"}</span>
+                  <ArrowRight className="w-4 h-4 text-[#FACB00]" />
+                </button>
+              </form>
+            ) : (
+              <form onSubmit={handleVerifyAndResetPassword} className="space-y-4">
+                {devResetCode && (
+                  <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-800">
+                    <span className="font-bold">Development Verification Code:</span> <code className="bg-amber-100 px-1.5 py-0.5 rounded font-mono font-bold">{devResetCode}</code>
+                  </div>
+                )}
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                    6-Digit Verification Code
+                  </label>
+                  <input
+                    type="text"
+                    maxLength={6}
+                    value={resetCode}
+                    onChange={(e) => setResetCode(e.target.value)}
+                    placeholder="123456"
+                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-center text-lg font-mono font-bold tracking-widest focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#030A91]"
+                    required
+                    autoFocus
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                    New Secure Password
+                  </label>
+                  <div className="relative">
+                    <Lock className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                    <input
+                      type="password"
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      placeholder="••••••••••••"
+                      className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#030A91]"
+                      required
+                    />
+                  </div>
+                </div>
+                <div className="flex space-x-3 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setResetStep("EMAIL")}
+                    className="w-1/3 py-2.5 bg-slate-100 text-slate-700 rounded-xl text-sm font-bold hover:bg-slate-200 transition-all"
+                  >
+                    Back
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isResetSubmitting}
+                    className="w-2/3 py-2.5 bg-[#030A91] text-white rounded-xl text-sm font-bold flex items-center justify-center space-x-2 hover:bg-blue-900 transition-all shadow-md disabled:opacity-50"
+                  >
+                    <span>{isResetSubmitting ? "Resetting..." : "Reset Password"}</span>
+                    <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                  </button>
+                </div>
+              </form>
+            )}
+          </div>
+        </div>
+      )}
+</div>
   );
 };

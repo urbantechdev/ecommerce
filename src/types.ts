@@ -442,4 +442,5 @@ export interface DashboardMetrics {
   }[];
   recentSales: Sale[];
   pendingRetryKraCount: number;
+  kraPin?: string;
 }

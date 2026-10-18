@@ -58,6 +58,16 @@ export const api = {
       method: 'POST',
       body: JSON.stringify(credentials),
     }),
+    forgotPassword: (email: string) =>
+    request<{ success: boolean; message: string; devCode?: string }>('/auth/forgot-password', {
+      method: 'POST',
+      body: JSON.stringify({ email }),
+    }),
+  resetPassword: (payload: { email: string; code: string; newPassword: string }) =>
+    request<{ success: boolean; message: string }>('/auth/reset-password', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
   getStaffUsers: () => request<any[]>('/auth/staff-users'),
   logout: () => request<{ success: boolean }>('/auth/logout', { method: 'POST' }),
   getCurrentUser: () => request<{ user: any }>('/auth/me'),
@@ -315,13 +325,18 @@ export const api = {
   getSettings: () => request<any>('/settings'),
   updateSettings: (data: any) =>
     request<any>('/settings', { method: 'PUT', body: JSON.stringify(data) }),
-  getAuditLogs: (params?: { action?: string; entityType?: string }) => {
+  logUserAction: (payload: { action: string; entityType?: string; entityId?: string; details?: string }) =>
+    request<{ success: boolean }>('/audit-logs/client', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
+  getAuditLogs: (params?: { action?: string; entityType?: string; userId?: string }) => {
     const query = new URLSearchParams();
     if (params?.action) query.append('action', params.action);
     if (params?.entityType) query.append('entityType', params.entityType);
-    return request<any[]>(`/audit-logs?${query.toString()}`);
+    if (params?.userId) query.append('userId', params.userId);
+    return request<any[]>((`/audit-logs?${query.toString()}`));
   },
   getEmails: () => request<any[]>('/emails'),
   testEmail: (to?: string) =>
-    request<any>('/emails/test', { method: 'POST', body: JSON.stringify({ to }) }),
-};
+    request<any>('/emails/test', { method: 'POST', body: JSON.stringify({ to }) }),};

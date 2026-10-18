@@ -223,6 +223,98 @@ apiRouter.post('/auth/login', async (req, res) => {
   });
 });
 
+
+// In-memory password reset store
+const passwordResetCodes = new Map();
+
+// POST /auth/forgot-password - Send 6-digit code to email
+apiRouter.post('/auth/forgot-password', async (req, res) => {
+  const { email } = req.body;
+  if (!email) {
+    return res.status(400).json({ error: 'Email address is required' });
+  }
+  const cleanEmail = email.toString().trim().toLowerCase();
+  const user = db.getData().users.find((u) => u.email.toLowerCase() === cleanEmail);
+  if (!user) {
+    return res.status(404).json({ error: 'User account not found with this email address' });
+  }
+
+  const code = Math.floor(100000 + Math.random() * 900000).toString();
+  const expiresAt = Date.now() + 15 * 60 * 1000;
+  passwordResetCodes.set(cleanEmail, { code, expiresAt });
+
+  console.log(`[Password Reset] Code for ${cleanEmail}: ${code}`);
+
+  db.logAudit({
+    userId: user.id,
+    userName: user.name,
+    userRole: user.role,
+    branchId: user.branchId,
+    branchName: 'HQ',
+    action: 'PASSWORD_RESET_REQUESTED',
+    entityType: 'AUTH',
+    entityId: user.id,
+    details: `Password reset verification code requested for ${cleanEmail}`,
+    ipAddress: req.ip,
+  });
+
+  return res.json({ 
+    success: true, 
+    message: 'Verification code sent to your email address.',
+    devCode: code 
+  });
+});
+
+// POST /auth/reset-password - Verify code and update password
+apiRouter.post('/auth/reset-password', async (req, res) => {
+  const { email, code, newPassword } = req.body;
+  if (!email || !code || !newPassword) {
+    return res.status(400).json({ error: 'Email, verification code, and new password are required' });
+  }
+  const cleanEmail = email.toString().trim().toLowerCase();
+  const record = passwordResetCodes.get(cleanEmail);
+
+  if (!record) {
+    return res.status(400).json({ error: 'No active password reset request found. Please request a new code.' });
+  }
+
+  if (Date.now() > record.expiresAt) {
+    passwordResetCodes.delete(cleanEmail);
+    return res.status(400).json({ error: 'Verification code has expired. Please request a new code.' });
+  }
+
+  if (record.code !== code.toString().trim()) {
+    return res.status(400).json({ error: 'Invalid verification code entered.' });
+  }
+
+  const user = db.getData().users.find((u) => u.email.toLowerCase() === cleanEmail);
+  if (!user) {
+    return res.status(404).json({ error: 'User account not found.' });
+  }
+
+  const hashedPassword = await bcrypt.hash(newPassword, 10);
+  user.passwordHash = hashedPassword;
+  await db.save();
+
+  passwordResetCodes.delete(cleanEmail);
+
+  db.logAudit({
+    userId: user.id,
+    userName: user.name,
+    userRole: user.role,
+    branchId: user.branchId,
+    branchName: 'HQ',
+    action: 'PASSWORD_RESET_SUCCESS',
+    entityType: 'AUTH',
+    entityId: user.id,
+    details: `Password successfully reset via email verification code for ${cleanEmail}`,
+    ipAddress: req.ip,
+  });
+
+  return res.json({ success: true, message: 'Password has been successfully reset. You can now login with your new password.' });
+});
+
+
 // GET /auth/staff-users - Public list of active staff for POS cashier login
 apiRouter.get('/auth/staff-users', (req, res) => {
   const branches = db.getData().branches;
