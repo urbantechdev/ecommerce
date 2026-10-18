@@ -55,7 +55,7 @@
       "branchId": "all",
       "status": "ACTIVE",
       "createdAt": "2026-10-09T06:24:27.719Z",
-      "lastLogin": "2026-10-18T20:30:40.901Z"
+      "lastLogin": "2026-10-18T21:17:08.222Z"
     },
     {
       "id": "usr-1791527847945",
@@ -81,6 +81,18 @@
       "pin": "333333",
       "status": "ACTIVE",
       "createdAt": "2026-10-09T06:39:17.315Z"
+    },
+    {
+      "id": "usr-1792361247894",
+      "name": "Naisiae Textiles Admin",
+      "email": "naisiaetext@gmail.com",
+      "passwordHash": "",
+      "role": "ADMIN",
+      "branchId": "all",
+      "phone": "",
+      "status": "ACTIVE",
+      "createdAt": "2026-10-18T22:07:27.894Z",
+      "lastLogin": "2026-10-18T22:07:27.894Z"
     }
   ],
   "products": [],
@@ -95,6 +107,48 @@
   "purchases": [],
   "expenses": [],
   "auditLogs": [
+    {
+      "id": "8e117332-9a73-4e0f-97ca-4ef57a3cea74",
+      "timestamp": "2026-10-18T21:17:08.224Z",
+      "userId": "usr-admin-1791527067719",
+      "userName": "Optimum Engineering",
+      "userRole": "ADMIN",
+      "branchId": "all",
+      "branchName": "All Branches (HQ)",
+      "action": "GOOGLE_OAUTH_LOGIN",
+      "entityType": "AUTH",
+      "entityId": "usr-admin-1791527067719",
+      "details": "Administrator Optimum Engineering signed in successfully via Google Account (naisiaetext@gmail.com)",
+      "ipAddress": "127.0.0.1"
+    },
+    {
+      "id": "5f876553-23d6-430c-8b4c-73ad01ece415",
+      "timestamp": "2026-10-18T21:15:56.722Z",
+      "userId": "usr-admin-1791527067719",
+      "userName": "Optimum Engineering",
+      "userRole": "ADMIN",
+      "branchId": "all",
+      "branchName": "N/A",
+      "action": "USER_LOGOUT",
+      "entityType": "AUTH",
+      "entityId": "usr-admin-1791527067719",
+      "details": "User Optimum Engineering logged out",
+      "ipAddress": "127.0.0.1"
+    },
+    {
+      "id": "fc662466-4d33-4042-ab03-a24983b0f5ce",
+      "timestamp": "2026-10-18T21:15:50.551Z",
+      "userId": "usr-admin-1791527067719",
+      "userName": "Optimum Engineering",
+      "userRole": "ADMIN",
+      "branchId": "all",
+      "branchName": "All Branches (HQ)",
+      "action": "GOOGLE_OAUTH_LOGIN",
+      "entityType": "AUTH",
+      "entityId": "usr-admin-1791527067719",
+      "details": "Administrator Optimum Engineering signed in successfully via Google Account (naisiaetext@gmail.com)",
+      "ipAddress": "127.0.0.1"
+    },
     {
       "id": "bf35a6f4-9bca-4af2-86cb-6b56fa9afa17",
       "timestamp": "2026-10-18T20:30:40.902Z",
