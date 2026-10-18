@@ -12,8 +12,7 @@ import {
   X,
   FileSpreadsheet,
   CheckCircle2,
-  Eye,
-  Download
+  Eye
 } from 'lucide-react';
 import { StatusBadge } from '../components/StatusBadge';
 import { QuotationPreviewModal } from '../components/QuotationPreviewModal';
@@ -235,20 +234,11 @@ export const QuotationsView: React.FC = () => {
                     <div className="flex items-center justify-center space-x-1.5">
                       <button
                         onClick={() => setPreviewQuotation(q)}
-                        className="inline-flex items-center px-2 py-1 bg-blue-50 hover:bg-[#030A91] hover:text-white text-[#030A91] border border-blue-200 rounded-lg text-[10px] font-bold transition-colors shadow-2xs cursor-pointer"
+                        className="inline-flex items-center px-2.5 py-1 bg-blue-50 hover:bg-[#030A91] hover:text-white text-[#030A91] border border-blue-200 rounded-lg text-[10px] font-bold transition-colors shadow-2xs"
                         title="Preview & Print Quotation"
                       >
                         <Eye className="w-3.5 h-3.5 mr-1" />
                         <span>Preview</span>
-                      </button>
-
-                      <button
-                        onClick={() => setPreviewQuotation(q)}
-                        className="inline-flex items-center px-2 py-1 bg-emerald-50 hover:bg-emerald-600 hover:text-white text-emerald-800 border border-emerald-200 rounded-lg text-[10px] font-bold transition-colors shadow-2xs cursor-pointer"
-                        title="Download Quotation as PDF"
-                      >
-                        <Download className="w-3.5 h-3.5 mr-1" />
-                        <span>PDF</span>
                       </button>
 
                       {q.status !== 'CONVERTED' ? (

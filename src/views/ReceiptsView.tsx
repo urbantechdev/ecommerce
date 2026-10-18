@@ -3,7 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import { useNotification } from '../context/NotificationContext';
 import { api } from '../api';
 import { PaymentReceipt } from '../types';
-import { Receipt, Search, Printer, Mail, ExternalLink, Download } from 'lucide-react';
+import { Receipt, Search, Printer, Mail, ExternalLink } from 'lucide-react';
 import { ReceiptModal } from '../components/ReceiptModal';
 
 export const ReceiptsView: React.FC = () => {
@@ -121,24 +121,13 @@ export const ReceiptsView: React.FC = () => {
                     {r.cuNumber || '013000000000001'}
                   </td>
                   <td className="py-3 px-4 text-center">
-                    <div className="flex items-center justify-center space-x-1.5">
-                      <button
-                        onClick={() => handleViewReceipt(r)}
-                        className="inline-flex items-center px-2 py-1 bg-blue-50 hover:bg-[#030A91] hover:text-white text-[#030A91] border border-blue-200 rounded-lg text-[10px] font-bold transition-colors shadow-2xs cursor-pointer"
-                        title="Preview & Print Receipt"
-                      >
-                        <Printer className="w-3.5 h-3.5 mr-1" />
-                        <span>Print</span>
-                      </button>
-                      <button
-                        onClick={() => handleViewReceipt(r)}
-                        className="inline-flex items-center px-2 py-1 bg-emerald-50 hover:bg-emerald-600 hover:text-white text-emerald-800 border border-emerald-200 rounded-lg text-[10px] font-bold transition-colors shadow-2xs cursor-pointer"
-                        title="Download Receipt as PDF"
-                      >
-                        <Download className="w-3.5 h-3.5 mr-1" />
-                        <span>PDF</span>
-                      </button>
-                    </div>
+                    <button
+                      onClick={() => handleViewReceipt(r)}
+                      className="inline-flex items-center px-2.5 py-1 bg-blue-50 hover:bg-[#030A91] hover:text-white text-[#030A91] border border-blue-200 rounded-lg text-[11px] font-bold transition-colors shadow-2xs"
+                    >
+                      <Printer className="w-3.5 h-3.5 mr-1" />
+                      <span>Preview & Print</span>
+                    </button>
                   </td>
                 </tr>
               ))}

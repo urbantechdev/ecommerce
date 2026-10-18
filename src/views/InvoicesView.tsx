@@ -20,8 +20,7 @@ import {
   Building,
   User,
   Layers,
-  Sparkles,
-  Download
+  Sparkles
 } from 'lucide-react';
 import { StatusBadge } from '../components/StatusBadge';
 import { InvoicePreviewModal } from '../components/InvoicePreviewModal';
@@ -330,7 +329,7 @@ export const InvoicesView: React.FC = () => {
             Institutional & School Invoices
           </h2>
           <p className="text-xs text-slate-500 mt-0.5">
-            KRA compliant invoices, custom billing, and instant email dispatch.
+            KRA eTIMS compliant tax invoices, custom billing, and instant email dispatch.
           </p>
         </div>
 
@@ -386,6 +385,7 @@ export const InvoicesView: React.FC = () => {
                 <th className="py-3 px-3 text-right">Total (KES)</th>
                 <th className="py-3 px-3 text-right">Balance Due</th>
                 <th className="py-3 px-3">Status</th>
+                <th className="py-3 px-3">KRA CU #</th>
                 <th className="py-3 px-4 text-center">Action</th>
               </tr>
             </thead>
@@ -414,24 +414,18 @@ export const InvoicesView: React.FC = () => {
                   <td className="py-3 px-3">
                     <StatusBadge status={inv.status} type="invoice" />
                   </td>
+                  <td className="py-3 px-3 text-slate-600 font-mono text-[11px]">
+                    {inv.cuInvoiceNumber || 'Pending eTIMS'}
+                  </td>
                   <td className="py-3 px-4 text-center">
                     <div className="flex items-center justify-center space-x-1.5">
                       <button
                         onClick={() => setPreviewInvoice(inv)}
-                        className="inline-flex items-center px-2 py-1 rounded-lg bg-blue-50 hover:bg-[#030A91] hover:text-white text-[#030A91] border border-blue-200 text-[10px] font-bold transition-colors shadow-2xs cursor-pointer"
-                        title="Preview & Print Official Invoice"
+                        className="inline-flex items-center px-2.5 py-1 rounded-lg bg-blue-50 hover:bg-[#030A91] hover:text-white text-[#030A91] border border-blue-200 text-[10px] font-bold transition-colors shadow-2xs"
+                        title="Preview & Print Official Tax Invoice"
                       >
                         <Eye className="w-3.5 h-3.5 mr-1" />
                         <span>Preview</span>
-                      </button>
-
-                      <button
-                        onClick={() => setPreviewInvoice(inv)}
-                        className="inline-flex items-center px-2 py-1 rounded-lg bg-emerald-50 hover:bg-emerald-600 hover:text-white text-emerald-800 border border-emerald-200 text-[10px] font-bold transition-colors shadow-2xs cursor-pointer"
-                        title="Download Invoice as PDF"
-                      >
-                        <Download className="w-3.5 h-3.5 mr-1" />
-                        <span>PDF</span>
                       </button>
 
                       {canAccessFinancials && inv.status !== 'PAID' && inv.status !== 'VOIDED' && (
@@ -478,7 +472,7 @@ export const InvoicesView: React.FC = () => {
               <div className="flex items-center space-x-2">
                 <FileSpreadsheet className="w-5 h-5 text-[#FACB00]" />
                 <h3 className="font-black text-sm sm:text-base">
-                  Create Custom Invoice
+                  Create Custom Tax Invoice
                 </h3>
               </div>
               <button
@@ -1048,7 +1042,7 @@ export const InvoicesView: React.FC = () => {
         </div>
       )}
 
-      {/* Official Invoice Preview Modal */}
+      {/* Official Tax Invoice Preview Modal */}
       <InvoicePreviewModal
         invoice={previewInvoice}
         isOpen={Boolean(previewInvoice)}

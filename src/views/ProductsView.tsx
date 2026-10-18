@@ -14,6 +14,7 @@ import {
   Barcode,
   Image as ImageIcon,
   Upload,
+  Download,
   Link as LinkIcon,
   Trash2,
   ExternalLink,
@@ -36,7 +37,6 @@ import {
 import { StatusBadge } from '../components/StatusBadge';
 import { ProductPriceSetModal } from '../components/ProductPriceSetModal';
 import { SkuImageManagerModal } from '../components/SkuImageManagerModal';
-import { ProductDetailsModal } from '../components/ProductDetailsModal';
 import {
   INVENTORY_SECTORS,
   COLLEGE_INSTITUTIONS,
@@ -74,6 +74,116 @@ export const normalizeImageUrl = (url: string): string => {
   return trimmed;
 };
 
+// Helper to parse CSV uniform catalogue files into Product objects with variants
+export const parseCSVToProducts = (csvText: string): Product[] => {
+  const lines = csvText.trim().split(/\r?\n/).filter((l) => l.trim().length > 0);
+  if (lines.length < 2) return [];
+
+  const parseLine = (line: string): string[] => {
+    const result: string[] = [];
+    let cur = '';
+    let inQuotes = false;
+    for (let i = 0; i < line.length; i++) {
+      const c = line[i];
+      if (c === '"') {
+        if (inQuotes && line[i + 1] === '"') {
+          cur += '"';
+          i++;
+        } else {
+          inQuotes = !inQuotes;
+        }
+      } else if (c === ',' && !inQuotes) {
+        result.push(cur.trim());
+        cur = '';
+      } else {
+        cur += c;
+      }
+    }
+    result.push(cur.trim());
+    return result;
+  };
+
+  const headers = parseLine(lines[0]).map((h) => h.toLowerCase().replace(/[^a-z0-9]/g, ''));
+  const colName = headers.findIndex((h) => h.includes('name') || h.includes('product') || h.includes('item'));
+  const colSchool = headers.findIndex((h) => h.includes('school') || h.includes('institution'));
+  const colCategory = headers.findIndex((h) => h.includes('category') || h.includes('garment'));
+  const colSector = headers.findIndex((h) => h.includes('sector'));
+  const colGender = headers.findIndex((h) => h.includes('gender'));
+  const colDesc = headers.findIndex((h) => h.includes('desc'));
+  const colSku = headers.findIndex((h) => h.includes('sku'));
+  const colSize = headers.findIndex((h) => h.includes('size'));
+  const colColor = headers.findIndex((h) => h.includes('color') || h.includes('colour'));
+  const colCost = headers.findIndex((h) => h.includes('cost') || h.includes('buying'));
+  const colPrice = headers.findIndex((h) => h.includes('price') || h.includes('selling') || h.includes('retail'));
+  const colStock = headers.findIndex((h) => h.includes('stock') || h.includes('qty') || h.includes('quantity'));
+  const colImage = headers.findIndex((h) => h.includes('image') || h.includes('photo') || h.includes('pic') || h.includes('url'));
+
+  const productMap = new Map<string, Product>();
+
+  for (let i = 1; i < lines.length; i++) {
+    const cols = parseLine(lines[i]);
+    const name = colName >= 0 && cols[colName] ? cols[colName] : `Uniform Item #${i}`;
+    const school = colSchool >= 0 && cols[colSchool] ? cols[colSchool] : 'General Uniform';
+    const category = colCategory >= 0 && cols[colCategory] ? cols[colCategory] : 'Uniforms';
+    const sector = (colSector >= 0 && cols[colSector] ? cols[colSector] : 'SECONDARY') as InventorySectorId;
+    const rawGender = colGender >= 0 && cols[colGender] ? cols[colGender].toUpperCase() : 'UNISEX';
+    const gender: 'BOYS' | 'GIRLS' | 'UNISEX' = ['BOYS', 'GIRLS', 'UNISEX'].includes(rawGender)
+      ? (rawGender as any)
+      : 'UNISEX';
+    const description = colDesc >= 0 && cols[colDesc] ? cols[colDesc] : '';
+    const sku = colSku >= 0 && cols[colSku] ? cols[colSku] : `NT-SKU-${i}`;
+    const size = colSize >= 0 && cols[colSize] ? cols[colSize] : 'Standard';
+    const color = colColor >= 0 && cols[colColor] ? cols[colColor] : 'Standard';
+    const costPrice = colCost >= 0 && !isNaN(Number(cols[colCost])) ? Number(cols[colCost]) : 600;
+    const sellingPrice = colPrice >= 0 && !isNaN(Number(cols[colPrice])) ? Number(cols[colPrice]) : 1000;
+    const stock = colStock >= 0 && !isNaN(Number(cols[colStock])) ? Number(cols[colStock]) : 20;
+    const imageUrl = colImage >= 0 && cols[colImage] ? cols[colImage] : '';
+
+    const key = `${name.toLowerCase()}::${school.toLowerCase()}`;
+    if (!productMap.has(key)) {
+      const prodId = `prod-${Date.now()}-${i}`;
+      productMap.set(key, {
+        id: prodId,
+        name,
+        school,
+        sector,
+        category,
+        garmentType: category,
+        gender,
+        description,
+        taxCategory: 'VAT_16',
+        imageUrl: imageUrl || undefined,
+        active: true,
+        variants: [],
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      });
+    }
+
+    const prod = productMap.get(key)!;
+    if (imageUrl && !prod.imageUrl) {
+      prod.imageUrl = imageUrl;
+    }
+
+    prod.variants.push({
+      id: `var-${prod.id}-${prod.variants.length + 1}`,
+      sku,
+      barcode: `616${Math.floor(100000000 + Math.random() * 900000000)}`,
+      size,
+      color,
+      costPrice,
+      sellingPrice,
+      branchStock: {
+        'branch-nbi-cbd': stock,
+      },
+      reorderLevel: 10,
+      reorderQuantity: 30,
+    });
+  }
+
+  return Array.from(productMap.values());
+};
+
 export const ProductsView: React.FC = () => {
   const { canAccessFinancials, branches } = useAuth();
   const { notify } = useNotification();
@@ -87,6 +197,137 @@ export const ProductsView: React.FC = () => {
   const [selectedCollegeInst, setSelectedCollegeInst] = useState<string>('ALL');
   const [selectedProfDomain, setSelectedProfDomain] = useState<string>('ALL');
   const [isLoading, setIsLoading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Export Catalogue as clean CSV
+  const exportCatalogue = () => {
+    if (!products.length) {
+      notify({ type: 'INFO', title: 'Catalogue Empty', message: 'No items in the catalogue to export yet.' });
+      return;
+    }
+
+    const headers = [
+      'Product Name',
+      'School',
+      'Sector',
+      'Category',
+      'Gender',
+      'Description',
+      'SKU',
+      'Size',
+      'Color',
+      'Cost Price',
+      'Selling Price',
+      'Total Stock',
+      'Image URL'
+    ];
+
+    const escapeCsv = (val: any) => `"${String(val ?? '').replace(/"/g, '""')}"`;
+    const rows: string[] = [headers.join(',')];
+
+    products.forEach((p) => {
+      if (p.variants && p.variants.length > 0) {
+        p.variants.forEach((v) => {
+          const totalStock = Object.values(v.branchStock || {}).reduce(
+            (sum, n) => sum + (typeof n === 'number' ? n : 0),
+            0
+          );
+          rows.push([
+            escapeCsv(p.name),
+            escapeCsv(p.school),
+            escapeCsv(p.sector || 'SECONDARY'),
+            escapeCsv(p.category || 'Uniform'),
+            escapeCsv(p.gender || 'UNISEX'),
+            escapeCsv(p.description || ''),
+            escapeCsv(v.sku),
+            escapeCsv(v.size),
+            escapeCsv(v.color),
+            v.costPrice,
+            v.sellingPrice,
+            totalStock,
+            escapeCsv(v.imageUrl || p.imageUrl || '')
+          ].join(','));
+        });
+      } else {
+        rows.push([
+          escapeCsv(p.name),
+          escapeCsv(p.school),
+          escapeCsv(p.sector || 'SECONDARY'),
+          escapeCsv(p.category || 'Uniform'),
+          escapeCsv(p.gender || 'UNISEX'),
+          escapeCsv(p.description || ''),
+          escapeCsv(`SKU-${p.id}`),
+          escapeCsv('Standard'),
+          escapeCsv('Standard'),
+          600,
+          1000,
+          0,
+          escapeCsv(p.imageUrl || '')
+        ].join(','));
+      }
+    });
+
+    const blob = new Blob([rows.join('\n')], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `naisiae-catalogue-${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+
+    notify({
+      type: 'SUCCESS',
+      title: 'Catalogue Exported',
+      message: `Exported ${products.length} products to CSV spreadsheet format.`,
+    });
+  };
+
+  // Import Catalogue supporting both CSV and JSON
+  const importCatalogue = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = async (event) => {
+      try {
+        const rawContent = (event.target?.result as string) || '';
+        const trimmed = rawContent.trim();
+        let importedProducts: Product[] = [];
+
+        if (file.name.endsWith('.json') || trimmed.startsWith('[') || trimmed.startsWith('{')) {
+          const parsed = JSON.parse(trimmed);
+          importedProducts = Array.isArray(parsed) ? parsed : (parsed.products || []);
+        } else {
+          importedProducts = parseCSVToProducts(rawContent);
+        }
+
+        if (!importedProducts || importedProducts.length === 0) {
+          throw new Error('No valid products detected in the uploaded file.');
+        }
+
+        await api.importProducts(importedProducts);
+        notify({
+          type: 'SUCCESS',
+          title: 'Catalogue Imported',
+          message: `Successfully uploaded ${importedProducts.length} items from ${file.name}.`,
+        });
+        fetchProducts();
+      } catch (err: any) {
+        notify({
+          type: 'ERROR',
+          title: 'Import Failed',
+          message: err.message || 'Could not parse uploaded catalogue file. Verify CSV or JSON format.',
+        });
+      } finally {
+        if (fileInputRef.current) {
+          fileInputRef.current.value = '';
+        }
+      }
+    };
+    reader.readAsText(file);
+  };
 
   // New Product Modal States
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -151,10 +392,6 @@ export const ProductsView: React.FC = () => {
   // SKU Image Manager Modal
   const [isSkuImageModalOpen, setIsSkuImageModalOpen] = useState(false);
   const [skuModalInitialSku, setSkuModalInitialSku] = useState<string | undefined>(undefined);
-  
-  // Product Details Modal for Mobile
-  const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
-  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
 
   // Single Product Quick Price Set state inside Edit Modal
   const [quickSetPriceInput, setQuickSetPriceInput] = useState<string>('');
@@ -502,52 +739,91 @@ export const ProductsView: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      {/* Top Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      {/* Top Header & Action Toolbar */}
+      <div className="bg-white p-4 sm:p-6 rounded-2xl border border-slate-200 shadow-xs flex flex-col xl:flex-row xl:items-center justify-between gap-4">
         <div>
-          <h2 className="text-xl font-black text-slate-900 tracking-tight">
-            School Uniform Master Catalog
-          </h2>
-          <p className="text-xs text-slate-500 mt-0.5">
+          <div className="flex items-center space-x-2">
+            <div className="w-8 h-8 rounded-xl bg-blue-50 text-[#030A91] flex items-center justify-center shrink-0">
+              <Tag className="w-4 h-4" />
+            </div>
+            <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
+              School Uniform Master Catalog
+            </h2>
+            <span className="hidden sm:inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-700 border border-slate-200">
+              {products.length} Products
+            </span>
+          </div>
+          <p className="text-xs sm:text-sm text-slate-500 mt-1 max-w-2xl">
             Manage school garments, size specifications, product imagery from Drive or links, and pricing.
           </p>
         </div>
 
         {canAccessFinancials && (
-          <div className="flex flex-wrap items-center gap-2">
-            <button
-              onClick={() => {
-                setSkuModalInitialSku(undefined);
-                setIsSkuImageModalOpen(true);
-              }}
-              className="inline-flex items-center px-3.5 py-2 bg-gradient-to-r from-blue-700 to-[#030A91] hover:from-blue-800 hover:to-blue-950 text-white rounded-xl text-xs font-bold transition-all shadow-xs"
-            >
-              <ImageIcon className="w-4 h-4 mr-1.5 text-[#FACB00]" />
-              <span>SKU Image Files & Categories</span>
-            </button>
-
-            <button
-              onClick={() => setIsPriceSetModalOpen(true)}
-              className="inline-flex items-center px-3.5 py-2 bg-white hover:bg-slate-50 text-[#030A91] border-2 border-[#030A91] rounded-xl text-xs font-bold transition-all shadow-xs"
-            >
-              <SlidersHorizontal className="w-4 h-4 mr-1.5 text-[#030A91]" />
-              <span>Batch Price Set</span>
-            </button>
-
+          <div className="flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center gap-2">
+            {/* Primary Action Button (Full width on mobile, auto width on desktop) */}
             <button
               onClick={() => setIsCreateModalOpen(true)}
-              className="inline-flex items-center px-4 py-2 bg-[#030A91] text-white rounded-xl text-xs font-bold hover:bg-blue-900 transition-colors shadow-sm"
+              className="w-full sm:w-auto inline-flex items-center justify-center px-4 py-2.5 bg-[#030A91] text-[#FACB00] rounded-xl text-xs font-black hover:bg-blue-900 active:scale-[0.98] transition-all shadow-sm"
             >
-              <Plus className="w-4 h-4 mr-1.5 text-[#FACB00]" />
+              <Plus className="w-4 h-4 mr-1.5 stroke-[3]" />
               <span>Add New Uniform Item</span>
             </button>
+
+            {/* Action Grid: 2x2 grid on mobile phones (<sm), flex inline on larger screens */}
+            <div className="grid grid-cols-2 sm:flex sm:flex-wrap items-center gap-2 w-full sm:w-auto">
+              <button
+                onClick={() => {
+                  setSkuModalInitialSku(undefined);
+                  setIsSkuImageModalOpen(true);
+                }}
+                className="w-full sm:w-auto inline-flex items-center justify-center px-3.5 py-2 bg-gradient-to-r from-blue-700 to-[#030A91] hover:from-blue-800 hover:to-blue-950 text-white rounded-xl text-xs font-bold transition-all shadow-xs"
+                title="SKU Image Files & Categories"
+              >
+                <ImageIcon className="w-3.5 h-3.5 mr-1.5 text-[#FACB00] shrink-0" />
+                <span className="truncate">SKU Images</span>
+              </button>
+
+              <button
+                onClick={() => setIsPriceSetModalOpen(true)}
+                className="w-full sm:w-auto inline-flex items-center justify-center px-3.5 py-2 bg-white hover:bg-slate-50 text-[#030A91] border-2 border-[#030A91] rounded-xl text-xs font-bold transition-all shadow-xs"
+                title="Batch Price Set"
+              >
+                <SlidersHorizontal className="w-3.5 h-3.5 mr-1.5 text-[#030A91] shrink-0" />
+                <span className="truncate">Batch Price Set</span>
+              </button>
+
+              <button
+                onClick={exportCatalogue}
+                className="w-full sm:w-auto inline-flex items-center justify-center px-3.5 py-2 bg-white text-slate-700 border border-slate-200 hover:bg-slate-50 hover:border-slate-300 rounded-xl text-xs font-bold transition-all shadow-xs"
+                title="Export Catalogue as CSV spreadsheet"
+              >
+                <Download className="w-3.5 h-3.5 mr-1.5 text-blue-600 shrink-0" />
+                <span className="truncate">Export Catalogue</span>
+              </button>
+
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                className="w-full sm:w-auto inline-flex items-center justify-center px-3.5 py-2 bg-emerald-50 text-emerald-800 border border-emerald-300 hover:bg-emerald-100 rounded-xl text-xs font-bold transition-all shadow-xs"
+                title="Import Catalogue (CSV or JSON)"
+              >
+                <Upload className="w-3.5 h-3.5 mr-1.5 text-emerald-600 shrink-0" />
+                <span className="truncate">Import Catalogue</span>
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  className="hidden"
+                  accept=".csv,.json,text/csv,application/json"
+                  onChange={importCatalogue}
+                />
+              </button>
+            </div>
           </div>
         )}
       </div>
 
       {/* Filter Bar */}
-      <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs flex flex-wrap items-center justify-between gap-3">
-        <div className="flex-1 min-w-[240px] relative">
+      <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+        <div className="flex-1 relative">
           <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
           <input
             type="text"
@@ -558,11 +834,11 @@ export const ProductsView: React.FC = () => {
           />
         </div>
 
-        <div className="flex items-center space-x-2">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
           <select
             value={selectedSchool}
             onChange={(e) => setSelectedSchool(e.target.value)}
-            className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold"
+            className="w-full sm:w-auto px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#030A91]"
           >
             <option value="ALL">All Schools</option>
             {schools.map((s) => (
@@ -575,7 +851,7 @@ export const ProductsView: React.FC = () => {
           <select
             value={selectedCategory}
             onChange={(e) => setSelectedCategory(e.target.value)}
-            className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold"
+            className="w-full sm:w-auto px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#030A91]"
           >
             <option value="ALL">All Uniform Categories ({availableCategoriesList.length})</option>
             {availableCategoriesList.map((cat) => (
@@ -587,19 +863,12 @@ export const ProductsView: React.FC = () => {
         </div>
       </div>
 
-
       {/* Products Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
         {filtered.map((prod) => (
           <div
             key={prod.id}
-            onClick={() => {
-              if (window.innerWidth < 768) {
-                setSelectedProduct(prod);
-                setIsDetailsModalOpen(true);
-              }
-            }}
-            className="cursor-pointer bg-white rounded-3xl border border-slate-200 shadow-xs hover:shadow-md transition-all overflow-hidden flex flex-col justify-between group"
+            className="bg-white rounded-3xl border border-slate-200 shadow-xs hover:shadow-md transition-all overflow-hidden flex flex-col justify-between group"
           >
             <div>
               {/* Product Image Banner */}
@@ -1839,13 +2108,6 @@ export const ProductsView: React.FC = () => {
           products={products}
           onRefresh={fetchProducts}
           initialSku={skuModalInitialSku}
-        />
-      )}
-      {selectedProduct && (
-        <ProductDetailsModal
-          product={selectedProduct}
-          isOpen={isDetailsModalOpen}
-          onClose={() => setIsDetailsModalOpen(false)}
         />
       )}
     </div>

@@ -42,8 +42,8 @@ export async function fiscalizeTransaction(
   simulateOffline = false
 ): Promise<KraFiscalizationResult> {
   const settings = db.getData().settings;
-  const traderPin = settings.kraPin || 'P051839281Z';
-  const oscuSerial = settings.kraOscuSerial || 'NAISIAE-OSCU-001';
+  const traderPin = settings.kraPin || '';
+  const oscuSerial = settings.kraOscuSerial || '';
 
   cuSequenceCounter++;
   const cuInvoiceNumber = `0130${String(cuSequenceCounter).padStart(11, '0')}`;

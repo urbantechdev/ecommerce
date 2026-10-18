@@ -223,151 +223,48 @@ apiRouter.post('/auth/login', async (req, res) => {
   });
 });
 
-// GET /auth/staff-users - Public list of active staff and users for PIN login
+// GET /auth/staff-users - Public list of active staff for POS cashier login
 apiRouter.get('/auth/staff-users', (req, res) => {
   const branches = db.getData().branches;
   const branchMap = new Map(branches.map((b) => [b.id, b.name]));
 
   const staff = db
     .getData()
-    .users.filter((u) => u.status === 'ACTIVE')
+    .users.filter((u) => u.status === 'ACTIVE' && u.role === 'STAFF')
     .map((u) => ({
       id: u.id,
-      name: u.role === 'ADMIN' ? `${u.name} (Administrator)` : u.name,
+      name: u.name,
       email: u.email,
       role: u.role,
       branchId: u.branchId,
       branchName: u.branchId === 'all' ? 'Consolidated / All Branches' : branchMap.get(u.branchId) || 'Station',
       phone: u.phone || '',
-      hasPin: Boolean(u.pin || u.role === 'ADMIN'),
+      hasPin: Boolean(u.pin),
     }));
 
   return res.json(staff);
 });
 
-// POST /auth/admin-pin-login - Authenticate Administrator using 6-digit PIN (202020)
-apiRouter.post('/auth/admin-pin-login', async (req, res) => {
-  const { pin } = req.body;
-  const cleanPin = String(pin || '').trim();
-
-  if (cleanPin !== '202020') {
-    return res.status(401).json({ error: 'Incorrect Administrator PIN. Access denied.' });
-  }
-
-  let adminUser = db.getData().users.find((u) => u.role === 'ADMIN');
-  if (!adminUser) {
-    adminUser = {
-      id: 'usr-admin-1791527067719',
-      name: 'Optimum Engineering',
-      email: 'optimumengineeringke@gmail.com',
-      passwordHash: '',
-      role: 'ADMIN',
-      branchId: 'all',
-      pin: '202020',
-      status: 'ACTIVE',
-      createdAt: new Date().toISOString(),
-      lastLogin: new Date().toISOString(),
-      phone: '+254 700 000 000',
-    };
-    db.getData().users.push(adminUser);
-  }
-
-  adminUser.lastLogin = new Date().toISOString();
-  await db.save();
-
-  const token = createSession(adminUser.id);
-  const branch = db.getData().branches.find((b) => b.id === adminUser.branchId);
-
-  db.logAudit({
-    userId: adminUser.id,
-    userName: adminUser.name,
-    userRole: adminUser.role,
-    branchId: adminUser.branchId,
-    branchName: branch ? branch.name : 'All Branches (HQ)',
-    action: 'ADMIN_PIN_LOGIN_SUCCESS',
-    entityType: 'AUTH',
-    entityId: adminUser.id,
-    details: `Administrator ${adminUser.name} authenticated successfully via PIN 202020`,
-    ipAddress: req.ip,
-  });
-
-  return res.json({
-    token,
-    user: {
-      id: adminUser.id,
-      name: adminUser.name,
-      email: adminUser.email,
-      role: adminUser.role,
-      branchId: adminUser.branchId,
-      branchName: branch ? branch.name : 'All Branches (HQ)',
-      phone: adminUser.phone,
-    },
-  });
-});
-
-// POST /auth/pin-login - Authenticate staff or administrator using 6-digit PIN
+// POST /auth/pin-login - Authenticate staff using user selection and 6-digit PIN
 apiRouter.post('/auth/pin-login', async (req, res) => {
   const { userId, pin } = req.body;
-  if (!pin) {
-    return res.status(400).json({ error: '6-digit PIN is required' });
+  if (!userId || !pin) {
+    return res.status(400).json({ error: 'Staff member selection and 6-digit PIN are required' });
   }
 
-  const cleanPin = String(pin).trim();
-
-  // Special handling: if PIN is 202020, grant Administrator session
-  if (cleanPin === '202020') {
-    const adminUser = db.getData().users.find((u) => u.role === 'ADMIN');
-    if (adminUser) {
-      adminUser.lastLogin = new Date().toISOString();
-      await db.save();
-
-      const token = createSession(adminUser.id);
-      const branch = db.getData().branches.find((b) => b.id === adminUser.branchId);
-
-      db.logAudit({
-        userId: adminUser.id,
-        userName: adminUser.name,
-        userRole: adminUser.role,
-        branchId: adminUser.branchId,
-        branchName: branch ? branch.name : 'All Branches (HQ)',
-        action: 'ADMIN_PIN_LOGIN_SUCCESS',
-        entityType: 'AUTH',
-        entityId: adminUser.id,
-        details: `Administrator ${adminUser.name} authenticated via 6-digit PIN 202020`,
-        ipAddress: req.ip,
-      });
-
-      return res.json({
-        token,
-        user: {
-          id: adminUser.id,
-          name: adminUser.name,
-          email: adminUser.email,
-          role: adminUser.role,
-          branchId: adminUser.branchId,
-          branchName: branch ? branch.name : 'All Branches (HQ)',
-          phone: adminUser.phone,
-        },
-      });
-    }
-  }
-
-  let user = userId ? db.getData().users.find((u) => u.id === userId) : null;
-  if (!user && !userId) {
-    user = db.getData().users.find((u) => u.pin === cleanPin && u.status === 'ACTIVE');
-  }
-
+  const user = db.getData().users.find((u) => u.id === userId);
   if (!user) {
-    return res.status(404).json({ error: 'User profile not found in ERP' });
+    return res.status(404).json({ error: 'Staff user profile not found in ERP' });
   }
 
   if (user.status !== 'ACTIVE') {
-    return res.status(403).json({ error: 'User account is inactive. Please contact administration.' });
+    return res.status(403).json({ error: 'Staff account is inactive. Please contact administration.' });
   }
 
-  const expectedPin = user.pin || (user.role === 'ADMIN' ? '202020' : '123456');
+  const expectedPin = user.pin || '123456';
+  const cleanPin = String(pin).trim();
 
-  if (cleanPin !== expectedPin && !(user.role === 'ADMIN' && cleanPin === '202020')) {
+  if (cleanPin !== expectedPin) {
     db.logAudit({
       userId: user.id,
       userName: user.name,
@@ -380,7 +277,7 @@ apiRouter.post('/auth/pin-login', async (req, res) => {
       details: `Incorrect 6-digit PIN entered for ${user.name}`,
       ipAddress: req.ip,
     });
-    return res.status(401).json({ error: 'Incorrect 6-digit PIN. Please re-enter.' });
+    return res.status(401).json({ error: 'Incorrect 6-digit PIN. Please re-enter or check with administrator.' });
   }
 
   user.lastLogin = new Date().toISOString();
@@ -1297,47 +1194,6 @@ apiRouter.post('/inventory/adjust', requireAuth, requireRoles('ADMIN', 'ACCOUNTA
   });
 
   return res.json({ success: true, newStock: Number(newStock), movement });
-});
-
-// POST /inventory/clear - Reset all inventory stocks to zero
-apiRouter.post('/inventory/clear', requireAuth, requireRoles('ADMIN'), async (req: AuthenticatedRequest, res: Response) => {
-  const products = db.getData().products;
-  const branches = db.getData().branches;
-
-  products.forEach((p) => {
-    p.variants.forEach((v) => {
-      branches.forEach((b) => {
-        v.branchStock[b.id] = 0;
-      });
-    });
-    p.updatedAt = new Date().toISOString();
-  });
-
-  await db.save();
-  return res.json({ success: true, message: 'All inventory stocks cleared.' });
-});
-
-// POST /inventory/import - Import inventory stocks
-apiRouter.post('/inventory/import', requireAuth, requireRoles('ADMIN', 'ACCOUNTANT'), async (req: AuthenticatedRequest, res: Response) => {
-  const { items } = req.body;
-  if (!items || !Array.isArray(items)) return res.status(400).json({ error: 'Invalid import data' });
-
-  const products = db.getData().products;
-  let updatedCount = 0;
-
-  items.forEach((item: { sku: string, branchId: string, stock: number }) => {
-    products.forEach((p) => {
-      const v = p.variants.find((v) => v.sku === item.sku);
-      if (v && v.branchStock.hasOwnProperty(item.branchId)) {
-        v.branchStock[item.branchId] = Number(item.stock);
-        p.updatedAt = new Date().toISOString();
-        updatedCount++;
-      }
-    });
-  });
-
-  await db.save();
-  return res.json({ success: true, updatedCount });
 });
 
 apiRouter.get('/inventory/alerts', requireAuth, (req, res) => {
@@ -2439,7 +2295,7 @@ apiRouter.post('/invoices/:id/email', requireAuth, async (req: AuthenticatedRequ
 
   const result = await sendEmail({
     to: targetEmail,
-    subject: `Naisia Textiles Official Invoice - ${invoice.invoiceNumber}`,
+    subject: `Naisia Textiles Official Tax Invoice - ${invoice.invoiceNumber}`,
     html: generateInvoiceEmailHtml(invoice, db.getData().settings),
   });
 
@@ -2932,6 +2788,8 @@ apiRouter.get('/reports/dashboard', requireAuth, (req, res) => {
     branchPerformance,
     recentSales: sales.slice(0, 5),
     pendingRetryKraCount: kraRetryQueue.length,
+    kraPin: db.getData().settings.kraPin || '',
+    kraOscuSerial: db.getData().settings.kraOscuSerial || '',
   });
 });
 
@@ -3047,17 +2905,57 @@ apiRouter.get('/kra/status', requireAuth, (req, res) => {
   const pendingSales = sales.filter((s) => s.kraStatus === 'PENDING' || s.kraStatus === 'FAILED').length;
   const fiscalizedInvoices = invoices.filter((i) => i.kraStatus === 'FISCALIZED').length;
 
+  const isConfigured = Boolean(settings.kraPin && settings.kraPin.trim());
+
   return res.json({
-    status: 'ONLINE',
-    traderPin: settings.kraPin,
-    traderCode: settings.kraTraderCode,
-    oscuSerial: settings.kraOscuSerial,
-    mode: settings.kraMode,
-    autoRetry: settings.autoRetryKra,
+    status: isConfigured ? (settings.kraMode === 'PRODUCTION' ? 'PRODUCTION_LIVE' : 'SANDBOX_ACTIVE') : 'PENDING_CONFIGURATION',
+    traderPin: settings.kraPin || '',
+    traderCode: settings.kraTraderCode || '',
+    oscuSerial: settings.kraOscuSerial || '',
+    mode: settings.kraMode || 'SANDBOX',
+    autoRetry: settings.autoRetryKra ?? true,
+    isConfigured,
     fiscalizedCount: fiscalizedSales + fiscalizedInvoices,
     pendingOrFailedCount: pendingSales,
     retryQueueCount: kraRetryQueue.length,
     retryQueue: kraRetryQueue,
+  });
+});
+
+apiRouter.put('/kra/config', requireAuth, requireRoles('ADMIN'), async (req: AuthenticatedRequest, res: Response) => {
+  const { traderPin, traderCode, oscuSerial, mode, autoRetry } = req.body;
+  const settings = db.getData().settings;
+
+  if (typeof traderPin === 'string') settings.kraPin = traderPin.trim().toUpperCase();
+  if (typeof traderCode === 'string') settings.kraTraderCode = traderCode.trim();
+  if (typeof oscuSerial === 'string') settings.kraOscuSerial = oscuSerial.trim();
+  if (typeof mode === 'string') settings.kraMode = mode as any;
+  if (typeof autoRetry === 'boolean') settings.autoRetryKra = autoRetry;
+
+  await db.save();
+
+  db.logAudit({
+    userId: req.user!.id,
+    userName: req.user!.name,
+    userRole: req.user!.role,
+    branchId: 'N/A',
+    branchName: 'N/A',
+    action: 'KRA_CONFIG_UPDATED',
+    entityType: 'SETTINGS',
+    entityId: 'KRA',
+    details: `Updated KRA eTIMS configuration. PIN: ${settings.kraPin || 'None'}, Mode: ${settings.kraMode}`,
+    ipAddress: req.ip,
+  });
+
+  return res.json({
+    success: true,
+    settings: {
+      kraPin: settings.kraPin,
+      kraTraderCode: settings.kraTraderCode,
+      kraOscuSerial: settings.kraOscuSerial,
+      kraMode: settings.kraMode,
+      autoRetryKra: settings.autoRetryKra,
+    },
   });
 });
 
@@ -3187,7 +3085,37 @@ apiRouter.post('/emails/test', requireAuth, requireRoles('ADMIN'), async (req: A
 });
 
 // ==========================================
-// 18. BACKUP & DATABASE SNAPSHOTS
+// 18. PRODUCT CATALOGUE MANAGEMENT
+// ==========================================
+
+apiRouter.post('/products/import', requireAuth, requireRoles('ADMIN'), async (req: AuthenticatedRequest, res: Response) => {
+  const { products } = req.body;
+  if (!Array.isArray(products)) {
+    return res.status(400).json({ error: 'Invalid catalogue format. Expected an array of products.' });
+  }
+
+  const dbData = db.getData();
+  dbData.products = products;
+  await db.save();
+
+  db.logAudit({
+    userId: req.user!.id,
+    userName: req.user!.name,
+    userRole: req.user!.role,
+    branchId: req.user!.branchId,
+    branchName: 'All Branches (HQ)',
+    action: 'CATALOGUE_IMPORTED',
+    entityType: 'CATALOGUE',
+    entityId: 'SYSTEM',
+    details: `Catalogue imported with ${products.length} products.`,
+    ipAddress: req.ip,
+  });
+
+  return res.json({ success: true });
+});
+
+// ==========================================
+// 19. BACKUP & DATABASE SNAPSHOTS
 // ==========================================
 
 apiRouter.get('/backup/export', requireAuth, requireRoles('ADMIN'), (req, res) => {

@@ -137,52 +137,6 @@ export const InventoryView: React.FC = () => {
     }
   };
 
-  const exportCsv = () => {
-    const headers = ['SKU', 'BranchId', 'Stock'];
-    const rows = inventory.map(i => [i.sku, i.branchId, i.currentStock].join(',')).join('\n');
-    const csv = [headers.join(','), rows].join('\n');
-    const blob = new Blob([csv], { type: 'text/csv' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'inventory.csv';
-    a.click();
-  };
-
-  const importCsv = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = async (e) => {
-      const text = e.target?.result as string;
-      const lines = text.split('\n').slice(1);
-      const items = lines.map(line => {
-        const [sku, branchId, stock] = line.split(',');
-        return { sku, branchId, stock: Number(stock) };
-      }).filter(i => i.sku);
-      
-      try {
-        await api.importInventory(items);
-        notify({ type: 'SUCCESS', title: 'Imported', message: `Imported ${items.length} items.` });
-        fetchInventory();
-      } catch(err: any) {
-        notify({ type: 'ERROR', title: 'Import Failed', message: err.message });
-      }
-    };
-    reader.readAsText(file);
-  };
-
-  const clearInventory = async () => {
-    if (!confirm('Are you sure? This will wipe all stock data.')) return;
-    try {
-      await api.clearInventory();
-      notify({ type: 'SUCCESS', title: 'Cleared', message: 'Inventory cleared.' });
-      fetchInventory();
-    } catch(err: any) {
-      notify({ type: 'ERROR', title: 'Clear Failed', message: err.message });
-    }
-  };
-
   return (
     <div className="space-y-6">
       {/* Header & Tabs */}
@@ -197,29 +151,20 @@ export const InventoryView: React.FC = () => {
         </div>
 
         {/* Header Actions & Tab Switcher */}
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-col gap-3">
           <button
             onClick={() => handleOpenSkuModal()}
-            className="inline-flex items-center px-3.5 py-2 bg-gradient-to-r from-blue-700 to-[#030A91] hover:from-blue-800 hover:to-blue-950 text-white rounded-xl text-xs font-bold transition-all shadow-xs"
+            className="inline-flex items-center justify-center px-3.5 py-2 bg-gradient-to-r from-blue-700 to-[#030A91] hover:from-blue-800 hover:to-blue-950 text-white rounded-xl text-xs font-bold transition-all shadow-xs"
           >
             <ImageIcon className="w-3.5 h-3.5 mr-1.5 text-[#FACB00]" />
-            <span>SKU Images</span>
+            <span>SKU Image Files & Categories</span>
           </button>
-          
-          <div className="flex items-center space-x-1">
-            <button onClick={exportCsv} className="px-3 py-2 bg-white border border-slate-200 text-slate-700 rounded-xl text-xs font-bold hover:bg-slate-50">Export</button>
-            <label className="px-3 py-2 bg-white border border-slate-200 text-slate-700 rounded-xl text-xs font-bold hover:bg-slate-50 cursor-pointer">
-              <input type="file" accept=".csv" className="hidden" onChange={importCsv} />
-              Import
-            </label>
-            <button onClick={clearInventory} className="px-3 py-2 bg-rose-50 border border-rose-200 text-rose-700 rounded-xl text-xs font-bold hover:bg-rose-100">Clear</button>
-          </div>
 
           {/* Tab Switcher */}
-          <div className="flex items-center bg-white border border-slate-200 p-1 rounded-xl shadow-xs text-xs font-bold">
+          <div className="flex items-center bg-white border border-slate-200 p-1 rounded-xl shadow-xs text-xs font-bold overflow-x-auto">
             <button
               onClick={() => setActiveTab('STOCK')}
-              className={`px-3 py-1.5 rounded-lg transition-colors flex items-center space-x-1.5 ${
+              className={`px-3 py-1.5 rounded-lg transition-colors flex items-center space-x-1.5 whitespace-nowrap ${
                 activeTab === 'STOCK'
                   ? 'bg-[#030A91] text-white shadow-xs'
                   : 'text-slate-600 hover:text-slate-900'
@@ -231,7 +176,7 @@ export const InventoryView: React.FC = () => {
 
             <button
               onClick={() => setActiveTab('ALERTS')}
-              className={`px-3 py-1.5 rounded-lg transition-colors flex items-center space-x-1.5 ${
+              className={`px-3 py-1.5 rounded-lg transition-colors flex items-center space-x-1.5 whitespace-nowrap ${
                 activeTab === 'ALERTS'
                   ? 'bg-[#030A91] text-white shadow-xs'
                   : 'text-slate-600 hover:text-slate-900'
@@ -243,7 +188,7 @@ export const InventoryView: React.FC = () => {
 
             <button
               onClick={() => setActiveTab('MOVEMENTS')}
-              className={`px-3 py-1.5 rounded-lg transition-colors flex items-center space-x-1.5 ${
+              className={`px-3 py-1.5 rounded-lg transition-colors flex items-center space-x-1.5 whitespace-nowrap ${
                 activeTab === 'MOVEMENTS'
                   ? 'bg-[#030A91] text-white shadow-xs'
                   : 'text-slate-600 hover:text-slate-900'
@@ -262,25 +207,25 @@ export const InventoryView: React.FC = () => {
       {activeTab === 'STOCK' && (
         <div className="space-y-4">
           {/* Filter Bar */}
-          <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs flex flex-wrap items-center justify-between gap-3">
-            <div className="flex-1 min-w-[240px] relative">
+          <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+            <div className="flex-1 relative">
               <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search by name, SKU, school..."
+                placeholder="Search inventory..."
                 className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#030A91]"
               />
             </div>
 
-            <div className="flex items-center space-x-2 w-full sm:w-auto">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
               <select
                 value={selectedBranchFilter}
                 onChange={(e) => setSelectedBranchFilter(e.target.value)}
-                className="flex-1 px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#030A91]"
+                className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#030A91]"
               >
-                <option value="all">Branch</option>
+                <option value="all">All Branches</option>
                 {branches.map((b) => (
                   <option key={b.id} value={b.id}>
                     {b.name}
@@ -291,7 +236,7 @@ export const InventoryView: React.FC = () => {
               <select
                 value={selectedSchoolFilter}
                 onChange={(e) => setSelectedSchoolFilter(e.target.value)}
-                className="flex-1 px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#030A91]"
+                className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#030A91]"
               >
                 <option value="ALL">All Schools</option>
                 {schools.map((s) => (
@@ -303,55 +248,111 @@ export const InventoryView: React.FC = () => {
             </div>
           </div>
 
-          {/* Stock Display: Card for Mobile, Table for Desktop */}
-          <div className="space-y-3">
-            {filteredInventory.map((item) => (
-              <div
-                key={`${item.variantId}-${item.branchId}`}
-                className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs flex items-center space-x-4"
-              >
-                <div
-                  onClick={() => handleOpenSkuModal(item.sku)}
-                  className="w-14 h-14 rounded-xl overflow-hidden bg-slate-100 border border-slate-200 shrink-0 cursor-pointer"
-                >
-                  {item.imageUrl ? (
-                    <img src={item.imageUrl} alt={item.sku} className="w-full h-full object-cover" />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center text-slate-300">
-                      <ImageIcon className="w-6 h-6" />
-                    </div>
+          {/* Stock Table */}
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs">
+                <thead>
+                  <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 font-bold uppercase">
+                    <th className="py-3 px-4">School & Garment</th>
+                    <th className="py-3 px-3">Size / SKU</th>
+                    <th className="py-3 px-3">Branch</th>
+                    <th className="py-3 px-3 text-center">Available Stock</th>
+                    <th className="py-3 px-3">Threshold</th>
+                    {canAccessFinancials && <th className="py-3 px-3 text-right">Cost Value</th>}
+                    <th className="py-3 px-3 text-right">Selling Price</th>
+                    <th className="py-3 px-4 text-center">Action</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {filteredInventory.map((item) => (
+                    <tr key={`${item.variantId}-${item.branchId}`} className="hover:bg-slate-50/80">
+                      <td className="py-3 px-4">
+                        <div className="flex items-center space-x-3">
+                          <div
+                            onClick={() => handleOpenSkuModal(item.sku)}
+                            className="relative w-10 h-10 rounded-xl overflow-hidden bg-slate-100 border border-slate-200 shrink-0 cursor-pointer group hover:border-[#030A91]"
+                            title="Click to view/change SKU photo"
+                          >
+                            {item.imageUrl ? (
+                              <img
+                                src={item.imageUrl}
+                                alt={item.sku}
+                                className="w-full h-full object-cover transition-transform group-hover:scale-105"
+                              />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center text-slate-300 group-hover:text-amber-600 group-hover:bg-amber-50">
+                                <ImageIcon className="w-4 h-4" />
+                              </div>
+                            )}
+                          </div>
+                          <div>
+                            <span className="font-bold text-slate-900 block">{item.productName}</span>
+                            <span className="text-[10px] text-slate-500 uppercase font-semibold">
+                              {item.school} • {item.category}
+                            </span>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="py-3 px-3">
+                        <span className="font-black text-slate-800 bg-slate-100 px-1.5 py-0.5 rounded text-[11px]">
+                          Size {item.size}
+                        </span>
+                        <span className="text-[10px] font-mono text-slate-400 block mt-0.5">
+                          {item.sku}
+                        </span>
+                      </td>
+                      <td className="py-3 px-3 text-slate-600 font-medium">
+                        {item.branchName}
+                      </td>
+                      <td className="py-3 px-3 text-center">
+                        <span
+                          className={`font-black text-xs px-2 py-0.5 rounded-full inline-block ${
+                            item.currentStock === 0
+                              ? 'bg-rose-100 text-rose-800'
+                              : item.isLow
+                              ? 'bg-amber-100 text-amber-800'
+                              : 'bg-emerald-100 text-emerald-800'
+                          }`}
+                        >
+                          {item.currentStock} units
+                        </span>
+                      </td>
+                      <td className="py-3 px-3 text-slate-500">
+                        Min: {item.reorderLevel} | Reorder: {item.reorderQuantity}
+                      </td>
+                      {canAccessFinancials && (
+                        <td className="py-3 px-3 text-right font-medium text-slate-600">
+                          KES {item.totalValuationCost.toLocaleString()}
+                        </td>
+                      )}
+                      <td className="py-3 px-3 text-right font-bold text-[#030A91]">
+                        KES {item.sellingPrice.toLocaleString()}
+                      </td>
+                      <td className="py-3 px-4 text-center">
+                        {canAccessFinancials ? (
+                          <button
+                            onClick={() => openAdjustModal(item)}
+                            className="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-[#030A91] hover:text-white text-slate-700 text-[11px] font-bold transition-colors"
+                          >
+                            Adjust
+                          </button>
+                        ) : (
+                          <span className="text-slate-400 text-[10px]">Read-only</span>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                  {filteredInventory.length === 0 && (
+                    <tr>
+                      <td colSpan={8} className="py-12 text-center text-slate-400">
+                        No uniform inventory records found.
+                      </td>
+                    </tr>
                   )}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <h4 className="font-bold text-slate-900 text-sm truncate">{item.productName}</h4>
-                  <p className="text-xs text-slate-500 truncate">{item.school} • Size {item.size}</p>
-                  <div className="flex items-center justify-between mt-2">
-                    <span
-                      className={`font-black text-[11px] px-2 py-0.5 rounded-full ${
-                        item.currentStock === 0
-                          ? 'bg-rose-100 text-rose-800'
-                          : item.isLow
-                          ? 'bg-amber-100 text-amber-800'
-                          : 'bg-emerald-100 text-emerald-800'
-                      }`}
-                    >
-                      {item.currentStock} in {item.branchName}
-                    </span>
-                    <span className="font-bold text-[#030A91] text-sm">
-                      KES {item.sellingPrice.toLocaleString()}
-                    </span>
-                  </div>
-                </div>
-                {canAccessFinancials && (
-                  <button
-                    onClick={() => openAdjustModal(item)}
-                    className="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-[#030A91] hover:text-white text-slate-700 text-xs font-bold transition-colors"
-                  >
-                    Adjust
-                  </button>
-                )}
-              </div>
-            ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       )}

@@ -13,12 +13,10 @@ import {
   Sliders,
   QrCode,
   ShieldCheck,
-  Store,
-  Loader2
+  Store
 } from 'lucide-react';
 import { api } from '../api';
 import { useNotification } from '../context/NotificationContext';
-import { downloadElementAsPdf } from '../utils/pdfGenerator';
 
 interface ReceiptModalProps {
   sale?: Sale | null;
@@ -300,33 +298,6 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({
     }
   };
 
-  const [isDownloadingPdf, setIsDownloadingPdf] = useState(false);
-
-  const handleDownloadPdf = async () => {
-    if (!receiptRef.current) return;
-    setIsDownloadingPdf(true);
-    try {
-      await downloadElementAsPdf(receiptRef.current, `Receipt-${receiptNumber}.pdf`, {
-        type: 'receipt',
-        rollWidth: rollWidth,
-        title: `Naisiae Textiles Receipt ${receiptNumber}`,
-      });
-      notify({
-        type: 'SUCCESS',
-        title: 'PDF Downloaded',
-        message: `Receipt ${receiptNumber} downloaded as PDF successfully`,
-      });
-    } catch (err: any) {
-      notify({
-        type: 'ERROR',
-        title: 'PDF Download Failed',
-        message: err.message || 'Could not generate receipt PDF',
-      });
-    } finally {
-      setIsDownloadingPdf(false);
-    }
-  };
-
   const handleDownloadHtml = () => {
     const text = generateTextSlip();
     const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
@@ -454,22 +425,12 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({
             </button>
 
             <button
-              onClick={handleDownloadPdf}
-              disabled={isDownloadingPdf}
-              className="inline-flex items-center px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition-all shadow-xs active:scale-95 disabled:opacity-50 cursor-pointer"
-              title="Download official receipt as PDF file"
+              onClick={handleDownloadHtml}
+              className="inline-flex items-center px-3 py-1.5 rounded-xl bg-white border border-slate-300 text-slate-700 text-xs font-bold hover:bg-slate-50 transition-colors shadow-2xs"
+              title="Save receipt slip file"
             >
-              {isDownloadingPdf ? (
-                <>
-                  <Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" />
-                  <span>Generating PDF...</span>
-                </>
-              ) : (
-                <>
-                  <Download className="w-3.5 h-3.5 mr-1" />
-                  <span>Download PDF</span>
-                </>
-              )}
+              <Download className="w-3.5 h-3.5 mr-1 text-slate-500" />
+              <span className="hidden sm:inline">Save</span>
             </button>
           </div>
 
@@ -521,12 +482,6 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({
                 <p className="text-[10px] text-slate-600">
                   Tel: 0792021496 / 0112264870 • support@naisiaetextiles.com • naisiaetextiles.com
                 </p>
-                <div className="mt-1.5 text-[9.5px] font-bold text-black">
-                  PIN: P051839281Z
-                </div>
-                <div className="text-[9px] text-slate-500">
-                  ETR OSCU SERIAL: NAISIAE-OSCU-001
-                </div>
               </div>
 
               {/* Station & Transaction Header */}
@@ -634,40 +589,6 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({
                       </strong>
                     </div>
                   </>
-                )}
-              </div>
-
-              {/* KRA eTIMS Fiscal Compliance Block */}
-              <div className="py-2.5 border-b border-dashed border-slate-800 text-center space-y-1 text-[9.5px]">
-                <div className="inline-flex items-center px-2 py-0.5 rounded text-[9px] font-black bg-emerald-50 text-emerald-800 border border-emerald-300">
-                  <CheckCircle2 className="w-3 h-3 mr-1 text-emerald-600" />
-                  KRA eTIMS FISCALIZED RECEIPT
-                </div>
-
-                <div className="text-slate-700">
-                  Control Unit (CU) No: <strong className="text-black">{cuInvoiceNumber}</strong>
-                </div>
-
-                <div className="text-slate-700">
-                  Internal Fiscal Hash: <span className="font-mono text-black text-[9px]">{controlCode}</span>
-                </div>
-
-                {/* QR Code image for KRA verification */}
-                {qrCode ? (
-                  <div className="qr-container flex flex-col items-center justify-center my-1.5">
-                    <img
-                      src={qrCode}
-                      alt="KRA eTIMS QR Code"
-                      className="w-24 h-24 sm:w-28 sm:h-28 border border-slate-300 rounded p-1 bg-white"
-                    />
-                    <span className="text-[8.5px] text-slate-500 mt-1">
-                      Scan to verify on official KRA iTax Portal
-                    </span>
-                  </div>
-                ) : (
-                  <div className="p-2 bg-slate-50 border border-slate-200 rounded text-[9px] text-slate-500 my-1">
-                    https://itax.kra.go.ke/KRA-Portal/
-                  </div>
                 )}
               </div>
 

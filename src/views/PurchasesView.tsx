@@ -180,8 +180,21 @@ export const PurchasesView: React.FC = () => {
               ))}
               {purchases.length === 0 && (
                 <tr>
-                  <td colSpan={7} className="py-12 text-center text-slate-400">
-                    No purchase orders found.
+                  <td colSpan={7} className="py-16 text-center">
+                    <div className="w-12 h-12 bg-blue-50 text-[#030A91] rounded-2xl flex items-center justify-center mx-auto mb-2">
+                      <Truck className="w-6 h-6" />
+                    </div>
+                    <p className="text-sm font-bold text-slate-800">No Purchase Orders Issued Yet</p>
+                    <p className="text-xs text-slate-500 max-w-sm mx-auto mt-0.5 mb-4">
+                      Create purchase orders to order raw fabrics and uniform inventory from accredited millers.
+                    </p>
+                    <button
+                      onClick={() => setIsModalOpen(true)}
+                      className="inline-flex items-center px-3.5 py-1.5 bg-[#030A91] text-white rounded-xl text-xs font-bold hover:bg-blue-900 transition-colors shadow-xs"
+                    >
+                      <Plus className="w-3.5 h-3.5 mr-1 text-[#FACB00]" />
+                      <span>Create Purchase Order</span>
+                    </button>
                   </td>
                 </tr>
               )}

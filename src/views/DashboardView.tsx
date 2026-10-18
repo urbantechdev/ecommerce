@@ -31,14 +31,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
     try {
       const data = await api.getDashboardMetrics(activeBranchId);
       setMetrics(data);
-    } catch (err: any) {
+    } catch (err) {
       console.error('Failed to load dashboard metrics:', err);
-      if (err.message.includes('Unauthorized') || err.message.includes('401')) {
-        // Simple fix: force re-authentication by clearing token if session expired
-        // In a real production app, we'd navigate to /login
-        localStorage.removeItem('nais_auth_token');
-        window.location.reload();
-      }
     } finally {
       setIsLoading(false);
     }
@@ -64,17 +58,17 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
           </p>
         </div>
 
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
           <button
             onClick={() => onNavigate('pos')}
-            className="px-4 py-2 bg-[#FACB00] text-[#030A91] rounded-xl text-xs font-black hover:bg-yellow-400 transition-colors shadow-sm flex items-center space-x-1.5"
+            className="w-full sm:w-auto px-4 py-3 bg-[#FACB00] text-[#030A91] rounded-xl text-xs font-black hover:bg-yellow-400 transition-colors shadow-sm flex items-center justify-center sm:justify-start space-x-1.5"
           >
             <ShoppingCart className="w-4 h-4" />
-            <span>Launch POS Terminal</span>
+            <span>Launch POS</span>
           </button>
           <button
             onClick={() => onNavigate('inventory')}
-            className="px-4 py-2 bg-blue-800 text-white rounded-xl text-xs font-bold hover:bg-blue-700 transition-colors flex items-center space-x-1.5 border border-blue-700"
+            className="w-full sm:w-auto px-4 py-3 bg-blue-800 text-white rounded-xl text-xs font-bold hover:bg-blue-700 transition-colors flex items-center justify-center sm:justify-start space-x-1.5 border border-blue-700"
           >
             <Layers className="w-4 h-4" />
             <span>Check Stock</span>
@@ -83,7 +77,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
       </div>
 
       {/* KPI Cards Grid */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Today's Sales */}
         <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs flex flex-col justify-between">
           <div className="flex items-center justify-between">
@@ -215,7 +209,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
             <div className="text-xs">
               <p className="font-bold text-slate-800">KRA eTIMS OSCU Integration</p>
               <p className="text-slate-500 text-[11px] mt-0.5">
-                PIN: P051839281Z • Fiscal receipts transmitted with QR verification.
+                PIN: {metrics?.kraPin ? `${metrics.kraPin} • Verified` : 'Not Configured (Set in Settings)'}
               </p>
               {metrics?.pendingRetryKraCount ? (
                 <span className="text-rose-600 font-bold block mt-1">
