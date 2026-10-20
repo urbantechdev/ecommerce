@@ -450,7 +450,13 @@ export const PosView: React.FC = () => {
             </div>
 
             {/* Category filter pills */}
-            <div className="flex items-center space-x-1.5 overflow-x-auto pb-1 text-xs select-none">
+            <div
+              onWheel={(e) => {
+                if (e.deltaY !== 0) {
+                  e.currentTarget.scrollLeft += e.deltaY;
+                }
+              }}
+              className="flex items-center space-x-1.5 overflow-x-auto pb-1.5 text-xs select-none scroll-smooth touch-pan-x [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar-track]:bg-slate-100 [&::-webkit-scrollbar-thumb]:bg-slate-300 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-slate-400">
               {availableCategories.map((cat) => (
                 <button
                   key={cat}

@@ -391,8 +391,7 @@ export const LoginView: React.FC = () => {
     const q = staffSearchQuery.toLowerCase();
     return (
       s.name.toLowerCase().includes(q) ||
-      s.branchName.toLowerCase().includes(q) ||
-      s.email.toLowerCase().includes(q)
+      s.branchName.toLowerCase().includes(q)
     );
   });
 
@@ -1043,7 +1042,7 @@ export const LoginView: React.FC = () => {
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
                   <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                    Staff Email Address
+                    Staff Username / Name
                   </label>
                   <div className="relative">
                     <Mail className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { api } from '../api';
 import { User, Branch } from '../types';
 import { useNotification } from '../context/NotificationContext';
-import { UserCheck, Plus, Search, Shield, Lock, X } from 'lucide-react';
+import { UserCheck, Plus, Search, Shield, Lock, X, Edit2, UserCog } from 'lucide-react';
 import { StatusBadge } from '../components/StatusBadge';
 
 export const UsersView: React.FC = () => {
@@ -10,6 +10,10 @@ export const UsersView: React.FC = () => {
   const [users, setUsers] = useState<User[]>([]);
   const [branches, setBranches] = useState<Branch[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isPinModalOpen, setIsPinModalOpen] = useState(false);
+  const [editingUser, setEditingUser] = useState<User | null>(null);
+  const [newPin, setNewPin] = useState('');
 
   // Form states
   const [name, setName] = useState('');
@@ -46,13 +50,47 @@ export const UsersView: React.FC = () => {
         branchId,
         phone,
       });
-
-      notify({ type: 'SUCCESS', title: 'User Created', message: `${name} (${role}) added with PIN ${pin || '123456'}.` });
+      notify({ type: 'SUCCESS', title: 'User Created', message: `${name} (${role}) added.` });
       setIsModalOpen(false);
       setName('');
       setEmail('');
       setPassword('');
       setPin('123456');
+      fetchUsers();
+    } catch (err: any) {
+      notify({ type: 'ERROR', title: 'Error', message: err.message });
+    }
+  };
+
+  const handleUpdateUser = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingUser) return;
+    try {
+      await api.updateUser(editingUser.id, {
+        name,
+        email,
+        role,
+        branchId,
+        phone,
+      });
+      notify({ type: 'SUCCESS', title: 'User Updated', message: `${name} updated.` });
+      setIsEditModalOpen(false);
+      setEditingUser(null);
+      fetchUsers();
+    } catch (err: any) {
+      notify({ type: 'ERROR', title: 'Error', message: err.message });
+    }
+  };
+
+  const handleUpdatePin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingUser) return;
+    try {
+      await api.updateUser(editingUser.id, { pin: newPin });
+      notify({ type: 'SUCCESS', title: 'PIN Updated', message: `PIN updated for ${editingUser.name}.` });
+      setIsPinModalOpen(false);
+      setEditingUser(null);
+      setNewPin('');
       fetchUsers();
     } catch (err: any) {
       notify({ type: 'ERROR', title: 'Error', message: err.message });
@@ -74,6 +112,16 @@ export const UsersView: React.FC = () => {
     }
   };
 
+  const openEditModal = (u: User) => {
+    setEditingUser(u);
+    setName(u.name);
+    setEmail(u.email);
+    setRole(u.role);
+    setBranchId(u.branchId);
+    setPhone(u.phone || '');
+    setIsEditModalOpen(true);
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -85,7 +133,6 @@ export const UsersView: React.FC = () => {
             Manage ERP access, assign branch stations, and enforce role-based access control.
           </p>
         </div>
-
         <button
           onClick={() => setIsModalOpen(true)}
           className="inline-flex items-center px-4 py-2 bg-[#030A91] text-white rounded-xl text-xs font-bold hover:bg-blue-900 transition-colors shadow-sm"
@@ -94,7 +141,6 @@ export const UsersView: React.FC = () => {
           <span>Add System User</span>
         </button>
       </div>
-
       <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
@@ -114,7 +160,7 @@ export const UsersView: React.FC = () => {
               {users.map((u) => {
                 const b = branches.find((br) => br.id === u.branchId);
                 return (
-                  <tr key={u.id} className="hover:bg-slate-50">
+                  <tr key={u.id} className="hover:bg-slate-50 cursor-pointer" onClick={() => openEditModal(u)}>
                     <td className="py-3 px-4">
                       <span className="font-bold text-slate-900 block">{u.name}</span>
                       <span className="text-[10px] text-slate-500 font-mono">{u.email}</span>
@@ -136,9 +182,17 @@ export const UsersView: React.FC = () => {
                       {u.branchId === 'all' ? 'All Branches (HQ Access)' : b?.name || u.branchId}
                     </td>
                     <td className="py-3 px-3 font-mono font-bold text-xs text-[#030A91]">
-                      <span className="px-2 py-0.5 rounded bg-blue-50 border border-blue-100">
-                        {u.pin || '123456'}
-                      </span>
+                      <div className="flex items-center space-x-2">
+                        <span className="px-2 py-0.5 rounded bg-blue-50 border border-blue-100">
+                          {u.pin || '123456'}
+                        </span>
+                        <button
+                          onClick={(e) => { e.stopPropagation(); setEditingUser(u); setNewPin(u.pin || ''); setIsPinModalOpen(true); }}
+                          className="text-slate-400 hover:text-[#030A91]"
+                        >
+                          <Edit2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
                     </td>
                     <td className="py-3 px-3 text-slate-500">{u.phone || 'N/A'}</td>
                     <td className="py-3 px-3">
@@ -149,7 +203,7 @@ export const UsersView: React.FC = () => {
                     </td>
                     <td className="py-3 px-4 text-center">
                       <button
-                        onClick={() => handleToggleStatus(u)}
+                        onClick={(e) => { e.stopPropagation(); handleToggleStatus(u); }}
                         className={`px-2.5 py-1 rounded-lg text-[10px] font-bold ${
                           u.status === 'ACTIVE'
                             ? 'bg-rose-50 text-rose-700 hover:bg-rose-100'
@@ -166,7 +220,8 @@ export const UsersView: React.FC = () => {
           </table>
         </div>
       </div>
-
+      
+      {/* Add User Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl shadow-xl max-w-md w-full overflow-hidden border border-slate-200">
@@ -179,7 +234,6 @@ export const UsersView: React.FC = () => {
                 <X className="w-5 h-5" />
               </button>
             </div>
-
             <form onSubmit={handleCreateUser} className="p-5 space-y-3">
               <div>
                 <label className="text-xs font-bold text-slate-700 uppercase block mb-1">
@@ -194,7 +248,6 @@ export const UsersView: React.FC = () => {
                   required
                 />
               </div>
-
               <div>
                 <label className="text-xs font-bold text-slate-700 uppercase block mb-1">
                   Email Address:
@@ -208,7 +261,6 @@ export const UsersView: React.FC = () => {
                   required
                 />
               </div>
-
               <div>
                 <label className="text-xs font-bold text-slate-700 uppercase block mb-1">
                   Password:
@@ -222,7 +274,6 @@ export const UsersView: React.FC = () => {
                   required
                 />
               </div>
-
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="text-xs font-bold text-slate-700 uppercase block mb-1">
@@ -238,7 +289,6 @@ export const UsersView: React.FC = () => {
                     <option value="ADMIN">System Administrator</option>
                   </select>
                 </div>
-
                 <div>
                   <label className="text-xs font-bold text-slate-700 uppercase block mb-1">
                     Assigned Branch:
@@ -257,7 +307,6 @@ export const UsersView: React.FC = () => {
                   </select>
                 </div>
               </div>
-
               <div>
                 <label className="text-xs font-bold text-slate-700 uppercase block mb-1">
                   Phone:
@@ -270,7 +319,6 @@ export const UsersView: React.FC = () => {
                   className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-300 rounded-xl"
                 />
               </div>
-
               <div>
                 <label className="text-xs font-bold text-slate-700 uppercase block mb-1">
                   Assigned 6-Digit POS PIN:
@@ -286,7 +334,6 @@ export const UsersView: React.FC = () => {
                 />
                 <p className="text-[10px] text-slate-400 mt-0.5">Used by staff cashiers to unlock the POS retail checkout terminal.</p>
               </div>
-
               <div className="flex space-x-2 pt-2">
                 <button
                   type="button"
@@ -302,6 +349,148 @@ export const UsersView: React.FC = () => {
                   Create User
                 </button>
               </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Edit User Details Modal */}
+      {isEditModalOpen && editingUser && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-xl max-w-md w-full overflow-hidden border border-slate-200">
+            <div className="p-4 bg-[#030A91] text-white flex items-center justify-between">
+              <h3 className="font-bold text-sm flex items-center"><UserCog className="w-4 h-4 mr-2" /> Edit User Details</h3>
+              <button
+                onClick={() => setIsEditModalOpen(false)}
+                className="text-white/70 hover:text-white p-1"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <form onSubmit={handleUpdateUser} className="p-5 space-y-3">
+              <div>
+                <label className="text-xs font-bold text-slate-700 uppercase block mb-1">
+                  Full Name:
+                </label>
+                <input
+                  type="text"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-300 rounded-xl"
+                  required
+                />
+              </div>
+              <div>
+                <label className="text-xs font-bold text-slate-700 uppercase block mb-1">
+                  Email Address:
+                </label>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-300 rounded-xl"
+                  required
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs font-bold text-slate-700 uppercase block mb-1">
+                    System Role:
+                  </label>
+                  <select
+                    value={role}
+                    onChange={(e) => setRole(e.target.value as any)}
+                    className="w-full px-2 py-2 text-xs bg-slate-50 border border-slate-300 rounded-xl font-bold"
+                  >
+                    <option value="STAFF">Staff / POS Cashier</option>
+                    <option value="ACCOUNTANT">Accountant / Tax</option>
+                    <option value="ADMIN">System Administrator</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="text-xs font-bold text-slate-700 uppercase block mb-1">
+                    Assigned Branch:
+                  </label>
+                  <select
+                    value={branchId}
+                    onChange={(e) => setBranchId(e.target.value)}
+                    className="w-full px-2 py-2 text-xs bg-slate-50 border border-slate-300 rounded-xl"
+                  >
+                    <option value="all">All Branches (HQ)</option>
+                    {branches.map((b) => (
+                      <option key={b.id} value={b.id}>
+                        {b.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+              <div>
+                <label className="text-xs font-bold text-slate-700 uppercase block mb-1">
+                  Phone:
+                </label>
+                <input
+                  type="text"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-300 rounded-xl"
+                />
+              </div>
+              <div className="flex space-x-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setIsEditModalOpen(false)}
+                  className="flex-1 py-2 rounded-xl border border-slate-300 text-slate-700 text-xs font-bold"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 py-2 rounded-xl bg-[#030A91] text-white text-xs font-bold hover:bg-blue-900"
+                >
+                  Save Changes
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Change PIN Modal */}
+      {isPinModalOpen && editingUser && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-xl max-w-sm w-full overflow-hidden border border-slate-200">
+            <div className="p-4 bg-indigo-800 text-white flex items-center justify-between">
+              <h3 className="font-bold text-sm">Update PIN for {editingUser.name}</h3>
+              <button
+                onClick={() => setIsPinModalOpen(false)}
+                className="text-white/70 hover:text-white p-1"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <form onSubmit={handleUpdatePin} className="p-5 space-y-4">
+              <div>
+                <label className="text-xs font-bold text-slate-700 uppercase block mb-1">
+                  New 6-Digit POS PIN:
+                </label>
+                <input
+                  type="text"
+                  maxLength={6}
+                  value={newPin}
+                  onChange={(e) => setNewPin(e.target.value.replace(/\D/g, ''))}
+                  placeholder="e.g. 123456"
+                  className="w-full px-3 py-3 text-lg font-mono font-bold bg-slate-50 border border-slate-300 rounded-xl tracking-widest text-indigo-900 text-center"
+                  required
+                  autoFocus
+                />
+              </div>
+              <button
+                type="submit"
+                className="w-full py-2.5 rounded-xl bg-indigo-800 text-white text-xs font-bold hover:bg-indigo-900"
+              >
+                Update PIN
+              </button>
             </form>
           </div>
         </div>

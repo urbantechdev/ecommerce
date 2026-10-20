@@ -119,6 +119,19 @@ export const api = {
       body: JSON.stringify({ products }),
     }),
   getSchools: () => request<string[]>('/products/schools'),
+  getPortalProducts: (params?: { school?: string; category?: string; search?: string }) => {
+    const query = new URLSearchParams();
+    if (params?.school && params.school !== "ALL") query.append("school", params.school);
+    if (params?.category && params.category !== "ALL") query.append("category", params.category);
+    if (params?.search) query.append("search", params.search);
+    return request<any[]>(`/portal/products?${query.toString()}`);
+  },
+  getPortalSchools: () => request<string[]>('/portal/schools'),
+  checkoutPortal: (data: any) =>
+    request<{ sale: any; receipt: any; qrCodeDataUrl: string }>('/portal/checkout', {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
   createProduct: (data: any) =>
     request<any>('/products', { method: 'POST', body: JSON.stringify(data) }),
   updateProduct: (id: string, data: any) =>

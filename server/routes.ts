@@ -713,6 +713,242 @@ apiRouter.get('/products/schools', requireAuth, (req, res) => {
   return res.json(schools);
 });
 
+// ==========================================
+// CUSTOMER PORTAL PUBLIC API ROUTES
+// ==========================================
+apiRouter.get('/portal/products', (req, res) => {
+  const { school, category, search } = req.query;
+  let products = db.getData().products.filter((p) => p.active);
+
+  if (school && typeof school === "string" && school !== "ALL") {
+    products = products.filter((p) => p.school.toLowerCase().includes(school.toLowerCase()));
+  }
+  if (category && typeof category === "string" && category !== "ALL") {
+    products = products.filter((p) => p.category === category || p.garmentType === category);
+  }
+  if (search && typeof search === "string") {
+    const q = search.toLowerCase();
+    products = products.filter(
+      (p) =>
+        p.name.toLowerCase().includes(q) ||
+        p.school.toLowerCase().includes(q) ||
+        (p.category && p.category.toLowerCase().includes(q)) ||
+        p.variants.some((v) => v.sku.toLowerCase().includes(q) || v.barcode.includes(q))
+    );
+  }
+  return res.json(products);
+});
+
+apiRouter.get('/portal/schools', (_req, res) => {
+  const schools = Array.from(new Set(db.getData().products.map((p) => p.school))).filter(Boolean);
+  return res.json(schools);
+});
+
+apiRouter.post('/portal/checkout', async (req, res) => {
+  const {
+    customerName,
+    customerEmail,
+    customerPhone,
+    items,
+    paymentMethod,
+    paymentReference,
+    branchId,
+  } = req.body;
+
+  if (!items || !items.length) {
+    return res.status(400).json({ error: "Cart is empty. Please add items to checkout." });
+  }
+
+  const branches = db.getData().branches;
+  const branch = (branchId && branches.find((b) => b.id === branchId)) || branches[0];
+  if (!branch) return res.status(404).json({ error: "No active branch available for order fulfillment." });
+
+  const products = db.getData().products;
+  for (const item of items) {
+    const prod = products.find((p) => p.id === item.productId);
+    if (!prod) return res.status(400).json({ error: `Product not found: ${item.productName}` });
+    const variant = prod.variants.find((v) => v.id === item.variantId);
+    if (!variant) return res.status(400).json({ error: `Size variant not found for: ${item.productName}` });
+    const currentStock = variant.branchStock[branch.id] ?? 0;
+    if (currentStock < item.quantity) {
+      return res.status(400).json({
+        error: `Insufficient stock for ${prod.name} (Size ${variant.size}). Available: ${currentStock}, Requested: ${item.quantity}`,
+      });
+    }
+  }
+
+  let subtotal = 0;
+  let totalTax = 0;
+  let totalDiscount = 0;
+  let totalAmount = 0;
+
+  const processedItems = items.map((item) => {
+    const prod = products.find((p) => p.id === item.productId);
+    const variant = prod.variants.find((v) => v.id === item.variantId);
+    const qty = Number(item.quantity);
+    const unitPrice = Number(item.unitPrice || variant.sellingPrice);
+    const discount = Number(item.discountAmount || 0);
+    const lineTotal = qty * unitPrice - discount;
+    const lineTax = lineTotal - lineTotal / 1.16;
+
+    subtotal += lineTotal - lineTax;
+    totalTax += lineTax;
+    totalDiscount += discount;
+    totalAmount += lineTotal;
+
+    return {
+      productId: item.productId,
+      variantId: item.variantId,
+      productName: prod.name,
+      sku: variant.sku,
+      school: prod.school,
+      size: variant.size,
+      quantity: qty,
+      unitPrice,
+      discountAmount: discount,
+      taxAmount: Number(lineTax.toFixed(2)),
+      totalPrice: Number(lineTotal.toFixed(2)),
+    };
+  });
+
+  const receiptNumber = db.getNextSequence("RCP-WEB", db.getData().sales, "receiptNumber");
+  const now = new Date().toISOString();
+
+  const fiscalResult = await fiscalizeTransaction(
+    {
+      invoiceOrReceiptNumber: receiptNumber,
+      totalAmount,
+      taxableAmount: subtotal,
+      taxAmount: totalTax,
+      zeroRatedAmount: totalAmount - (subtotal + totalTax),
+      customerName: customerName || "Online Portal Customer",
+      itemsCount: processedItems.length,
+      branchCode: branch.code,
+    },
+    false
+  );
+
+  const sale = {
+    id: uuidv4(),
+    receiptNumber,
+    branchId: branch.id,
+    branchName: branch.name,
+    cashierId: "usr-online-portal",
+    cashierName: "Online Web Portal (Customer Checkout)",
+    customerName: customerName || "Online Customer",
+    customerPhone: customerPhone || undefined,
+    customerEmail: customerEmail || undefined,
+    items: processedItems,
+    subtotal: Number(subtotal.toFixed(2)),
+    totalTax: Number(totalTax.toFixed(2)),
+    totalDiscount: Number(totalDiscount.toFixed(2)),
+    totalAmount: Number(totalAmount.toFixed(2)),
+    paymentMethod: paymentMethod || "MPESA",
+    paymentReference: paymentReference || undefined,
+    amountTendered: totalAmount,
+    changeGiven: 0,
+    status: "COMPLETED",
+    kraStatus: fiscalResult.status,
+    cuInvoiceNumber: fiscalResult.cuInvoiceNumber || undefined,
+    kraControlCode: fiscalResult.kraControlCode || undefined,
+    kraQrCodeUrl: fiscalResult.kraQrCodeUrl || undefined,
+    kraSubmissionTimestamp: fiscalResult.timestamp,
+    kraError: fiscalResult.error,
+    createdAt: now,
+  };
+
+  if (fiscalResult.status === "FAILED") {
+    enqueueKraRetry(sale.id, "SALE", receiptNumber, {
+      invoiceOrReceiptNumber: receiptNumber,
+      totalAmount,
+      taxableAmount: subtotal,
+      taxAmount: totalTax,
+      zeroRatedAmount: totalAmount - (subtotal + totalTax),
+      customerName: sale.customerName,
+      itemsCount: processedItems.length,
+      branchCode: branch.code,
+    }, fiscalResult.error || "Connection Failed");
+  }
+
+  for (const item of processedItems) {
+    const prod = products.find((p) => p.id === item.productId);
+    const variant = prod.variants.find((v) => v.id === item.variantId);
+    const previousStock = variant.branchStock[branch.id] ?? 0;
+    const newStock = Math.max(0, previousStock - item.quantity);
+    variant.branchStock[branch.id] = newStock;
+
+    db.getData().inventoryMovements.unshift({
+      id: uuidv4(),
+      productId: item.productId,
+      variantId: item.variantId,
+      productName: item.productName,
+      sku: item.sku,
+      branchId: branch.id,
+      branchName: branch.name,
+      type: "SALE",
+      quantityChange: -item.quantity,
+      previousStock,
+      newStock,
+      referenceNumber: receiptNumber,
+      userId: "usr-online-portal",
+      userName: "Online Web Portal",
+      timestamp: now,
+    });
+  }
+
+  db.getData().sales.unshift(sale);
+
+  const receiptRecord = {
+    id: uuidv4(),
+    receiptNumber,
+    saleId: sale.id,
+    branchId: branch.id,
+    branchName: branch.name,
+    customerName: sale.customerName,
+    amountPaid: totalAmount,
+    paymentMethod: sale.paymentMethod,
+    paymentReference: sale.paymentReference,
+    issuedBy: "Online Web Portal",
+    issuedAt: now,
+    kraControlCode: sale.kraControlCode,
+    cuInvoiceNumber: sale.cuInvoiceNumber,
+    qrCodeUrl: sale.kraQrCodeUrl,
+  };
+  db.getData().receipts.unshift(receiptRecord);
+
+  if (customerEmail && customerEmail.includes("@")) {
+    try {
+      const emailHtml = generateReceiptEmailHtml(receiptRecord, sale);
+      sendEmail({
+        to: customerEmail,
+        subject: `Payment Receipt ${receiptNumber} - Naisia Textiles & Uniforms`,
+        html: emailHtml,
+      });
+    } catch {}
+  }
+
+  await db.save();
+
+  db.logAudit({
+    userId: "online-customer",
+    userName: sale.customerName,
+    userRole: "STAFF",
+    branchId: branch.id,
+    branchName: branch.name,
+    action: "ONLINE_PORTAL_CHECKOUT",
+    entityType: "SALE",
+    entityId: sale.id,
+    details: `Online checkout completed by ${sale.customerName} (${sale.customerEmail || "no email"}) for ${receiptNumber}. Total: KES ${totalAmount.toLocaleString()}`,
+    ipAddress: req.ip,
+  });
+
+  return res.status(201).json({
+    sale,
+    receipt: receiptRecord,
+    qrCodeDataUrl: fiscalResult.kraQrCodeUrl,
+  });
+});
+
 apiRouter.post('/upload/image', requireAuth, requireRoles('ADMIN', 'ACCOUNTANT'), async (req: AuthenticatedRequest, res: Response) => {
   const { dataUrl, url } = req.body;
   if (!dataUrl && !url) {
