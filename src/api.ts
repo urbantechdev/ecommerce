@@ -114,11 +114,33 @@ export const api = {
     return request<any[]>(`/products?${query.toString()}`);
   },
   importProducts: (products: any[]) =>
-    request<{ success: boolean }>('/products/import', {
+    request<{
+      success: boolean;
+      message?: string;
+      summary?: {
+        totalProcessed: number;
+        productsAdded: number;
+        productsUpdated: number;
+        variantsAdded: number;
+        variantsUpdated: number;
+        duplicatesChecked: number;
+      };
+    }>('/products/import', {
       method: 'POST',
       body: JSON.stringify({ products }),
     }),
+  repairCatalogue: () =>
+    request<{
+      success: boolean;
+      message: string;
+      count: number;
+      repairedCount?: number;
+      reseeded?: boolean;
+    }>('/products/repair', {
+      method: 'POST',
+    }),
   getSchools: () => request<string[]>('/products/schools'),
+
   getPortalProducts: (params?: { school?: string; category?: string; search?: string }) => {
     const query = new URLSearchParams();
     if (params?.school && params.school !== "ALL") query.append("school", params.school);

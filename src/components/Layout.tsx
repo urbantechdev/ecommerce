@@ -217,12 +217,6 @@ export const Layout: React.FC<LayoutProps> = ({ currentView, onNavigate, childre
                 </div>
               )}
             </div>
-
-            {/* Tax Compliance badge */}
-            <div className="hidden xl:flex items-center space-x-1.5 text-xs text-blue-200 font-medium pl-1">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-              <span>Tax Compliant • KRA eTIMS Online</span>
-            </div>
           </div>
 
           {/* Right Header Controls: On mobile, ONLY the hamburger menu is displayed. All other buttons are inside the hamburger drawer. On desktop, full toolbar is shown. */}

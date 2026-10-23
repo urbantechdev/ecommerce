@@ -220,6 +220,33 @@ export const InventoryView: React.FC = () => {
             </div>
 
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+              <button
+                onClick={() => {
+                  const headers = ['Product', 'School', 'Category', 'SKU', 'Size', 'Branch', 'Stock', 'Selling Price'];
+                  const rows = filteredInventory.map(item => [
+                    `"${item.productName.replace(/"/g, '""')}"`,
+                    `"${item.school.replace(/"/g, '""')}"`,
+                    `"${item.category.replace(/"/g, '""')}"`,
+                    `"${item.sku.replace(/"/g, '""')}"`,
+                    `"${item.size.replace(/"/g, '""')}"`,
+                    `"${item.branchName.replace(/"/g, '""')}"`,
+                    item.currentStock,
+                    item.sellingPrice
+                  ]);
+                  const csvContent = [headers.join(','), ...rows.map(row => row.join(','))].join('\n');
+                  const blob = new Blob([csvContent], { type: 'text/csv' });
+                  const url = window.URL.createObjectURL(blob);
+                  const a = document.createElement('a');
+                  a.href = url;
+                  a.download = `inventory_export_${new Date().toISOString().slice(0, 10)}.csv`;
+                  a.click();
+                  window.URL.revokeObjectURL(url);
+                }}
+                className="px-3 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-xl text-xs font-semibold transition-all cursor-pointer flex items-center justify-center gap-1.5"
+              >
+                <span>Export CSV</span>
+              </button>
+              
               <select
                 value={selectedBranchFilter}
                 onChange={(e) => setSelectedBranchFilter(e.target.value)}

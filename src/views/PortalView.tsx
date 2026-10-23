@@ -92,14 +92,24 @@ export const PortalView: React.FC = () => {
         api.getPortalProducts(),
         api.getPortalSchools(),
       ]);
-      setProducts(prods);
-      setSchools(schs);
+      const shuffledProds = (Array.isArray(prods) ? prods : []).sort(() => Math.random() - 0.5);
+      setProducts(shuffledProds);
+      setSchools(Array.isArray(schs) ? schs : []);
     } catch (err: any) {
-      notify({ type: "ERROR", title: "Catalog Error", message: err.message || "Failed to load products" });
+      console.warn("Initial catalogue load failed, attempting retry...", err);
+      try {
+        const prods = await api.getPortalProducts();
+        const schs = await api.getPortalSchools();
+        setProducts(Array.isArray(prods) ? prods : []);
+        setSchools(Array.isArray(schs) ? schs : []);
+      } catch (retryErr: any) {
+        notify({ type: "ERROR", title: "Catalog Error", message: retryErr.message || "Could not load uniforms catalogue. Please retry." });
+      }
     } finally {
       setIsLoading(false);
     }
   };
+
 
   useEffect(() => {
     loadPortalData();
@@ -486,20 +496,29 @@ export const PortalView: React.FC = () => {
                 )}
               </div>
 
-              {/* School Selector */}
-              <div className="w-full sm:w-64">
-                <select
-                  value={selectedSchool}
-                  onChange={(e) => setSelectedSchool(e.target.value)}
-                  className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#030A91]"
+              {/* School Selector & Shuffle */}
+              <div className="flex gap-2 w-full sm:w-auto">
+                <div className="flex-1 sm:w-64">
+                  <select
+                    value={selectedSchool}
+                    onChange={(e) => setSelectedSchool(e.target.value)}
+                    className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#030A91]"
+                  >
+                    <option value="ALL">🏫 All Institutions & Schools</option>
+                    {schools.map((s) => (
+                      <option key={s} value={s}>
+                        {s}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <button
+                  onClick={() => setProducts([...products].sort(() => Math.random() - 0.5))}
+                  className="px-3 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-all cursor-pointer"
+                  title="Reshuffle Products"
                 >
-                  <option value="ALL">🏫 All Institutions & Schools</option>
-                  {schools.map((s) => (
-                    <option key={s} value={s}>
-                      {s}
-                    </option>
-                  ))}
-                </select>
+                  <RefreshCw className="w-4 h-4" />
+                </button>
               </div>
             </div>
 
@@ -559,21 +578,40 @@ export const PortalView: React.FC = () => {
               <p className="font-bold">Loading Naisiae uniform collection...</p>
             </div>
           ) : filteredProducts.length === 0 ? (
-            <div className="bg-white rounded-2xl border border-slate-200 p-12 text-center text-xs text-slate-500 space-y-2">
+            <div className="bg-white rounded-2xl border border-slate-200 p-12 text-center text-xs text-slate-500 space-y-3">
               <Shirt className="w-10 h-10 text-slate-300 mx-auto" />
-              <p className="font-bold text-slate-800">No matching garments found</p>
-              <p className="text-slate-400">Try adjusting your search or selecting another institution.</p>
-              <button
-                onClick={() => {
-                  setSelectedSchool("ALL");
-                  setSelectedCategory("ALL");
-                  setSearchQuery("");
-                }}
-                className="mt-2 text-[#030A91] font-bold underline cursor-pointer"
-              >
-                Reset Filters
-              </button>
+              <p className="font-bold text-slate-800 text-sm">
+                {products.length === 0 ? 'Catalogue Temporarily Unavailable' : 'No matching garments found'}
+              </p>
+              <p className="text-slate-400 max-w-md mx-auto">
+                {products.length === 0
+                  ? 'We could not load uniform items. Click below to reload the catalogue.'
+                  : 'Try adjusting your search or selecting another institution.'}
+              </p>
+              <div className="flex items-center justify-center space-x-2 pt-2">
+                {products.length === 0 ? (
+                  <button
+                    onClick={loadPortalData}
+                    className="px-4 py-2 bg-[#030A91] hover:bg-blue-900 text-white font-bold rounded-xl text-xs transition-all cursor-pointer inline-flex items-center space-x-1.5 shadow-sm"
+                  >
+                    <RefreshCw className="w-3.5 h-3.5 text-[#FACB00]" />
+                    <span>Reload Catalogue</span>
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => {
+                      setSelectedSchool("ALL");
+                      setSelectedCategory("ALL");
+                      setSearchQuery("");
+                    }}
+                    className="text-[#030A91] font-bold underline cursor-pointer"
+                  >
+                    Reset Filters
+                  </button>
+                )}
+              </div>
             </div>
+
           ) : (
             <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-3.5">
               {filteredProducts.map((p) => {
@@ -586,7 +624,7 @@ export const PortalView: React.FC = () => {
                   <div
                     key={p.id}
                     onClick={() => setActiveProductForVariant(p)}
-                    className="bg-white rounded-2xl border border-slate-200 hover:border-[#030A91] hover:shadow-md transition-all cursor-pointer flex flex-col overflow-hidden group text-left"
+                    className="bg-white rounded-2xl border border-slate-200 hover:border-[#030A91] hover:shadow-xl hover:scale-[1.02] transition-all duration-300 cursor-pointer flex flex-col overflow-hidden group text-left"
                   >
                     {/* Image Box */}
                     <div className="aspect-square bg-slate-100 relative overflow-hidden flex items-center justify-center">

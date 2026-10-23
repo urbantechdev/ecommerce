@@ -17,7 +17,18 @@ import {
   Search,
   Sparkles,
   Key,
-  X
+  X,
+  Eye,
+  EyeOff,
+  Volume2,
+  VolumeX,
+  Clock,
+  Wifi,
+  ShieldAlert,
+  Users,
+  RefreshCw,
+  HelpCircle,
+  BadgeCheck
 } from 'lucide-react';
 import { useNotification } from '../context/NotificationContext';
 import { api } from '../api';
@@ -54,6 +65,8 @@ interface StaffUserItem {
   branchName: string;
   phone: string;
   hasPin: boolean;
+  demoPin?: string;
+  pinHint?: string;
 }
 
 export const LoginView: React.FC = () => {
@@ -184,6 +197,112 @@ export const LoginView: React.FC = () => {
   const [enteredPin, setEnteredPin] = useState('');
   const [staffSearchQuery, setStaffSearchQuery] = useState('');
   const [useEmailForStaff, setUseEmailForStaff] = useState(false);
+  const [showPin, setShowPin] = useState(false);
+  const [soundEnabled, setSoundEnabled] = useState(true);
+  const [pressedKey, setPressedKey] = useState<string | null>(null);
+  const [currentTime, setCurrentTime] = useState('');
+  const [isCashierSwitchModalOpen, setIsCashierSwitchModalOpen] = useState(false);
+  const [isPinHelpModalOpen, setIsPinHelpModalOpen] = useState(false);
+  const [isPinErrorShaking, setIsPinErrorShaking] = useState(false);
+
+  // Digital clock update
+  useEffect(() => {
+    const updateTime = () => {
+      const now = new Date();
+      setCurrentTime(
+        now.toLocaleTimeString('en-US', {
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit',
+          hour12: true,
+        })
+      );
+    };
+    updateTime();
+    const timer = setInterval(updateTime, 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  // Web Audio API Synthesizer for tactile feedback
+  const playSound = useCallback(
+    (type: 'press' | 'backspace' | 'clear' | 'success' | 'error') => {
+      if (!soundEnabled || typeof window === 'undefined') return;
+      try {
+        const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
+        if (!AudioCtx) return;
+        const ctx = new AudioCtx();
+
+        if (type === 'press') {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(800, ctx.currentTime);
+          osc.frequency.exponentialRampToValueAtTime(1150, ctx.currentTime + 0.04);
+          gain.gain.setValueAtTime(0.07, ctx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.05);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start();
+          osc.stop(ctx.currentTime + 0.05);
+        } else if (type === 'backspace') {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(450, ctx.currentTime);
+          osc.frequency.exponentialRampToValueAtTime(280, ctx.currentTime + 0.06);
+          gain.gain.setValueAtTime(0.08, ctx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.07);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start();
+          osc.stop(ctx.currentTime + 0.07);
+        } else if (type === 'clear') {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = 'sawtooth';
+          osc.frequency.setValueAtTime(320, ctx.currentTime);
+          osc.frequency.exponentialRampToValueAtTime(160, ctx.currentTime + 0.09);
+          gain.gain.setValueAtTime(0.06, ctx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.1);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start();
+          osc.stop(ctx.currentTime + 0.1);
+        } else if (type === 'success') {
+          const now = ctx.currentTime;
+          [523.25, 659.25, 783.99, 1046.5].forEach((freq, idx) => {
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(freq, now + idx * 0.06);
+            gain.gain.setValueAtTime(0.09, now + idx * 0.06);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.06 + 0.18);
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.start(now + idx * 0.06);
+            osc.stop(now + idx * 0.06 + 0.2);
+          });
+        } else if (type === 'error') {
+          const now = ctx.currentTime;
+          [220, 160].forEach((freq, idx) => {
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(freq, now + idx * 0.08);
+            gain.gain.setValueAtTime(0.12, now + idx * 0.08);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.08 + 0.08);
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.start(now + idx * 0.08);
+            osc.stop(now + idx * 0.08 + 0.08);
+          });
+        }
+      } catch {
+        // AudioContext silent fallback
+      }
+    },
+    [soundEnabled]
+  );
 
   // Load staff users when tapping STAFF
   const loadStaffUsers = async () => {
@@ -234,6 +353,27 @@ export const LoginView: React.FC = () => {
     setEnteredPin('');
     setErrorMessage('');
   };
+
+  // Demo PIN helpers for quick testing & hint
+  const getDemoPinForUser = useCallback(
+    (userOrId?: StaffUserItem | string | null) => {
+      if (!userOrId) return '333333';
+      if (typeof userOrId === 'object') {
+        if (userOrId.demoPin) return userOrId.demoPin;
+        userOrId = userOrId.id;
+      }
+      const found = staffList.find((s) => s.id === userOrId);
+      if (found?.demoPin) return found.demoPin;
+      if (userOrId === 'usr-pos-nbi') return '123456';
+      if (userOrId === 'usr-pos-wst') return '654321';
+      if (userOrId === 'usr-pos-msa') return '112233';
+      if (userOrId === 'usr-pos-ksm') return '334455';
+      if (userOrId.includes('1791527847945')) return '333333';
+      if (userOrId.includes('1791527957212')) return '333333';
+      return '333333';
+    },
+    [staffList]
+  );
 
   // Standard Email + Password submission
   const handleSubmit = async (e: React.FormEvent) => {
@@ -298,6 +438,9 @@ export const LoginView: React.FC = () => {
       if (!selectedStaffUser) return;
       if (pin.length !== 6) {
         setErrorMessage('Please enter your full 6-digit PIN');
+        playSound('error');
+        setIsPinErrorShaking(true);
+        setTimeout(() => setIsPinErrorShaking(false), 500);
         return;
       }
 
@@ -306,12 +449,16 @@ export const LoginView: React.FC = () => {
 
       try {
         await loginWithPin({ userId: selectedStaffUser.id, pin });
+        playSound('success');
         notify({
           type: 'SUCCESS',
           title: 'Station Unlocked',
           message: `Welcome, ${selectedStaffUser.name}`,
         });
       } catch (err: any) {
+        playSound('error');
+        setIsPinErrorShaking(true);
+        setTimeout(() => setIsPinErrorShaking(false), 500);
         setErrorMessage(err.message || 'Incorrect 6-digit PIN. Please try again.');
         setEnteredPin('');
         notify({
@@ -323,39 +470,57 @@ export const LoginView: React.FC = () => {
         setIsSubmitting(false);
       }
     },
-    [enteredPin, selectedStaffUser, loginWithPin, notify]
+    [enteredPin, selectedStaffUser, loginWithPin, notify, playSound]
   );
 
   // Keypad Handlers
-  const handleKeypadPress = (num: string) => {
-    if (enteredPin.length < 6 && !isSubmitting) {
-      const newPin = enteredPin + num;
-      setEnteredPin(newPin);
-      setErrorMessage('');
-      if (newPin.length === 6) {
-        // Auto-submit when 6th digit is typed
-        setTimeout(() => handlePinSubmit(newPin), 80);
+  const handleKeypadPress = useCallback(
+    (num: string) => {
+      if (enteredPin.length < 6 && !isSubmitting) {
+        playSound('press');
+        setPressedKey(num);
+        setTimeout(() => setPressedKey(null), 150);
+        const newPin = enteredPin + num;
+        setEnteredPin(newPin);
+        setErrorMessage('');
+        if (newPin.length === 6) {
+          // Auto-submit when 6th digit is typed
+          setTimeout(() => handlePinSubmit(newPin), 80);
+        }
       }
-    }
-  };
+    },
+    [enteredPin, isSubmitting, playSound, handlePinSubmit]
+  );
 
-  const handleKeypadBackspace = () => {
+  const handleKeypadBackspace = useCallback(() => {
     if (enteredPin.length > 0 && !isSubmitting) {
+      playSound('backspace');
+      setPressedKey('backspace');
+      setTimeout(() => setPressedKey(null), 150);
       setEnteredPin(enteredPin.slice(0, -1));
       setErrorMessage('');
     }
-  };
+  }, [enteredPin, isSubmitting, playSound]);
 
-  const handleKeypadClear = () => {
-    setEnteredPin('');
-    setErrorMessage('');
-  };
+  const handleKeypadClear = useCallback(() => {
+    if (!isSubmitting) {
+      playSound('clear');
+      setPressedKey('clear');
+      setTimeout(() => setPressedKey(null), 150);
+      setEnteredPin('');
+      setErrorMessage('');
+    }
+  }, [isSubmitting, playSound]);
 
   // Physical Keyboard Listener for PIN Pad
   useEffect(() => {
     if (selectedRole !== 'STAFF' || !selectedStaffUser || useEmailForStaff) return;
 
     const handleKeyDown = (e: KeyboardEvent) => {
+      // Don't intercept if an input or textarea is focused
+      const targetTag = (e.target as HTMLElement)?.tagName?.toLowerCase();
+      if (targetTag === 'input' || targetTag === 'textarea') return;
+
       if (e.key >= '0' && e.key <= '9') {
         e.preventDefault();
         handleKeypadPress(e.key);
@@ -375,16 +540,16 @@ export const LoginView: React.FC = () => {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [selectedRole, selectedStaffUser, enteredPin, useEmailForStaff, handlePinSubmit]);
-
-  // Demo PIN helpers for quick testing
-  const getDemoPinForUser = (userId: string) => {
-    if (userId === 'usr-pos-nbi') return '123456';
-    if (userId === 'usr-pos-wst') return '654321';
-    if (userId === 'usr-pos-msa') return '112233';
-    if (userId === 'usr-pos-ksm') return '334455';
-    return '123456';
-  };
+  }, [
+    selectedRole,
+    selectedStaffUser,
+    enteredPin,
+    useEmailForStaff,
+    handleKeypadPress,
+    handleKeypadBackspace,
+    handleKeypadClear,
+    handlePinSubmit,
+  ]);
 
   // Filtered staff list based on search
   const filteredStaff = staffList.filter((s) => {
@@ -815,109 +980,297 @@ export const LoginView: React.FC = () => {
               </div>
             </div>
           ) : (
-            /* 2B. 6-DIGIT PIN ENTRY PAD                            */
-            <div className="max-w-md w-full bg-white rounded-3xl shadow-2xl border border-slate-200 overflow-hidden backdrop-blur-md animate-in fade-in zoom-in-95 duration-200">
-              {/* Header */}
-              <div className="p-4 bg-gradient-to-r from-emerald-800 to-teal-900 text-white flex items-center justify-between">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setSelectedStaffUser(null);
-                    setEnteredPin('');
-                    setErrorMessage('');
-                  }}
-                  className="inline-flex items-center text-xs font-bold text-emerald-100 hover:text-white px-2.5 py-1 rounded-lg bg-white/10 hover:bg-white/20 transition-colors"
-                >
-                  <ArrowLeft className="w-3.5 h-3.5 mr-1" />
-                  <span>Switch Staff</span>
-                </button>
+            /* 2B. ENHANCED POS TERMINAL 6-DIGIT PIN ENTRY PAD */
+            <div className="max-w-md w-full bg-white rounded-3xl shadow-2xl border border-slate-200/90 overflow-hidden backdrop-blur-md animate-in fade-in zoom-in-95 duration-200 relative">
+              {/* Terminal Station Status Header */}
+              <div className="px-4 py-3 bg-gradient-to-r from-[#030A91] via-[#0412B3] to-[#0A2076] text-white flex items-center justify-between shadow-inner">
+                <div className="flex items-center space-x-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedStaffUser(null);
+                      setEnteredPin('');
+                      setErrorMessage('');
+                    }}
+                    className="inline-flex items-center text-xs font-bold text-white/90 hover:text-white px-2.5 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 transition-all active:scale-95 border border-white/10"
+                    title="Change Cashier"
+                  >
+                    <ArrowLeft className="w-3.5 h-3.5 mr-1" />
+                    <span>Cashiers</span>
+                  </button>
 
-                <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-[#FACB00] text-[#030A91]">
-                  6-Digit Terminal PIN
-                </span>
-              </div>
-
-              <div className="p-6 sm:p-7">
-                {/* Selected Staff Profile Card */}
-                <div className="text-center mb-5 pb-4 border-b border-slate-100">
-                  <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[#030A91] to-[#0412B3] text-[#FACB00] mx-auto flex items-center justify-center font-black text-xl shadow-md ring-4 ring-emerald-50">
-                    {selectedStaffUser.name
-                      .split(' ')
-                      .map((n) => n[0])
-                      .slice(0, 2)
-                      .join('')
-                      .toUpperCase()}
-                  </div>
-                  <h3 className="text-base font-black text-slate-900 mt-2.5">
-                    {selectedStaffUser.name}
-                  </h3>
-                  <div className="inline-flex items-center space-x-1.5 text-xs text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full mt-1 border border-emerald-200/60 font-semibold">
-                    <Store className="w-3 h-3 text-emerald-600" />
-                    <span>{selectedStaffUser.branchName}</span>
+                  <div className="hidden sm:flex items-center space-x-1.5 text-[10px] font-bold text-emerald-300 bg-emerald-950/60 px-2 py-1 rounded-full border border-emerald-500/30">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
+                    <span>POS ONLINE</span>
                   </div>
                 </div>
 
+                <div className="flex items-center space-x-2">
+                  {/* Live Clock */}
+                  <div className="flex items-center space-x-1 text-[11px] font-mono text-blue-100 bg-white/10 px-2 py-0.5 rounded-md">
+                    <Clock className="w-3 h-3 text-[#FACB00]" />
+                    <span>{currentTime || 'LIVE'}</span>
+                  </div>
+
+                  {/* Sound FX Toggle */}
+                  <button
+                    type="button"
+                    onClick={() => setSoundEnabled((prev) => !prev)}
+                    className={`p-1.5 rounded-lg transition-colors text-xs flex items-center ${
+                      soundEnabled
+                        ? 'bg-[#FACB00] text-[#030A91] font-bold shadow-xs'
+                        : 'bg-white/10 text-white/60 hover:text-white'
+                    }`}
+                    title={soundEnabled ? 'Keypad sound enabled' : 'Keypad sound muted'}
+                  >
+                    {soundEnabled ? <Volume2 className="w-3.5 h-3.5" /> : <VolumeX className="w-3.5 h-3.5" />}
+                  </button>
+
+                  {/* Terminal Help / Supervisor */}
+                  <button
+                    type="button"
+                    onClick={() => setIsPinHelpModalOpen(true)}
+                    className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white/80 hover:text-white transition-colors"
+                    title="PIN Help & Supervisor Override"
+                  >
+                    <HelpCircle className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              </div>
+
+              <div className="p-5 sm:p-6">
+                {/* Selected Staff Profile Card with Quick Switcher */}
+                <div className="relative mb-5 p-3.5 rounded-2xl bg-gradient-to-b from-slate-50 to-blue-50/40 border border-slate-200/80 shadow-2xs">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-3 min-w-0">
+                      <div className="relative">
+                        <div className="w-13 h-13 rounded-2xl bg-gradient-to-br from-[#030A91] to-[#0412B3] text-[#FACB00] flex items-center justify-center font-black text-lg shadow-sm ring-2 ring-[#FACB00]/60 shrink-0">
+                          {selectedStaffUser.name
+                            .split(' ')
+                            .map((n) => n[0])
+                            .slice(0, 2)
+                            .join('')
+                            .toUpperCase()}
+                        </div>
+                        <span className="absolute -bottom-1 -right-1 w-4 h-4 bg-emerald-500 rounded-full border-2 border-white flex items-center justify-center shadow-xs">
+                          <CheckCircle2 className="w-3 h-3 text-white" />
+                        </span>
+                      </div>
+
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center space-x-2">
+                          <h3 className="text-sm font-black text-slate-900 truncate">
+                            {selectedStaffUser.name}
+                          </h3>
+                          <span className="text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-[#030A91] text-[#FACB00] shrink-0">
+                            {selectedStaffUser.role || 'CASHIER'}
+                          </span>
+                        </div>
+
+                        <div className="flex items-center space-x-2 text-xs text-slate-500 mt-0.5">
+                          <div className="inline-flex items-center space-x-1 text-slate-600 font-medium truncate">
+                            <Store className="w-3 h-3 text-emerald-600 shrink-0" />
+                            <span className="truncate">{selectedStaffUser.branchName}</span>
+                          </div>
+                          <span className="text-slate-300">•</span>
+                          <span className="font-mono text-[10px] text-slate-400">
+                            ID: {selectedStaffUser.id.slice(-6).toUpperCase()}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => setIsCashierSwitchModalOpen(true)}
+                      className="ml-2 px-2.5 py-1.5 text-[11px] font-bold text-[#030A91] bg-white hover:bg-blue-50 border border-blue-200 rounded-xl transition-all shadow-2xs hover:shadow-xs active:scale-95 shrink-0 inline-flex items-center space-x-1"
+                    >
+                      <Users className="w-3 h-3 text-[#030A91]" />
+                      <span className="hidden sm:inline">Switch</span>
+                    </button>
+                  </div>
+
+                  {/* Quick Cashier Avatar Strip if other cashiers exist */}
+                  {staffList.filter((s) => s.id !== selectedStaffUser.id).length > 0 && (
+                    <div className="mt-3 pt-2.5 border-t border-slate-200/60 flex items-center justify-between text-xs">
+                      <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400">
+                        Quick switch:
+                      </span>
+                      <div className="flex items-center space-x-1.5 overflow-x-auto max-w-[240px] py-0.5">
+                        {staffList
+                          .filter((s) => s.id !== selectedStaffUser.id)
+                          .slice(0, 4)
+                          .map((cashier) => (
+                            <button
+                              key={cashier.id}
+                              type="button"
+                              onClick={() => {
+                                setSelectedStaffUser(cashier);
+                                setEnteredPin('');
+                                setErrorMessage('');
+                                playSound('press');
+                              }}
+                              className="px-2 py-0.5 rounded-lg bg-white hover:bg-blue-100/70 border border-slate-200 text-slate-700 hover:text-[#030A91] font-semibold text-[11px] transition-all flex items-center space-x-1 active:scale-95 shrink-0"
+                              title={`Switch to ${cashier.name}`}
+                            >
+                              <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                              <span className="max-w-[70px] truncate">{cashier.name.split(' ')[0]}</span>
+                            </button>
+                          ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
                 {errorMessage && (
-                  <div className="mb-4 p-3 rounded-xl bg-rose-50 border border-rose-200 flex items-start space-x-2 text-rose-800 text-xs animate-shake">
+                  <div className="mb-4 p-3 rounded-xl bg-rose-50 border border-rose-200 flex items-start space-x-2 text-rose-800 text-xs animate-shake shadow-xs">
                     <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-rose-600" />
-                    <span>{errorMessage}</span>
+                    <div className="flex-1">
+                      <p className="font-semibold">{errorMessage}</p>
+                      <button
+                        type="button"
+                        onClick={() => setIsPinHelpModalOpen(true)}
+                        className="text-rose-700 underline text-[11px] font-bold mt-0.5 inline-block hover:text-rose-900"
+                      >
+                        Need manager override or forgot PIN?
+                      </button>
+                    </div>
                   </div>
                 )}
 
-                {/* 6 Circular PIN Indicators */}
-                <div className="mb-6">
-                  <label className="block text-center text-xs font-bold text-slate-600 uppercase tracking-wider mb-3">
-                    Enter Assigned 6-Digit PIN
-                  </label>
-                  <div className="flex items-center justify-center space-x-3.5">
+                {/* 6 Digit PIN Display Cells */}
+                <div className="mb-5">
+                  <div className="flex items-center justify-between mb-2 px-1">
+                    <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider flex items-center space-x-1">
+                      <KeyRound className="w-3.5 h-3.5 text-[#030A91]" />
+                      <span>Security PIN ({enteredPin.length}/6)</span>
+                    </span>
+
+                    <button
+                      type="button"
+                      onClick={() => setShowPin((prev) => !prev)}
+                      className="text-[11px] font-bold text-slate-600 hover:text-[#030A91] inline-flex items-center space-x-1 px-2 py-0.5 rounded-lg hover:bg-slate-100 transition-colors"
+                      title={showPin ? 'Hide PIN digits' : 'Peek PIN digits'}
+                    >
+                      {showPin ? (
+                        <>
+                          <EyeOff className="w-3.5 h-3.5 text-slate-500" />
+                          <span>Hide</span>
+                        </>
+                      ) : (
+                        <>
+                          <Eye className="w-3.5 h-3.5 text-slate-500" />
+                          <span>Peek</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+
+                  {/* 6 Cells */}
+                  <div
+                    className={`flex items-center justify-center space-x-2.5 sm:space-x-3.5 py-1 ${
+                      isPinErrorShaking ? 'animate-shake' : ''
+                    }`}
+                  >
                     {[0, 1, 2, 3, 4, 5].map((index) => {
                       const isFilled = index < enteredPin.length;
+                      const isCurrent = index === enteredPin.length;
+                      const digitChar = enteredPin[index];
+
                       return (
                         <div
                           key={index}
-                          className={`w-4 h-4 sm:w-5 sm:h-5 rounded-full transition-all duration-150 ${
-                            isFilled
-                              ? 'bg-[#030A91] ring-4 ring-[#FACB00] scale-110 shadow-sm'
-                              : 'border-2 border-slate-300 bg-slate-50'
+                          className={`w-11 h-13 sm:w-12 sm:h-14 rounded-2xl flex items-center justify-center font-mono font-black text-xl transition-all duration-150 relative ${
+                            isPinErrorShaking
+                              ? 'border-2 border-rose-400 bg-rose-50 text-rose-700'
+                              : isFilled
+                              ? 'border-2 border-[#030A91] bg-blue-50/80 text-[#030A91] shadow-xs scale-100'
+                              : isCurrent
+                              ? 'border-2 border-[#FACB00] bg-amber-50/40 shadow-sm ring-4 ring-[#FACB00]/30'
+                              : 'border-2 border-slate-200 bg-slate-50 text-slate-300'
                           }`}
-                        />
+                        >
+                          {isFilled ? (
+                            showPin ? (
+                              <span className="animate-in zoom-in-75 duration-100">{digitChar}</span>
+                            ) : (
+                              <span className="w-3.5 h-3.5 rounded-full bg-[#030A91] ring-2 ring-[#FACB00] shadow-2xs animate-in zoom-in-50 duration-100" />
+                            )
+                          ) : isCurrent ? (
+                            <span className="w-0.5 h-5 bg-[#FACB00] animate-pulse" />
+                          ) : null}
+                        </div>
                       );
                     })}
                   </div>
                 </div>
 
-                {/* Numeric Touch Keypad */}
-                <div className="grid grid-cols-3 gap-2.5 max-w-xs mx-auto mb-4">
-                  {['1', '2', '3', '4', '5', '6', '7', '8', '9'].map((digit) => (
-                    <button
-                      key={digit}
-                      type="button"
-                      disabled={isSubmitting}
-                      onClick={() => handleKeypadPress(digit)}
-                      className="h-12 sm:h-14 rounded-2xl bg-slate-100 hover:bg-[#030A91] hover:text-[#FACB00] text-slate-800 font-black text-xl transition-all duration-100 shadow-2xs active:scale-95 flex items-center justify-center disabled:opacity-50"
-                    >
-                      {digit}
-                    </button>
-                  ))}
+                {/* Tactile Hardware-Style Keypad */}
+                <div className="grid grid-cols-3 gap-2 sm:gap-2.5 max-w-xs mx-auto mb-4">
+                  {[
+                    { digit: '1', sub: ' ' },
+                    { digit: '2', sub: 'ABC' },
+                    { digit: '3', sub: 'DEF' },
+                    { digit: '4', sub: 'GHI' },
+                    { digit: '5', sub: 'JKL' },
+                    { digit: '6', sub: 'MNO' },
+                    { digit: '7', sub: 'PQRS' },
+                    { digit: '8', sub: 'TUV' },
+                    { digit: '9', sub: 'WXYZ' },
+                  ].map(({ digit, sub }) => {
+                    const isPressed = pressedKey === digit;
+                    return (
+                      <button
+                        key={digit}
+                        type="button"
+                        disabled={isSubmitting}
+                        onClick={() => handleKeypadPress(digit)}
+                        className={`h-13 sm:h-14 rounded-2xl flex flex-col items-center justify-center transition-all duration-100 select-none shadow-2xs active:scale-95 disabled:opacity-50 ${
+                          isPressed
+                            ? 'bg-[#030A91] text-[#FACB00] scale-95 ring-2 ring-[#FACB00]'
+                            : 'bg-slate-100 hover:bg-[#030A91] hover:text-[#FACB00] text-slate-800'
+                        }`}
+                      >
+                        <span className="font-black text-xl leading-none">{digit}</span>
+                        {sub.trim() ? (
+                          <span className="text-[9px] font-bold tracking-widest text-slate-400 uppercase mt-0.5">
+                            {sub}
+                          </span>
+                        ) : (
+                          <span className="text-[9px] opacity-0 mt-0.5">-</span>
+                        )}
+                      </button>
+                    );
+                  })}
 
                   {/* Clear Button */}
                   <button
                     type="button"
                     disabled={isSubmitting || enteredPin.length === 0}
                     onClick={handleKeypadClear}
-                    className="h-12 sm:h-14 rounded-2xl bg-slate-100 hover:bg-rose-100 hover:text-rose-700 text-slate-500 font-bold text-xs uppercase tracking-wider transition-all shadow-2xs active:scale-95 flex items-center justify-center disabled:opacity-40"
+                    className={`h-13 sm:h-14 rounded-2xl flex flex-col items-center justify-center transition-all shadow-2xs active:scale-95 disabled:opacity-40 select-none ${
+                      pressedKey === 'clear'
+                        ? 'bg-rose-600 text-white scale-95'
+                        : 'bg-slate-100 hover:bg-rose-100 hover:text-rose-700 text-slate-500'
+                    }`}
                   >
-                    Clear
+                    <X className="w-5 h-5 mb-0.5" />
+                    <span className="text-[9px] font-black uppercase tracking-wider">Clear</span>
                   </button>
 
-                  {/* 0 Digit */}
+                  {/* 0 Button */}
                   <button
                     type="button"
                     disabled={isSubmitting}
                     onClick={() => handleKeypadPress('0')}
-                    className="h-12 sm:h-14 rounded-2xl bg-slate-100 hover:bg-[#030A91] hover:text-[#FACB00] text-slate-800 font-black text-xl transition-all duration-100 shadow-2xs active:scale-95 flex items-center justify-center disabled:opacity-50"
+                    className={`h-13 sm:h-14 rounded-2xl flex flex-col items-center justify-center transition-all duration-100 select-none shadow-2xs active:scale-95 disabled:opacity-50 ${
+                      pressedKey === '0'
+                        ? 'bg-[#030A91] text-[#FACB00] scale-95 ring-2 ring-[#FACB00]'
+                        : 'bg-slate-100 hover:bg-[#030A91] hover:text-[#FACB00] text-slate-800'
+                    }`}
                   >
-                    0
+                    <span className="font-black text-xl leading-none">0</span>
+                    <span className="text-[9px] font-bold tracking-widest text-slate-400 uppercase mt-0.5">+</span>
                   </button>
 
                   {/* Backspace Button */}
@@ -925,48 +1278,197 @@ export const LoginView: React.FC = () => {
                     type="button"
                     disabled={isSubmitting || enteredPin.length === 0}
                     onClick={handleKeypadBackspace}
-                    className="h-12 sm:h-14 rounded-2xl bg-slate-100 hover:bg-amber-100 hover:text-amber-800 text-slate-600 font-bold transition-all shadow-2xs active:scale-95 flex items-center justify-center disabled:opacity-40"
+                    className={`h-13 sm:h-14 rounded-2xl flex flex-col items-center justify-center transition-all shadow-2xs active:scale-95 disabled:opacity-40 select-none ${
+                      pressedKey === 'backspace'
+                        ? 'bg-amber-500 text-white scale-95'
+                        : 'bg-slate-100 hover:bg-amber-100 hover:text-amber-800 text-slate-600'
+                    }`}
                   >
-                    <Delete className="w-5 h-5" />
+                    <Delete className="w-5 h-5 mb-0.5" />
+                    <span className="text-[9px] font-black uppercase tracking-wider">Delete</span>
                   </button>
                 </div>
 
-                {/* Submit Action */}
+                {/* Primary Unlock Action */}
                 <button
                   type="button"
                   disabled={isSubmitting || enteredPin.length !== 6}
                   onClick={() => handlePinSubmit()}
-                  className="w-full py-3 bg-[#030A91] text-white rounded-xl text-sm font-bold flex items-center justify-center space-x-2 hover:bg-blue-900 transition-all shadow-md shadow-blue-900/20 disabled:opacity-40"
+                  className="w-full py-3.5 bg-gradient-to-r from-[#030A91] to-[#0412B3] text-white rounded-2xl text-sm font-black uppercase tracking-wider flex items-center justify-center space-x-2 hover:brightness-110 active:scale-[0.99] transition-all shadow-lg shadow-blue-900/20 disabled:opacity-40 disabled:cursor-not-allowed"
                 >
-                  <span>{isSubmitting ? 'Verifying PIN...' : 'Unlock POS Terminal'}</span>
-                  <ArrowRight className="w-4 h-4 text-[#FACB00]" />
+                  {isSubmitting ? (
+                    <>
+                      <RefreshCw className="w-4 h-4 text-[#FACB00] animate-spin" />
+                      <span>Verifying PIN...</span>
+                    </>
+                  ) : (
+                    <>
+                      <span>Unlock POS Terminal</span>
+                      <ArrowRight className="w-4 h-4 text-[#FACB00]" />
+                    </>
+                  )}
                 </button>
 
-                {/* Demo Helper Hint */}
+                {/* Demo Helper & PIN Hint Footer Bar */}
                 <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
-                  <div className="flex items-center space-x-1.5">
-                    <Key className="w-3.5 h-3.5 text-amber-500" />
-                    <span>
-                      Demo PIN:{' '}
+                  <div className="flex items-center space-x-1.5 min-w-0">
+                    <Key className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                    <span className="truncate">
+                      Hint:{' '}
                       <strong className="text-slate-800 font-mono">
-                        {getDemoPinForUser(selectedStaffUser.id)}
+                        {selectedStaffUser.pinHint || `${getDemoPinForUser(selectedStaffUser).slice(0, 2)}••${getDemoPinForUser(selectedStaffUser).slice(-2)}`}
                       </strong>
                     </span>
                   </div>
 
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const demoPin = getDemoPinForUser(selectedStaffUser.id);
-                      setEnteredPin(demoPin);
-                      handlePinSubmit(demoPin);
-                    }}
-                    className="text-[11px] font-bold text-[#030A91] hover:underline px-2 py-1 rounded bg-blue-50"
-                  >
-                    Auto-Fill PIN
-                  </button>
+                  <div className="flex items-center space-x-2 shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const demoPin = getDemoPinForUser(selectedStaffUser);
+                        setEnteredPin(demoPin);
+                        playSound('press');
+                        handlePinSubmit(demoPin);
+                      }}
+                      className="text-[11px] font-black text-[#030A91] hover:underline px-2.5 py-1 rounded-lg bg-blue-50 border border-blue-200/80 hover:bg-blue-100 active:scale-95 transition-all"
+                    >
+                      Auto-Fill ({getDemoPinForUser(selectedStaffUser)})
+                    </button>
+                  </div>
                 </div>
               </div>
+
+              {/* Quick Cashier Switch Modal */}
+              {isCashierSwitchModalOpen && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-150">
+                  <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 max-w-sm w-full p-5 animate-in zoom-in-95 duration-150">
+                    <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+                      <div className="flex items-center space-x-2">
+                        <Users className="w-5 h-5 text-[#030A91]" />
+                        <h4 className="font-black text-sm text-slate-900">Switch POS Cashier</h4>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setIsCashierSwitchModalOpen(false)}
+                        className="p-1 rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-700"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+
+                    <p className="text-xs text-slate-500 mt-2 mb-3">
+                      Select the cashier currently logging into this terminal station:
+                    </p>
+
+                    <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
+                      {staffList.map((cashier) => {
+                        const isCurrent = cashier.id === selectedStaffUser.id;
+                        return (
+                          <button
+                            key={cashier.id}
+                            type="button"
+                            onClick={() => {
+                              setSelectedStaffUser(cashier);
+                              setEnteredPin('');
+                              setErrorMessage('');
+                              setIsCashierSwitchModalOpen(false);
+                              playSound('press');
+                            }}
+                            className={`w-full p-2.5 rounded-xl border flex items-center space-x-3 text-left transition-all ${
+                              isCurrent
+                                ? 'border-[#030A91] bg-blue-50/60 ring-2 ring-[#030A91]/20'
+                                : 'border-slate-200 hover:border-blue-300 hover:bg-slate-50'
+                            }`}
+                          >
+                            <div className="w-9 h-9 rounded-lg bg-[#030A91] text-[#FACB00] flex items-center justify-center font-bold text-xs shrink-0">
+                              {cashier.name
+                                .split(' ')
+                                .map((n) => n[0])
+                                .slice(0, 2)
+                                .join('')
+                                .toUpperCase()}
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <span className="font-bold text-xs text-slate-900 block truncate">
+                                {cashier.name}
+                              </span>
+                              <span className="text-[11px] text-slate-500 block truncate">
+                                {cashier.branchName} • PIN {cashier.pinHint || 'Active'}
+                              </span>
+                            </div>
+                            {isCurrent && (
+                              <CheckCircle2 className="w-4 h-4 text-[#030A91] shrink-0" />
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* PIN Assistance & Supervisor Override Modal */}
+              {isPinHelpModalOpen && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-150">
+                  <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 max-w-sm w-full p-5 animate-in zoom-in-95 duration-150">
+                    <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+                      <div className="flex items-center space-x-2">
+                        <ShieldAlert className="w-5 h-5 text-amber-600" />
+                        <h4 className="font-black text-sm text-slate-900">PIN & Terminal Help</h4>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setIsPinHelpModalOpen(false)}
+                        className="p-1 rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-700"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+
+                    <div className="py-3 text-xs text-slate-600 space-y-2.5">
+                      <div className="p-3 bg-amber-50 rounded-xl border border-amber-200">
+                        <strong className="text-amber-900 block mb-1">Forgot or Lost Cashier PIN?</strong>
+                        <p className="text-amber-800">
+                          Branch Managers and Administrators can update or reset any staff member's 6-digit PIN in the <strong>Staff & Users</strong> section.
+                        </p>
+                      </div>
+
+                      <div className="p-3 bg-blue-50 rounded-xl border border-blue-200">
+                        <strong className="text-[#030A91] block mb-1">Supervisor Direct Login:</strong>
+                        <p className="text-blue-900">
+                          Administrators and Accountants can log in directly using email and password with zero restrictions.
+                        </p>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setIsPinHelpModalOpen(false);
+                            handleSelectRoleBox('ADMIN');
+                          }}
+                          className="mt-2 text-xs font-bold text-white bg-[#030A91] hover:bg-blue-900 px-3 py-1.5 rounded-lg inline-flex items-center space-x-1"
+                        >
+                          <span>Go to Administrator Login</span>
+                          <ArrowRight className="w-3.5 h-3.5 text-[#FACB00]" />
+                        </button>
+                      </div>
+
+                      <div className="text-[11px] text-slate-400 pt-1">
+                        Active Cashier: <strong>{selectedStaffUser.name}</strong> • PIN Hint:{' '}
+                        <strong>{selectedStaffUser.pinHint || '33••33'}</strong>
+                      </div>
+                    </div>
+
+                    <div className="pt-2 border-t border-slate-100 flex justify-end">
+                      <button
+                        type="button"
+                        onClick={() => setIsPinHelpModalOpen(false)}
+                        className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold text-xs"
+                      >
+                        Close
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           )
         ) : (

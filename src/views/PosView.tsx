@@ -854,33 +854,79 @@ export const PosView: React.FC = () => {
       </div>
 
       {/* ==================================================== */}
-      {/* VARIANT / SIZE SELECTION MODAL                       */}
+      {/* PRODUCT PREVIEW & SIZE VARIANT SELECTION MODAL       */}
       {/* ==================================================== */}
       {activeProductForVariant && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl shadow-xl max-w-md w-full overflow-hidden border border-slate-200 animate-in zoom-in-95 duration-150">
-            <div className="p-4 bg-[#030A91] text-white flex items-center justify-between">
-              <div>
-                <span className="text-[10px] uppercase font-bold text-[#FACB00]">
-                  {activeProductForVariant.school}
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-0 sm:p-4">
+          <div className="bg-white w-full h-full sm:h-auto sm:max-h-[90vh] sm:rounded-3xl sm:max-w-lg shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-150 border border-slate-200">
+            {/* Header / Product Preview Banner */}
+            <div className="relative p-4 sm:p-6 bg-gradient-to-br from-[#030A91] via-[#0412B3] to-[#0A2076] text-white flex flex-col shrink-0">
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full bg-[#FACB00] text-[#030A91]">
+                  Product Preview & Size Selection
                 </span>
-                <h3 className="font-bold text-sm leading-tight">
-                  {activeProductForVariant.name}
-                </h3>
+                <button
+                  type="button"
+                  onClick={() => setActiveProductForVariant(null)}
+                  className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/25 text-white flex items-center justify-center transition-colors"
+                >
+                  <X className="w-5 h-5" />
+                </button>
               </div>
-              <button
-                onClick={() => setActiveProductForVariant(null)}
-                className="text-white/70 hover:text-white p-1"
-              >
-                <X className="w-5 h-5" />
-              </button>
+
+              <div className="flex items-center space-x-4">
+                <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl overflow-hidden bg-white shadow-md border-2 border-white/20 shrink-0 relative flex items-center justify-center">
+                  {activeProductForVariant.imageUrl ? (
+                    <img
+                      src={normalizeImageUrl(activeProductForVariant.imageUrl)}
+                      alt={activeProductForVariant.name}
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        (e.target as HTMLElement).style.display = 'none';
+                        const fallback = (e.target as HTMLElement).nextElementSibling as HTMLElement;
+                        if (fallback) fallback.style.display = 'flex';
+                      }}
+                    />
+                  ) : null}
+                  <div
+                    style={{ display: activeProductForVariant.imageUrl ? 'none' : 'flex' }}
+                    className="w-full h-full flex flex-col items-center justify-center p-2 bg-blue-50 text-[#030A91]"
+                  >
+                    <Shirt className="w-8 h-8 opacity-60" />
+                  </div>
+                </div>
+
+                <div className="min-w-0 flex-1">
+                  <span className="text-[11px] font-bold text-[#FACB00] uppercase tracking-wider block">
+                    {activeProductForVariant.school}
+                  </span>
+                  <h3 className="font-black text-base sm:text-lg text-white leading-tight mt-0.5 truncate sm:whitespace-normal">
+                    {activeProductForVariant.name}
+                  </h3>
+                  <div className="flex items-center space-x-2 mt-1.5">
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-white/15 text-white">
+                      {activeProductForVariant.category || 'Uniform'}
+                    </span>
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-500/80 text-white">
+                      {activeProductForVariant.gender}
+                    </span>
+                  </div>
+                </div>
+              </div>
             </div>
 
-            <div className="p-4">
-              <p className="text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
-                Select Garment Size Variant:
-              </p>
-              <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
+            {/* Scrollable Size Variants List */}
+            <div className="p-4 sm:p-6 flex-1 overflow-y-auto space-y-3 bg-slate-50/60">
+              <div className="flex items-center justify-between">
+                <p className="text-xs font-black text-slate-800 uppercase tracking-wider">
+                  Select Garment Size & Variant:
+                </p>
+                <span className="text-[11px] text-slate-500 font-mono">
+                  {activeProductForVariant.variants.length} Sizes Available
+                </span>
+              </div>
+
+              <div className="space-y-2.5">
                 {activeProductForVariant.variants.map((v) => {
                   const stock = v.branchStock[effectiveBranchId] ?? 0;
                   const isAvailable = stock > 0;
@@ -889,32 +935,37 @@ export const PosView: React.FC = () => {
                       key={v.id}
                       disabled={!isAvailable}
                       onClick={() => handleAddToCart(activeProductForVariant, v)}
-                      className={`w-full p-3 rounded-xl border text-left flex items-center justify-between transition-colors ${
+                      className={`w-full p-3.5 rounded-2xl border text-left flex items-center justify-between transition-all shadow-2xs ${
                         isAvailable
-                          ? 'border-slate-200 hover:border-[#030A91] hover:bg-blue-50/50'
-                          : 'border-slate-100 bg-slate-50 opacity-60 cursor-not-allowed'
+                          ? 'bg-white border-slate-200/90 hover:border-[#030A91] hover:bg-blue-50/30 hover:shadow-md active:scale-[0.99]'
+                          : 'bg-slate-100 border-slate-200 opacity-60 cursor-not-allowed'
                       }`}
                     >
-                      <div>
+                      <div className="min-w-0 pr-2">
                         <div className="flex items-center space-x-2">
-                          <span className="text-xs font-black text-slate-900">Size {v.size}</span>
-                          <span className="text-[10px] text-slate-500 font-mono">({v.sku})</span>
+                          <span className="px-2.5 py-0.5 rounded-lg bg-[#030A91] text-[#FACB00] font-black text-xs font-mono">
+                            Size {v.size}
+                          </span>
+                          <span className="text-[11px] text-slate-500 font-mono truncate">
+                            SKU: {v.sku}
+                          </span>
                         </div>
                         <span
-                          className={`text-[10px] font-semibold mt-0.5 block ${
+                          className={`text-[11px] font-bold mt-1 block ${
                             isAvailable ? 'text-emerald-700' : 'text-rose-600'
                           }`}
                         >
-                          {isAvailable ? `${stock} units available at this branch` : 'Out of stock at this branch'}
+                          {isAvailable ? `✓ ${stock} units in stock at ${currentBranch?.name}` : '✕ Out of stock at this branch'}
                         </span>
                       </div>
-                      <div className="text-right">
-                        <span className="text-xs font-bold text-[#030A91] block">
+
+                      <div className="text-right shrink-0">
+                        <span className="text-sm font-black text-[#030A91] block">
                           KES {v.sellingPrice.toLocaleString()}
                         </span>
                         {isAvailable && (
-                          <span className="text-[10px] bg-[#FACB00] text-slate-900 font-bold px-1.5 py-0.5 rounded">
-                            Add +
+                          <span className="mt-1 inline-flex items-center text-[10px] bg-[#FACB00] text-[#030A91] font-black px-2 py-0.5 rounded-lg shadow-2xs">
+                            Add to Cart +
                           </span>
                         )}
                       </div>
@@ -922,6 +973,17 @@ export const PosView: React.FC = () => {
                   );
                 })}
               </div>
+            </div>
+
+            {/* Footer close button for mobile */}
+            <div className="p-4 bg-white border-t border-slate-200 flex sm:hidden">
+              <button
+                type="button"
+                onClick={() => setActiveProductForVariant(null)}
+                className="w-full py-3 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl font-bold text-xs"
+              >
+                Close Preview
+              </button>
             </div>
           </div>
         </div>

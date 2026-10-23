@@ -1,6 +1,6 @@
 {
-  "name": "Naisiae ERP - School Uniforms & Multi-Branch Enterprise Management",
-  "description": "Secure, multi-branch ERP system for Naisia Textiles featuring real-time inventory synchronization, POS, quotations, invoices, receipts, KRA eTIMS tax compliance, and financial management.",
+  "name": "Naisiae School Uniforms ERP",
+  "description": "Comprehensive school uniform ERP with POS checkout, real-time inventory tracking, multi-branch syncing, and eTIMS tax compliance.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

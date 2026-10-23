@@ -322,17 +322,22 @@ apiRouter.get('/auth/staff-users', (req, res) => {
 
   const staff = db
     .getData()
-    .users.filter((u) => u.status === 'ACTIVE' && u.role === 'STAFF')
-    .map((u) => ({
-      id: u.id,
-      name: u.name,
-      email: u.email,
-      role: u.role,
-      branchId: u.branchId,
-      branchName: u.branchId === 'all' ? 'Consolidated / All Branches' : branchMap.get(u.branchId) || 'Station',
-      phone: u.phone || '',
-      hasPin: Boolean(u.pin),
-    }));
+    .users.filter((u) => u.status === 'ACTIVE' && (u.role === 'STAFF' || Boolean(u.pin)))
+    .map((u) => {
+      const pinValue = u.pin || '123456';
+      return {
+        id: u.id,
+        name: u.name,
+        email: u.email,
+        role: u.role,
+        branchId: u.branchId,
+        branchName: u.branchId === 'all' ? 'Consolidated / All Branches' : branchMap.get(u.branchId) || 'Station',
+        phone: u.phone || '',
+        hasPin: Boolean(u.pin),
+        demoPin: pinValue,
+        pinHint: pinValue.length >= 4 ? `${pinValue.slice(0, 2)}••${pinValue.slice(-2)}` : '••••••',
+      };
+    });
 
   return res.json(staff);
 });
@@ -666,83 +671,124 @@ apiRouter.put('/users/:id', requireAuth, requireRoles('ADMIN'), async (req: Auth
 // ==========================================
 
 apiRouter.get('/products', requireAuth, (req, res) => {
-  const { school, category, gender, sector, institutionType, professionalDomain, search, activeOnly } = req.query;
-  let products = db.getData().products;
+  try {
+    const { school, category, gender, sector, institutionType, professionalDomain, search, activeOnly } = req.query;
+    let products = db.getData().products || [];
 
-  if (activeOnly === 'true') {
-    products = products.filter((p) => p.active);
-  }
-  if (sector && typeof sector === 'string' && sector !== 'ALL') {
-    products = products.filter((p) => p.sector === sector);
-  }
-  if (institutionType && typeof institutionType === 'string' && institutionType !== 'ALL') {
-    products = products.filter((p) => p.institutionType === institutionType);
-  }
-  if (professionalDomain && typeof professionalDomain === 'string' && professionalDomain !== 'ALL') {
-    products = products.filter((p) => p.professionalDomain === professionalDomain);
-  }
-  if (school && typeof school === 'string' && school !== 'ALL') {
-    products = products.filter((p) => p.school.toLowerCase().includes(school.toLowerCase()));
-  }
-  if (category && typeof category === 'string' && category !== 'ALL') {
-    products = products.filter((p) => p.category === category || p.garmentType === category);
-  }
-  if (gender && typeof gender === 'string') {
-    products = products.filter((p) => p.gender === gender || p.gender === 'UNISEX');
-  }
-  if (search && typeof search === 'string') {
-    const q = search.toLowerCase();
-    products = products.filter(
-      (p) =>
-        p.name.toLowerCase().includes(q) ||
-        p.school.toLowerCase().includes(q) ||
-        (p.sector && p.sector.toLowerCase().includes(q)) ||
-        (p.institutionType && p.institutionType.toLowerCase().includes(q)) ||
-        (p.professionalDomain && p.professionalDomain.toLowerCase().includes(q)) ||
-        (p.garmentType && p.garmentType.toLowerCase().includes(q)) ||
-        (p.category && p.category.toLowerCase().includes(q)) ||
-        p.variants.some((v) => v.sku.toLowerCase().includes(q) || v.barcode.includes(q))
-    );
-  }
+    if (activeOnly === 'true') {
+      products = products.filter((p) => p && p.active !== false);
+    }
+    if (sector && typeof sector === 'string' && sector !== 'ALL') {
+      products = products.filter((p) => p && p.sector === sector);
+    }
+    if (institutionType && typeof institutionType === 'string' && institutionType !== 'ALL') {
+      products = products.filter((p) => p && p.institutionType === institutionType);
+    }
+    if (professionalDomain && typeof professionalDomain === 'string' && professionalDomain !== 'ALL') {
+      products = products.filter((p) => p && p.professionalDomain === professionalDomain);
+    }
+    if (school && typeof school === 'string' && school !== 'ALL') {
+      products = products.filter((p) => p && (p.school || '').toLowerCase().includes(school.toLowerCase()));
+    }
+    if (category && typeof category === 'string' && category !== 'ALL') {
+      products = products.filter((p) => p && (p.category === category || p.garmentType === category));
+    }
+    if (gender && typeof gender === 'string') {
+      products = products.filter((p) => p && (p.gender === gender || p.gender === 'UNISEX'));
+    }
+    if (search && typeof search === 'string') {
+      const q = search.toLowerCase();
+      products = products.filter(
+        (p) =>
+          p &&
+          ((p.name || '').toLowerCase().includes(q) ||
+            (p.school || '').toLowerCase().includes(q) ||
+            (p.sector && p.sector.toLowerCase().includes(q)) ||
+            (p.institutionType && p.institutionType.toLowerCase().includes(q)) ||
+            (p.professionalDomain && p.professionalDomain.toLowerCase().includes(q)) ||
+            (p.garmentType && p.garmentType.toLowerCase().includes(q)) ||
+            (p.category && p.category.toLowerCase().includes(q)) ||
+            (p.variants || []).some(
+              (v) =>
+                v &&
+                ((v.sku && String(v.sku).toLowerCase().includes(q)) ||
+                  (v.barcode && String(v.barcode).includes(q)) ||
+                  (v.size && String(v.size).toLowerCase().includes(q)))
+            ))
+      );
+    }
 
-  return res.json(products);
+    return res.json(products);
+  } catch (err: any) {
+    console.error('[Products List Error]', err);
+    return res.status(500).json({ error: 'Failed to retrieve products catalogue', details: err.message });
+  }
 });
 
 apiRouter.get('/products/schools', requireAuth, (req, res) => {
-  const schools = Array.from(new Set(db.getData().products.map((p) => p.school))).filter(Boolean);
-  return res.json(schools);
+  try {
+    const products = db.getData().products || [];
+    const schools = Array.from(new Set(products.map((p) => (p && p.school ? String(p.school).trim() : ''))))
+      .filter(Boolean)
+      .sort();
+    return res.json(schools);
+  } catch (err: any) {
+    console.error('[Products Schools Error]', err);
+    return res.status(500).json({ error: 'Failed to retrieve schools list', details: err.message });
+  }
 });
 
 // ==========================================
 // CUSTOMER PORTAL PUBLIC API ROUTES
 // ==========================================
 apiRouter.get('/portal/products', (req, res) => {
-  const { school, category, search } = req.query;
-  let products = db.getData().products.filter((p) => p.active);
+  try {
+    const { school, category, search } = req.query;
+    let products = (db.getData().products || []).filter((p) => p && p.active !== false);
 
-  if (school && typeof school === "string" && school !== "ALL") {
-    products = products.filter((p) => p.school.toLowerCase().includes(school.toLowerCase()));
+    if (school && typeof school === 'string' && school !== 'ALL') {
+      products = products.filter((p) => p && (p.school || '').toLowerCase().includes(school.toLowerCase()));
+    }
+    if (category && typeof category === 'string' && category !== 'ALL') {
+      products = products.filter((p) => p && (p.category === category || p.garmentType === category));
+    }
+    if (search && typeof search === 'string') {
+      const q = search.toLowerCase();
+      products = products.filter(
+        (p) =>
+          p &&
+          ((p.name || '').toLowerCase().includes(q) ||
+            (p.school || '').toLowerCase().includes(q) ||
+            (p.category && p.category.toLowerCase().includes(q)) ||
+            (p.variants || []).some(
+              (v) =>
+                v &&
+                ((v.sku && String(v.sku).toLowerCase().includes(q)) ||
+                  (v.barcode && String(v.barcode).includes(q)) ||
+                  (v.size && String(v.size).toLowerCase().includes(q)))
+            ))
+      );
+    }
+    return res.json(products);
+  } catch (err: any) {
+    console.error('[Portal Products Error]', err);
+    return res.status(500).json({ error: 'Failed to retrieve portal products', details: err.message });
   }
-  if (category && typeof category === "string" && category !== "ALL") {
-    products = products.filter((p) => p.category === category || p.garmentType === category);
-  }
-  if (search && typeof search === "string") {
-    const q = search.toLowerCase();
-    products = products.filter(
-      (p) =>
-        p.name.toLowerCase().includes(q) ||
-        p.school.toLowerCase().includes(q) ||
-        (p.category && p.category.toLowerCase().includes(q)) ||
-        p.variants.some((v) => v.sku.toLowerCase().includes(q) || v.barcode.includes(q))
-    );
-  }
-  return res.json(products);
 });
 
 apiRouter.get('/portal/schools', (_req, res) => {
-  const schools = Array.from(new Set(db.getData().products.map((p) => p.school))).filter(Boolean);
-  return res.json(schools);
+  try {
+    const products = db.getData().products || [];
+    const schools = Array.from(new Set(products.map((p) => (p && p.school ? String(p.school).trim() : ''))))
+      .filter(Boolean)
+      .sort();
+    return res.json(schools);
+  } catch (err: any) {
+    console.error('[Portal Schools Error]', err);
+    return res.status(500).json({ error: 'Failed to retrieve portal schools list', details: err.message });
+  }
 });
+
 
 apiRouter.post('/portal/checkout', async (req, res) => {
   const {
@@ -3422,31 +3468,351 @@ apiRouter.post('/emails/test', requireAuth, requireRoles('ADMIN'), async (req: A
 // 18. PRODUCT CATALOGUE MANAGEMENT
 // ==========================================
 
-apiRouter.post('/products/import', requireAuth, requireRoles('ADMIN'), async (req: AuthenticatedRequest, res: Response) => {
-  const { products } = req.body;
-  if (!Array.isArray(products)) {
-    return res.status(400).json({ error: 'Invalid catalogue format. Expected an array of products.' });
+apiRouter.post('/products/import', requireAuth, requireRoles('ADMIN', 'ACCOUNTANT'), async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { products: incomingProducts } = req.body;
+    if (!Array.isArray(incomingProducts) || incomingProducts.length === 0) {
+      return res.status(400).json({ error: 'Invalid catalogue format. Expected an array of products.' });
+    }
+
+    const dbData = db.getData();
+    if (!Array.isArray(dbData.products)) {
+      dbData.products = [];
+    }
+
+    let productsAdded = 0;
+    let productsUpdated = 0;
+    let variantsAdded = 0;
+    let variantsUpdated = 0;
+    let duplicatesChecked = 0;
+    const now = new Date().toISOString();
+
+    // Map existing products by ID and by normalized key (name::school)
+    const existingById = new Map<string, any>();
+    const existingByNameSchool = new Map<string, any>();
+    const existingBySku = new Map<string, { product: any; variant: any }>();
+
+    for (const p of dbData.products) {
+      if (!p) continue;
+      if (p.id) existingById.set(p.id, p);
+      const key = `${(p.name || '').trim().toLowerCase()}::${(p.school || '').trim().toLowerCase()}`;
+      existingByNameSchool.set(key, p);
+
+      if (Array.isArray(p.variants)) {
+        for (const v of p.variants) {
+          if (v && v.sku) {
+            existingBySku.set(String(v.sku).trim().toUpperCase(), { product: p, variant: v });
+          }
+        }
+      }
+    }
+
+    // Process incoming products with duplicate checking and updates
+    for (let i = 0; i < incomingProducts.length; i++) {
+      const inc = incomingProducts[i];
+      if (!inc || !inc.name) continue;
+
+      const normName = String(inc.name).trim();
+      const normSchool = String(inc.school || 'General Uniform').trim();
+      const key = `${normName.toLowerCase()}::${normSchool.toLowerCase()}`;
+
+      // Check if product already exists
+      let matchedProd = inc.id ? existingById.get(inc.id) : null;
+      if (!matchedProd) {
+        matchedProd = existingByNameSchool.get(key);
+      }
+      if (!matchedProd && Array.isArray(inc.variants)) {
+        for (const v of inc.variants) {
+          if (v && v.sku) {
+            const found = existingBySku.get(String(v.sku).trim().toUpperCase());
+            if (found) {
+              matchedProd = found.product;
+              break;
+            }
+          }
+        }
+      }
+
+      const incomingVariants = Array.isArray(inc.variants) ? inc.variants : [];
+
+      if (matchedProd) {
+        // --- RUN UPDATE ON EXISTING PRODUCT ---
+        productsUpdated++;
+        if (inc.category && inc.category !== 'General Uniform') matchedProd.category = inc.category;
+        if (inc.sector) matchedProd.sector = inc.sector;
+        if (inc.institutionType) matchedProd.institutionType = inc.institutionType;
+        if (inc.professionalDomain) matchedProd.professionalDomain = inc.professionalDomain;
+        if (inc.garmentType) matchedProd.garmentType = inc.garmentType;
+        if (inc.gender) matchedProd.gender = inc.gender;
+        if (inc.description && inc.description.length > 5) matchedProd.description = inc.description;
+        if (inc.imageUrl && !matchedProd.imageUrl) matchedProd.imageUrl = inc.imageUrl;
+        matchedProd.updatedAt = now;
+
+        if (!Array.isArray(matchedProd.variants)) {
+          matchedProd.variants = [];
+        }
+
+        // Check & Update Variants
+        for (const incVar of incomingVariants) {
+          duplicatesChecked++;
+          const incVarSku = String(incVar.sku || '').trim().toUpperCase();
+          const incVarSize = String(incVar.size || 'Standard').trim().toLowerCase();
+          const incVarColor = String(incVar.color || 'Standard Official').trim().toLowerCase();
+
+          // Match variant
+          const matchedVar = matchedProd.variants.find((v: any) => {
+            if (!v) return false;
+            if (incVar.id && v.id === incVar.id) return true;
+            if (incVarSku && v.sku && String(v.sku).trim().toUpperCase() === incVarSku) return true;
+            if (incVar.barcode && v.barcode && String(v.barcode) === String(incVar.barcode)) return true;
+            return (
+              String(v.size || '').trim().toLowerCase() === incVarSize &&
+              String(v.color || 'Standard Official').trim().toLowerCase() === incVarColor
+            );
+          });
+
+          if (matchedVar) {
+            // --- UPDATE EXISTING VARIANT ---
+            if (typeof incVar.sellingPrice === 'number' && incVar.sellingPrice > 0) {
+              matchedVar.sellingPrice = incVar.sellingPrice;
+            }
+            if (typeof incVar.costPrice === 'number' && incVar.costPrice > 0) {
+              matchedVar.costPrice = incVar.costPrice;
+            }
+            if (incVar.imageUrl && (!matchedVar.imageUrl || matchedVar.imageUrl.includes('category_school'))) {
+              matchedVar.imageUrl = incVar.imageUrl;
+            }
+            if (typeof incVar.reorderLevel === 'number' && incVar.reorderLevel > 0) {
+              matchedVar.reorderLevel = incVar.reorderLevel;
+            }
+            if (incVar.branchStock && typeof incVar.branchStock === 'object') {
+              if (!matchedVar.branchStock) matchedVar.branchStock = {};
+              for (const [branchId, qty] of Object.entries(incVar.branchStock)) {
+                if (typeof qty === 'number' && qty >= 0) {
+                  matchedVar.branchStock[branchId] = qty;
+                }
+              }
+            }
+            variantsUpdated++;
+          } else {
+            // --- ADD NEW VARIANT TO EXISTING PRODUCT ---
+            const newVarId = incVar.id || `var-${matchedProd.id}-${matchedProd.variants.length + 1}`;
+            const newBarcode = incVar.barcode || `616${Math.floor(100000000 + Math.random() * 900000000)}`;
+            const newVar = {
+              id: newVarId,
+              sku: incVar.sku || `${matchedProd.name.slice(0, 4).toUpperCase()}-${incVar.size || 'STD'}`,
+              barcode: newBarcode,
+              size: incVar.size || 'Standard',
+              color: incVar.color || 'Standard Official',
+              costPrice: typeof incVar.costPrice === 'number' ? incVar.costPrice : 600,
+              sellingPrice: typeof incVar.sellingPrice === 'number' ? incVar.sellingPrice : 1000,
+              branchStock: incVar.branchStock || { 'branch-nbi-cbd': 25 },
+              reorderLevel: incVar.reorderLevel || 10,
+              reorderQuantity: incVar.reorderQuantity || 30,
+              imageUrl: incVar.imageUrl || matchedProd.imageUrl,
+            };
+            matchedProd.variants.push(newVar);
+            variantsAdded++;
+            if (newVar.sku) {
+              existingBySku.set(String(newVar.sku).trim().toUpperCase(), { product: matchedProd, variant: newVar });
+            }
+          }
+        }
+      } else {
+        // --- ADD NEW PRODUCT ---
+        const newProdId = inc.id || `prod-${Date.now()}-${i + 1}`;
+        const newProd = {
+          id: newProdId,
+          name: normName,
+          school: normSchool,
+          sector: inc.sector || 'SECONDARY',
+          institutionType: inc.institutionType || normSchool,
+          professionalDomain: inc.professionalDomain || normSchool,
+          garmentType: inc.garmentType || normName,
+          category: inc.category || 'General Uniform',
+          gender: inc.gender || 'UNISEX',
+          description: inc.description || 'Quality uniform tailored for durability and comfort.',
+          taxCategory: inc.taxCategory || 'VAT_16',
+          imageUrl: inc.imageUrl || '/assets/images/category_school_1782334810884.jpg',
+          active: inc.active !== false,
+          variants: incomingVariants.map((v: any, vIdx: number) => ({
+            id: v.id || `var-${newProdId}-${vIdx + 1}`,
+            sku: v.sku || `SKU-${newProdId}-${v.size || vIdx + 1}`,
+            barcode: v.barcode || `616${Math.floor(100000000 + Math.random() * 900000000)}`,
+            size: v.size || 'Standard',
+            color: v.color || 'Standard Official',
+            costPrice: typeof v.costPrice === 'number' ? v.costPrice : 600,
+            sellingPrice: typeof v.sellingPrice === 'number' ? v.sellingPrice : 1000,
+            branchStock: v.branchStock || { 'branch-nbi-cbd': 25 },
+            reorderLevel: v.reorderLevel || 10,
+            reorderQuantity: v.reorderQuantity || 30,
+            imageUrl: v.imageUrl || inc.imageUrl,
+          })),
+          createdAt: now,
+          updatedAt: now,
+        };
+
+        dbData.products.push(newProd);
+        existingById.set(newProd.id, newProd);
+        existingByNameSchool.set(key, newProd);
+        for (const nv of newProd.variants) {
+          if (nv.sku) existingBySku.set(String(nv.sku).trim().toUpperCase(), { product: newProd, variant: nv });
+        }
+        productsAdded++;
+        variantsAdded += newProd.variants.length;
+      }
+    }
+
+    await db.save();
+
+    db.logAudit({
+      userId: req.user!.id,
+      userName: req.user!.name,
+      userRole: req.user!.role,
+      branchId: req.user!.branchId,
+      branchName: 'All Branches (HQ)',
+      action: 'CATALOGUE_SYNC_IMPORTED',
+      entityType: 'CATALOGUE',
+      entityId: 'SYSTEM',
+      details: `Catalogue import & duplicate check: ${incomingProducts.length} processed. ${productsUpdated} products updated, ${productsAdded} products created, ${variantsUpdated} variants updated, ${variantsAdded} variants added.`,
+      ipAddress: req.ip,
+    });
+
+    const summary = {
+      totalProcessed: incomingProducts.length,
+      productsAdded,
+      productsUpdated,
+      variantsAdded,
+      variantsUpdated,
+      duplicatesChecked,
+    };
+
+    return res.json({
+      success: true,
+      summary,
+      message: `Catalogue synchronized: ${productsUpdated} products updated with latest pricing/specs, ${productsAdded} new products added, ${variantsUpdated} size variants updated.`,
+    });
+  } catch (err: any) {
+    console.error('[Products Import Error]', err);
+    return res.status(500).json({ error: 'Failed to import catalogue', details: err.message });
   }
-
-  const dbData = db.getData();
-  dbData.products = products;
-  await db.save();
-
-  db.logAudit({
-    userId: req.user!.id,
-    userName: req.user!.name,
-    userRole: req.user!.role,
-    branchId: req.user!.branchId,
-    branchName: 'All Branches (HQ)',
-    action: 'CATALOGUE_IMPORTED',
-    entityType: 'CATALOGUE',
-    entityId: 'SYSTEM',
-    details: `Catalogue imported with ${products.length} products.`,
-    ipAddress: req.ip,
-  });
-
-  return res.json({ success: true });
 });
+
+apiRouter.post('/products/repair', requireAuth, requireRoles('ADMIN', 'ACCOUNTANT'), async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const dbData = db.getData();
+    let reseeded = false;
+
+    if (!Array.isArray(dbData.products) || dbData.products.length === 0) {
+      dbData.products = db.seedProductsFromInventoryCsv();
+      reseeded = true;
+    }
+
+    let repairedCount = 0;
+    const now = new Date().toISOString();
+
+    for (let i = 0; i < dbData.products.length; i++) {
+      const p = dbData.products[i];
+      if (!p) continue;
+      let pChanged = false;
+
+      if (!p.id) {
+        p.id = `prod-${Date.now()}-${i + 1}`;
+        pChanged = true;
+      }
+      if (!p.school) {
+        p.school = 'General Uniform';
+        pChanged = true;
+      }
+      if (!p.category) {
+        p.category = 'General Uniform';
+        pChanged = true;
+      }
+      if (!p.garmentType) {
+        p.garmentType = p.category;
+        pChanged = true;
+      }
+      if (p.active === undefined) {
+        p.active = true;
+        pChanged = true;
+      }
+      if (!Array.isArray(p.variants) || p.variants.length === 0) {
+        p.variants = [
+          {
+            id: `var-${p.id}-1`,
+            sku: `NT-${p.id}-STD`,
+            barcode: `616${Math.floor(100000000 + Math.random() * 900000000)}`,
+            size: 'Standard',
+            color: 'Standard Official',
+            costPrice: 600,
+            sellingPrice: 1000,
+            branchStock: { 'branch-nbi-cbd': 30 },
+            reorderLevel: 10,
+            reorderQuantity: 30,
+          },
+        ];
+        pChanged = true;
+      } else {
+        p.variants.forEach((v, vIdx) => {
+          if (!v.id) {
+            v.id = `var-${p.id}-${vIdx + 1}`;
+            pChanged = true;
+          }
+          if (!v.barcode) {
+            v.barcode = `616${Math.floor(100000000 + Math.random() * 900000000)}`;
+            pChanged = true;
+          }
+          if (typeof v.sellingPrice !== 'number' || isNaN(v.sellingPrice)) {
+            v.sellingPrice = 1000;
+            pChanged = true;
+          }
+          if (typeof v.costPrice !== 'number' || isNaN(v.costPrice)) {
+            v.costPrice = 600;
+            pChanged = true;
+          }
+          if (!v.branchStock || typeof v.branchStock !== 'object') {
+            v.branchStock = { 'branch-nbi-cbd': 30 };
+            pChanged = true;
+          }
+        });
+      }
+
+      if (pChanged) {
+        p.updatedAt = now;
+        repairedCount++;
+      }
+    }
+
+    await db.save();
+
+    db.logAudit({
+      userId: req.user!.id,
+      userName: req.user!.name,
+      userRole: req.user!.role,
+      branchId: req.user!.branchId,
+      branchName: 'All Branches (HQ)',
+      action: 'CATALOGUE_REPAIRED',
+      entityType: 'CATALOGUE',
+      entityId: 'SYSTEM',
+      details: `Catalogue integrity repair executed. ${dbData.products.length} products verified. ${repairedCount} products patched. Reseeded: ${reseeded}.`,
+      ipAddress: req.ip,
+    });
+
+    return res.json({
+      success: true,
+      message: reseeded
+        ? `Catalogue restored from verified uniform inventory with ${dbData.products.length} items.`
+        : `Catalogue verified and repaired: ${dbData.products.length} items checked (${repairedCount} items sanitized).`,
+      count: dbData.products.length,
+      repairedCount,
+      reseeded,
+    });
+  } catch (err: any) {
+    console.error('[Products Repair Error]', err);
+    return res.status(500).json({ error: 'Failed to repair catalogue', details: err.message });
+  }
+});
+
 
 // ==========================================
 // 19. BACKUP & DATABASE SNAPSHOTS

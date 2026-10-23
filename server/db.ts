@@ -443,29 +443,34 @@ class DatabaseEngine {
         const raw = fs.readFileSync(DB_FILE, 'utf-8');
         const parsed: DatabaseSchema = JSON.parse(raw);
         let updated = false;
-        if (parsed.products && Array.isArray(parsed.products)) {
-          // Backfill sector and add products from all 7 categories
+        if (parsed.products && Array.isArray(parsed.products) && parsed.products.length > 0) {
+          // Sync image URLs from inventory CSV
+          const csvProducts = this.seedProductsFromInventoryCsv();
+          const csvImageMap = new Map(csvProducts.map((cp) => [cp.name.split(' (')[0].toLowerCase().trim(), cp.imageUrl]));
+          
           for (const p of parsed.products) {
             if (!p.sector) {
               if (p.category === 'TIES' || p.category === 'SOCKS' || p.category === 'ACCESSORIES') {
                 p.sector = 'ACCESSORIES';
-              } else if (p.school && (p.school.includes('Alliance') || p.school.includes('Nairobi School') || p.school.includes('Kenya High'))) {
-                p.sector = 'SECONDARY';
               } else {
                 p.sector = 'SECONDARY';
               }
               if (!p.garmentType) p.garmentType = p.category;
               updated = true;
             }
-          }
-
-          const seedProds = this.generateInitialSeed().products;
-          for (const sp of seedProds) {
-            if (!parsed.products.some((p) => p.id === sp.id)) {
-              parsed.products.push(sp);
+            const baseName = (p.garmentType || p.name.split(' (')[0]).toLowerCase().trim();
+            const matchedImg = csvImageMap.get(baseName);
+            if (matchedImg && (!p.imageUrl || p.imageUrl.includes('placeholder') || p.imageUrl.includes('category_school'))) {
+              p.imageUrl = matchedImg;
+              p.variants.forEach((v) => {
+                v.imageUrl = matchedImg;
+              });
               updated = true;
             }
           }
+        } else {
+          parsed.products = this.seedProductsFromInventoryCsv();
+          updated = true;
         }
 
         if (updated) {
@@ -481,6 +486,7 @@ class DatabaseEngine {
     this.saveDataDirect(defaultData);
     return defaultData;
   }
+
 
   public getData(): DatabaseSchema {
     return this.data;
@@ -584,14 +590,15 @@ class DatabaseEngine {
       });
     };
 
-    // 5. Products Catalog (School Uniforms)
-    const products: Product[] = []; // Catalogue cleared
+    // 5. Products Catalog (School Uniforms seeded from inventory CSV)
+    const products: Product[] = this.seedProductsFromInventoryCsv();
 
     // 6. Sales & POS Transactions (Awaiting real transactions)
     const sales: Sale[] = [];
 
     // 7. Quotations (Awaiting real creation)
     const quotations: Quotation[] = [];
+
 
     // 8. Invoices (Awaiting real creation)
     const invoices: Invoice[] = [];
@@ -672,6 +679,162 @@ class DatabaseEngine {
       settings,
     };
   }
+
+  public seedProductsFromInventoryCsv(): Product[] {
+    const csvPath = path.join(DATA_DIR, 'inventory_import.csv');
+    if (!fs.existsSync(csvPath)) {
+      return [];
+    }
+
+    try {
+      const csvText = fs.readFileSync(csvPath, 'utf-8');
+      const lines = csvText.trim().split(/\r?\n/).filter((l) => l.trim().length > 0);
+      if (lines.length < 2) return [];
+
+      const parseLine = (line: string): string[] => {
+        const result: string[] = [];
+        let cur = '';
+        let inQuotes = false;
+        for (let i = 0; i < line.length; i++) {
+          const c = line[i];
+          if (c === '"') {
+            if (inQuotes && line[i + 1] === '"') {
+              cur += '"';
+              i++;
+            } else {
+              inQuotes = !inQuotes;
+            }
+          } else if (c === ',' && !inQuotes) {
+            result.push(cur.trim());
+            cur = '';
+          } else {
+            cur += c;
+          }
+        }
+        result.push(cur.trim());
+        return result;
+      };
+
+      const SUBCAT_MAP: Record<string, string> = {
+        'ecde / pre-primary': 'ECDE Pre-Primary Institutions',
+        'ecde': 'ECDE Pre-Primary Institutions',
+        'primary': 'Primary Schools (National Standard)',
+        'jss / junior school': 'Junior Secondary Schools (JSS Kenya)',
+        'jss': 'Junior Secondary Schools (JSS Kenya)',
+        'secondary': 'Secondary & High Schools',
+        'school accessories': 'All Schools & Colleges (Accessories)',
+        'school sports': 'Schools & Sports Clubs (Kenya)',
+        'kmtc': 'Kenya Medical Training College (KMTC)',
+        'nursing / medical': 'Medical & Nursing Colleges',
+        'hospitality': 'Hospitality & Culinary Institutions',
+        'corporate': 'Corporate & Executive Workplaces',
+        'industrial': 'Industrial & Technical Workplaces',
+        'security': 'Security Services & Guard Forces',
+        'general': 'General & Institutional Workwear',
+      };
+
+      const expandSizes = (rawSize: string): string[] => {
+        if (!rawSize) return ['Standard'];
+        const s = rawSize.trim();
+        if (s.includes(',')) {
+          return s.split(',').map((x) => x.trim()).filter(Boolean);
+        }
+        if (s === '22-32') return ['22', '24', '26', '28', '30', '32'];
+        if (s === '24-36') return ['24', '26', '28', '30', '32', '34', '36'];
+        if (s === '28-40') return ['28', '30', '32', '34', '36', '38', '40'];
+        if (s === 'S-XXL') return ['S', 'M', 'L', 'XL', '2XL'];
+        if (s === 'S-3XL') return ['S', 'M', 'L', 'XL', '2XL', '3XL'];
+        return [s];
+      };
+
+      const headers = parseLine(lines[0]).map((h) => h.toLowerCase().replace(/[^a-z0-9]/g, ''));
+      const colPrice = headers.findIndex((h) => h.includes('retail') || h.includes('selling') || (h.includes('price') && !h.includes('cost') && !h.includes('buy')));
+      const colCost = headers.findIndex((h) => h.includes('cost') || h.includes('buying') || h.includes('purchase') || h.includes('marketlow'));
+      const colName = headers.findIndex((h) => (h.includes('product') && !h.includes('category')) || h.includes('itemname') || h.includes('name') || h.includes('title'));
+      const colSchool = headers.findIndex((h) => h.includes('school') || h.includes('institution') || h.includes('subcategory') || h.includes('campus'));
+      const colCategory = headers.findIndex((h) => h.includes('category') || h.includes('garment'));
+      const colSector = headers.findIndex((h) => h.includes('sector') || h.includes('education'));
+      const colGender = headers.findIndex((h) => h.includes('gender') || h.includes('sex'));
+      const colDesc = headers.findIndex((h) => h.includes('desc') || h.includes('note') || h.includes('detail'));
+      const colSku = headers.findIndex((h) => h.includes('sku') || h.includes('code'));
+      const colSize = headers.findIndex((h) => h.includes('size'));
+      const colReorder = headers.findIndex((h) => h.includes('reorder'));
+      const colImg = headers.findIndex((h) => h.includes('image') || h.includes('img') || h.includes('url'));
+
+      const products: Product[] = [];
+      const now = new Date().toISOString();
+
+      for (let i = 1; i < lines.length; i++) {
+        const cols = parseLine(lines[i]);
+        if (!cols.length || cols.every((c) => !c)) continue;
+
+        const name = colName >= 0 && cols[colName] ? cols[colName] : `Uniform Item #${i}`;
+        const rawSchool = colSchool >= 0 && cols[colSchool] ? cols[colSchool] : 'General Uniform';
+        const school = SUBCAT_MAP[rawSchool.toLowerCase().trim()] || rawSchool;
+        const category = colCategory >= 0 && cols[colCategory] ? cols[colCategory] : 'General Uniform';
+        const rawSector = colSector >= 0 && cols[colSector] ? cols[colSector].toUpperCase() : 'SECONDARY';
+        const sector = (['PRE_PRIMARY', 'PRIMARY', 'JSS', 'SECONDARY', 'COLLEGE_UNIVERSITY', 'SERVICE_PROFESSIONAL', 'ACCESSORIES'].includes(rawSector)
+          ? rawSector
+          : 'SECONDARY') as any;
+        const rawGender = colGender >= 0 && cols[colGender] ? cols[colGender].toUpperCase() : 'UNISEX';
+        const gender = ['BOYS', 'GIRLS', 'UNISEX'].includes(rawGender) ? (rawGender as any) : 'UNISEX';
+        const description = colDesc >= 0 && cols[colDesc] ? cols[colDesc] : 'High quality durable uniform crafted with reinforced stitching.';
+        const skuPrefix = colSku >= 0 && cols[colSku] ? cols[colSku].replace(/[^A-Za-z0-9]/g, '') : `NT-${i}`;
+        const costPrice = colCost >= 0 && !isNaN(Number(cols[colCost])) ? Number(cols[colCost]) : 600;
+        const sellingPrice = colPrice >= 0 && !isNaN(Number(cols[colPrice])) ? Number(cols[colPrice]) : 1000;
+        const reorderLevel = colReorder >= 0 && !isNaN(Number(cols[colReorder])) ? Number(cols[colReorder]) : 10;
+        const sizes = expandSizes(colSize >= 0 ? cols[colSize] : 'Standard');
+        const csvImageUrl = colImg >= 0 && cols[colImg] ? cols[colImg] : '';
+        const finalImageUrl = csvImageUrl || '/assets/images/category_school_1782334810884.jpg';
+
+        const prodId = `prod-${skuPrefix.toLowerCase().slice(0, 9)}-${i}`;
+        const variants: ProductVariant[] = sizes.map((size, sIdx) => {
+          const varSku = `${skuPrefix}-${size}`.toUpperCase();
+          const barcode = `616${String(100000000 + i * 100 + sIdx)}`;
+          return {
+            id: `var-${prodId}-${sIdx + 1}`,
+            sku: varSku,
+            barcode,
+            size,
+            color: 'Standard Official',
+            costPrice,
+            sellingPrice,
+            branchStock: {
+              'branch-nbi-cbd': 45,
+            },
+            reorderLevel,
+            reorderQuantity: 30,
+            imageUrl: finalImageUrl,
+          };
+        });
+
+        products.push({
+          id: prodId,
+          name: `${name} (${rawSchool} - ${gender === 'BOYS' ? 'Boys' : gender === 'GIRLS' ? 'Girls' : 'Unisex'})`,
+          school,
+          sector,
+          institutionType: rawSchool,
+          professionalDomain: rawSchool,
+          garmentType: name,
+          category,
+          gender,
+          description,
+          taxCategory: 'VAT_16',
+          imageUrl: finalImageUrl,
+          active: true,
+          variants,
+          createdAt: now,
+          updatedAt: now,
+        });
+      }
+
+      return products;
+    } catch (err) {
+      console.error('[CSV Seeding Error]', err);
+      return [];
+    }
+  }
 }
 
 export const db = new DatabaseEngine();
+

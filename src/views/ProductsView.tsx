@@ -32,8 +32,10 @@ import {
   Shirt,
   Shield,
   BookOpen,
-  Award
+  Award,
+  RefreshCw
 } from 'lucide-react';
+
 import { StatusBadge } from '../components/StatusBadge';
 import { ProductPriceSetModal } from '../components/ProductPriceSetModal';
 import { SkuImageManagerModal } from '../components/SkuImageManagerModal';
@@ -103,52 +105,95 @@ export const parseCSVToProducts = (csvText: string): Product[] => {
     return result;
   };
 
+  const SUBCAT_MAP: Record<string, string> = {
+    'ecde / pre-primary': 'ECDE Pre-Primary Institutions',
+    'ecde': 'ECDE Pre-Primary Institutions',
+    'primary': 'Primary Schools (National Standard)',
+    'jss / junior school': 'Junior Secondary Schools (JSS Kenya)',
+    'jss': 'Junior Secondary Schools (JSS Kenya)',
+    'secondary': 'Secondary & High Schools',
+    'school accessories': 'All Schools & Colleges (Accessories)',
+    'school sports': 'Schools & Sports Clubs (Kenya)',
+    'kmtc': 'Kenya Medical Training College (KMTC)',
+    'nursing / medical': 'Medical & Nursing Colleges',
+    'hospitality': 'Hospitality & Culinary Institutions',
+    'corporate': 'Corporate & Executive Workplaces',
+    'industrial': 'Industrial & Technical Workplaces',
+    'security': 'Security Services & Guard Forces',
+    'general': 'General & Institutional Workwear',
+  };
+
+  const expandSizes = (rawSize: string): string[] => {
+    if (!rawSize) return ['Standard'];
+    const s = rawSize.trim();
+    if (s.includes(',')) {
+      return s.split(',').map((x) => x.trim()).filter(Boolean);
+    }
+    if (s === '22-32') return ['22', '24', '26', '28', '30', '32'];
+    if (s === '24-36') return ['24', '26', '28', '30', '32', '34', '36'];
+    if (s === '28-40') return ['28', '30', '32', '34', '36', '38', '40'];
+    if (s === 'S-XXL') return ['S', 'M', 'L', 'XL', '2XL'];
+    if (s === 'S-3XL') return ['S', 'M', 'L', 'XL', '2XL', '3XL'];
+    return [s];
+  };
+
   const headers = parseLine(lines[0]).map((h) => h.toLowerCase().replace(/[^a-z0-9]/g, ''));
-  const colName = headers.findIndex((h) => h.includes('name') || h.includes('product') || h.includes('item'));
-  const colSchool = headers.findIndex((h) => h.includes('school') || h.includes('institution'));
+
+  const colPrice = headers.findIndex((h) => h.includes('retail') || h.includes('selling') || (h.includes('price') && !h.includes('cost') && !h.includes('buy')));
+  const colCost = headers.findIndex((h) => h.includes('cost') || h.includes('buying') || h.includes('purchase') || h.includes('marketlow'));
+  const colName = headers.findIndex((h) => (h.includes('product') && !h.includes('category')) || h.includes('itemname') || h.includes('name') || h.includes('title'));
+  const colSchool = headers.findIndex((h) => h.includes('school') || h.includes('institution') || h.includes('subcategory') || h.includes('campus'));
   const colCategory = headers.findIndex((h) => h.includes('category') || h.includes('garment'));
-  const colSector = headers.findIndex((h) => h.includes('sector'));
-  const colGender = headers.findIndex((h) => h.includes('gender'));
-  const colDesc = headers.findIndex((h) => h.includes('desc'));
-  const colSku = headers.findIndex((h) => h.includes('sku'));
+  const colSector = headers.findIndex((h) => h.includes('sector') || h.includes('education'));
+  const colGender = headers.findIndex((h) => h.includes('gender') || h.includes('sex'));
+  const colDesc = headers.findIndex((h) => h.includes('desc') || h.includes('note') || h.includes('detail') || h.includes('spec'));
+  const colSku = headers.findIndex((h) => h.includes('sku') || h.includes('code') || h.includes('barcode'));
   const colSize = headers.findIndex((h) => h.includes('size'));
   const colColor = headers.findIndex((h) => h.includes('color') || h.includes('colour'));
-  const colCost = headers.findIndex((h) => h.includes('cost') || h.includes('buying'));
-  const colPrice = headers.findIndex((h) => h.includes('price') || h.includes('selling') || h.includes('retail'));
-  const colStock = headers.findIndex((h) => h.includes('stock') || h.includes('qty') || h.includes('quantity'));
+  const colStock = headers.findIndex((h) => h.includes('stock') || h.includes('qty') || h.includes('count'));
   const colImage = headers.findIndex((h) => h.includes('image') || h.includes('photo') || h.includes('pic') || h.includes('url'));
+  const colReorder = headers.findIndex((h) => h.includes('reorder'));
 
   const productMap = new Map<string, Product>();
 
   for (let i = 1; i < lines.length; i++) {
     const cols = parseLine(lines[i]);
-    const name = colName >= 0 && cols[colName] ? cols[colName] : `Uniform Item #${i}`;
-    const school = colSchool >= 0 && cols[colSchool] ? cols[colSchool] : 'General Uniform';
+    if (!cols.length || cols.every((c) => !c)) continue;
+
+    const rawName = colName >= 0 && cols[colName] ? cols[colName] : `Uniform Item #${i}`;
+    const rawSchool = colSchool >= 0 && cols[colSchool] ? cols[colSchool] : 'General Uniform';
+    const school = SUBCAT_MAP[rawSchool.toLowerCase().trim()] || rawSchool;
     const category = colCategory >= 0 && cols[colCategory] ? cols[colCategory] : 'Uniforms';
-    const sector = (colSector >= 0 && cols[colSector] ? cols[colSector] : 'SECONDARY') as InventorySectorId;
+    const rawSector = colSector >= 0 && cols[colSector] ? cols[colSector].toUpperCase() : 'SECONDARY';
+    const sector = (['PRE_PRIMARY', 'PRIMARY', 'JSS', 'SECONDARY', 'COLLEGE_UNIVERSITY', 'SERVICE_PROFESSIONAL', 'ACCESSORIES'].includes(rawSector)
+      ? rawSector
+      : 'SECONDARY') as InventorySectorId;
     const rawGender = colGender >= 0 && cols[colGender] ? cols[colGender].toUpperCase() : 'UNISEX';
     const gender: 'BOYS' | 'GIRLS' | 'UNISEX' = ['BOYS', 'GIRLS', 'UNISEX'].includes(rawGender)
       ? (rawGender as any)
       : 'UNISEX';
     const description = colDesc >= 0 && cols[colDesc] ? cols[colDesc] : '';
-    const sku = colSku >= 0 && cols[colSku] ? cols[colSku] : `NT-SKU-${i}`;
-    const size = colSize >= 0 && cols[colSize] ? cols[colSize] : 'Standard';
-    const color = colColor >= 0 && cols[colColor] ? cols[colColor] : 'Standard';
+    const rawSkuPrefix = colSku >= 0 && cols[colSku] ? cols[colSku] : `NT-SKU-${i}`;
+    const color = colColor >= 0 && cols[colColor] ? cols[colColor] : 'Standard Official';
     const costPrice = colCost >= 0 && !isNaN(Number(cols[colCost])) ? Number(cols[colCost]) : 600;
     const sellingPrice = colPrice >= 0 && !isNaN(Number(cols[colPrice])) ? Number(cols[colPrice]) : 1000;
-    const stock = colStock >= 0 && !isNaN(Number(cols[colStock])) ? Number(cols[colStock]) : 20;
-    const imageUrl = colImage >= 0 && cols[colImage] ? cols[colImage] : '';
+    const stock = colStock >= 0 && !isNaN(Number(cols[colStock])) ? Number(cols[colStock]) : 25;
+    const rawImageUrl = colImage >= 0 && cols[colImage] ? cols[colImage] : '';
+    const imageUrl = normalizeImageUrl(rawImageUrl);
+    const reorderLevel = colReorder >= 0 && !isNaN(Number(cols[colReorder])) ? Number(cols[colReorder]) : 10;
+    const sizes = expandSizes(colSize >= 0 ? cols[colSize] : 'Standard');
 
-    const key = `${name.toLowerCase()}::${school.toLowerCase()}`;
+    const key = `${rawName.toLowerCase().trim()}::${school.toLowerCase().trim()}`;
+
     if (!productMap.has(key)) {
       const prodId = `prod-${Date.now()}-${i}`;
       productMap.set(key, {
         id: prodId,
-        name,
+        name: rawName,
         school,
         sector,
         category,
-        garmentType: category,
+        garmentType: rawName,
         gender,
         description,
         taxCategory: 'VAT_16',
@@ -164,25 +209,53 @@ export const parseCSVToProducts = (csvText: string): Product[] => {
     if (imageUrl && !prod.imageUrl) {
       prod.imageUrl = imageUrl;
     }
+    if (description && !prod.description) {
+      prod.description = description;
+    }
 
-    prod.variants.push({
-      id: `var-${prod.id}-${prod.variants.length + 1}`,
-      sku,
-      barcode: `616${Math.floor(100000000 + Math.random() * 900000000)}`,
-      size,
-      color,
-      costPrice,
-      sellingPrice,
-      branchStock: {
-        'branch-nbi-cbd': stock,
-      },
-      reorderLevel: 10,
-      reorderQuantity: 30,
-    });
+    // In-file duplicate checking for variants
+    for (const size of sizes) {
+      const variantSku = sizes.length === 1 && rawSkuPrefix.includes('-')
+        ? rawSkuPrefix.toUpperCase()
+        : `${rawSkuPrefix}-${size}`.toUpperCase();
+
+      const existingVar = prod.variants.find(
+        (v) =>
+          v.sku.toUpperCase() === variantSku ||
+          (v.size.toLowerCase() === size.toLowerCase() && v.color.toLowerCase() === color.toLowerCase())
+      );
+
+      if (existingVar) {
+        // Run update on duplicate variant inside the file
+        if (sellingPrice > 0) existingVar.sellingPrice = sellingPrice;
+        if (costPrice > 0) existingVar.costPrice = costPrice;
+        if (imageUrl) existingVar.imageUrl = imageUrl;
+        if (stock > 0) {
+          existingVar.branchStock['branch-nbi-cbd'] = stock;
+        }
+      } else {
+        prod.variants.push({
+          id: `var-${prod.id}-${prod.variants.length + 1}`,
+          sku: variantSku,
+          barcode: `616${Math.floor(100000000 + Math.random() * 900000000)}`,
+          size,
+          color,
+          costPrice,
+          sellingPrice,
+          branchStock: {
+            'branch-nbi-cbd': stock,
+          },
+          reorderLevel,
+          reorderQuantity: 30,
+          imageUrl: imageUrl || undefined,
+        });
+      }
+    }
   }
 
   return Array.from(productMap.values());
 };
+
 
 export const ProductsView: React.FC = () => {
   const { canAccessFinancials, branches } = useAuth();
@@ -307,11 +380,12 @@ export const ProductsView: React.FC = () => {
           throw new Error('No valid products detected in the uploaded file.');
         }
 
-        await api.importProducts(importedProducts);
+        const res = await api.importProducts(importedProducts);
+        const msg = res.message || `Successfully processed ${importedProducts.length} items from ${file.name}.`;
         notify({
           type: 'SUCCESS',
-          title: 'Catalogue Imported',
-          message: `Successfully uploaded ${importedProducts.length} items from ${file.name}.`,
+          title: 'Catalogue Synchronized',
+          message: msg,
         });
         fetchProducts();
       } catch (err: any) {
@@ -329,10 +403,33 @@ export const ProductsView: React.FC = () => {
     reader.readAsText(file);
   };
 
+  const [isRepairing, setIsRepairing] = useState(false);
+  const handleRepairCatalogue = async () => {
+    setIsRepairing(true);
+    try {
+      const res = await api.repairCatalogue();
+      notify({
+        type: 'SUCCESS',
+        title: 'Catalogue Repaired',
+        message: res.message || `Verified ${res.count} products in catalogue.`,
+      });
+      fetchProducts();
+    } catch (err: any) {
+      notify({
+        type: 'ERROR',
+        title: 'Repair Failed',
+        message: err.message || 'Could not repair catalogue integrity.',
+      });
+    } finally {
+      setIsRepairing(false);
+    }
+  };
+
   // New Product Modal States
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [createName, setCreateName] = useState('');
   const [createSchool, setCreateSchool] = useState('Nairobi School');
+
   const [createSector, setCreateSector] = useState<InventorySectorId>('SECONDARY');
   const [createInstitutionType, setCreateInstitutionType] = useState<string>('KMTC');
   const [createProfessionalDomain, setCreateProfessionalDomain] = useState<ProfessionalDomain>('Security');
@@ -803,8 +900,8 @@ export const ProductsView: React.FC = () => {
 
               <button
                 onClick={() => fileInputRef.current?.click()}
-                className="w-full sm:w-auto inline-flex items-center justify-center px-3.5 py-2 bg-emerald-50 text-emerald-800 border border-emerald-300 hover:bg-emerald-100 rounded-xl text-xs font-bold transition-all shadow-xs"
-                title="Import Catalogue (CSV or JSON)"
+                className="w-full sm:w-auto inline-flex items-center justify-center px-3.5 py-2 bg-emerald-50 text-emerald-800 border border-emerald-300 hover:bg-emerald-100 rounded-xl text-xs font-bold transition-all shadow-xs cursor-pointer"
+                title="Import Catalogue with Duplicate Check & Smart Update"
               >
                 <Upload className="w-3.5 h-3.5 mr-1.5 text-emerald-600 shrink-0" />
                 <span className="truncate">Import Catalogue</span>
@@ -816,10 +913,21 @@ export const ProductsView: React.FC = () => {
                   onChange={importCatalogue}
                 />
               </button>
+
+              <button
+                onClick={handleRepairCatalogue}
+                disabled={isRepairing}
+                className="w-full sm:w-auto inline-flex items-center justify-center px-3.5 py-2 bg-amber-50 text-amber-900 border border-amber-300 hover:bg-amber-100 rounded-xl text-xs font-bold transition-all shadow-xs cursor-pointer"
+                title="Verify and repair catalogue integrity"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 mr-1.5 text-amber-700 shrink-0 ${isRepairing ? 'animate-spin' : ''}`} />
+                <span className="truncate">{isRepairing ? 'Repairing...' : 'Repair Catalogue'}</span>
+              </button>
             </div>
           </div>
         )}
       </div>
+
 
       {/* Filter Bar */}
       <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
