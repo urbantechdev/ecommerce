@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Invoice } from '../types';
+import { Invoice, Product, InvoiceItem } from '../types';
 import { useAuth } from '../context/AuthContext';
 import {
   Printer,
@@ -10,11 +10,14 @@ import {
   Building,
   CreditCard,
   QrCode,
-  ShieldCheck
+  ShieldCheck,
+  Maximize2,
+  Image as ImageIcon
 } from 'lucide-react';
 import { api } from '../api';
 import { useNotification } from '../context/NotificationContext';
 import { StatusBadge } from './StatusBadge';
+import { normalizeImageUrl } from '../views/ProductsView';
 
 interface InvoicePreviewModalProps {
   invoice: Invoice | null;
@@ -31,6 +34,14 @@ export const InvoicePreviewModal: React.FC<InvoicePreviewModalProps> = ({
   const { user } = useAuth();
   const [emailInput, setEmailInput] = useState('');
   const [isSendingEmail, setIsSendingEmail] = useState(false);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [lightboxImage, setLightboxImage] = useState<{ url: string; title: string } | null>(null);
+
+  useEffect(() => {
+    if (isOpen) {
+      api.getProducts().then(setProducts).catch(() => {});
+    }
+  }, [isOpen]);
 
   useEffect(() => {
     if (invoice?.customerEmail) {
@@ -39,6 +50,17 @@ export const InvoicePreviewModal: React.FC<InvoicePreviewModalProps> = ({
   }, [invoice]);
 
   if (!isOpen || !invoice) return null;
+
+  const getItemImage = (item: InvoiceItem): string => {
+    const prod = products.find(
+      (p) => p.id === item.productId || p.name.toLowerCase() === item.productName.toLowerCase()
+    );
+    if (!prod) return '';
+    const variant = prod.variants.find(
+      (v) => v.id === item.variantId || v.sku === item.sku
+    );
+    return variant?.imageUrl || prod.imageUrl || '';
+  };
 
   // Always show served by currently logged-in user, falling back to document record
   const servedByName = user?.name || invoice.createdByName || 'Naisia Textiles Officer';
@@ -195,7 +217,7 @@ export const InvoicePreviewModal: React.FC<InvoicePreviewModalProps> = ({
             <table className="w-full text-left">
               <thead>
                 <tr className="border-b-2 border-slate-200 text-[10px] font-black uppercase text-slate-500 bg-slate-50">
-                  <th className="py-2.5 px-3">Item Description</th>
+                  <th className="py-2.5 px-3">Item & Garment Visual</th>
                   <th className="py-2.5 px-2 text-center">Size</th>
                   <th className="py-2.5 px-2 text-center">Qty</th>
                   <th className="py-2.5 px-3 text-right">Unit Price</th>
@@ -203,26 +225,57 @@ export const InvoicePreviewModal: React.FC<InvoicePreviewModalProps> = ({
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {invoice.items.map((item, idx) => (
-                  <tr key={idx} className="hover:bg-slate-50/50">
-                    <td className="py-2.5 px-3">
-                      <span className="font-bold text-slate-900 block">{item.productName}</span>
-                      {item.sku && <span className="text-[10px] text-slate-400 font-mono">{item.sku}</span>}
-                    </td>
-                    <td className="py-2.5 px-2 text-center font-mono font-bold text-slate-700">
-                      {item.size}
-                    </td>
-                    <td className="py-2.5 px-2 text-center font-black text-slate-900">
-                      {item.quantity}
-                    </td>
-                    <td className="py-2.5 px-3 text-right font-mono text-slate-700">
-                      KES {item.unitPrice.toLocaleString()}
-                    </td>
-                    <td className="py-2.5 px-3 text-right font-mono font-bold text-slate-900">
-                      KES {item.total.toLocaleString()}
-                    </td>
-                  </tr>
-                ))}
+                {invoice.items.map((item, idx) => {
+                  const imgUrl = getItemImage(item);
+                  return (
+                    <tr key={idx} className="hover:bg-slate-50/50">
+                      <td className="py-2.5 px-3">
+                        <div className="flex items-center space-x-3">
+                          {imgUrl ? (
+                            <button
+                              type="button"
+                              onClick={() => setLightboxImage({ url: imgUrl, title: `${item.productName} (Size ${item.size})` })}
+                              className="w-12 h-12 rounded-xl overflow-hidden bg-slate-100 border border-slate-200 shrink-0 relative group/img cursor-pointer transition-transform hover:scale-105 shadow-2xs"
+                              title="Tap to preview high-res image"
+                            >
+                              <img
+                                src={normalizeImageUrl(imgUrl)}
+                                alt={item.productName}
+                                className="w-full h-full object-cover"
+                                onError={(e) => {
+                                  (e.target as HTMLImageElement).src = '/logo.png';
+                                }}
+                              />
+                              <div className="absolute inset-0 bg-slate-900/40 opacity-0 group-hover/img:opacity-100 transition-opacity flex items-center justify-center">
+                                <Maximize2 className="w-3.5 h-3.5 text-white" />
+                              </div>
+                            </button>
+                          ) : (
+                            <div className="w-12 h-12 rounded-xl bg-slate-100 border border-slate-200 flex items-center justify-center shrink-0 text-slate-400">
+                              <ImageIcon className="w-5 h-5 text-slate-300" />
+                            </div>
+                          )}
+                          <div className="min-w-0">
+                            <span className="font-bold text-slate-900 block leading-tight">{item.productName}</span>
+                            {item.sku && <span className="text-[10px] text-slate-400 font-mono">{item.sku}</span>}
+                          </div>
+                        </div>
+                      </td>
+                      <td className="py-2.5 px-2 text-center font-mono font-bold text-slate-700">
+                        {item.size}
+                      </td>
+                      <td className="py-2.5 px-2 text-center font-black text-slate-900">
+                        {item.quantity}
+                      </td>
+                      <td className="py-2.5 px-3 text-right font-mono text-slate-700">
+                        KES {item.unitPrice.toLocaleString()}
+                      </td>
+                      <td className="py-2.5 px-3 text-right font-mono font-bold text-slate-900">
+                        KES {item.total.toLocaleString()}
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
@@ -318,6 +371,36 @@ export const InvoicePreviewModal: React.FC<InvoicePreviewModalProps> = ({
           </button>
         </div>
       </div>
+
+      {/* Lightbox Modal for Full Item Image Preview */}
+      {lightboxImage && (
+        <div
+          onClick={() => setLightboxImage(null)}
+          className="fixed inset-0 z-60 bg-black/85 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="bg-white rounded-3xl overflow-hidden max-w-lg w-full shadow-2xl border border-slate-200"
+          >
+            <div className="p-3.5 bg-slate-900 text-white flex items-center justify-between text-xs font-bold">
+              <span className="truncate pr-2">{lightboxImage.title}</span>
+              <button
+                onClick={() => setLightboxImage(null)}
+                className="p-1 rounded-lg bg-white/10 hover:bg-white/20 text-white cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <div className="p-4 bg-slate-100 flex items-center justify-center max-h-[70vh] overflow-hidden">
+              <img
+                src={normalizeImageUrl(lightboxImage.url)}
+                alt={lightboxImage.title}
+                className="max-h-[65vh] w-auto max-w-full object-contain rounded-xl shadow-md"
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

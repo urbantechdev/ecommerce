@@ -782,34 +782,38 @@ apiRouter.post('/portal/checkout', async (req, res) => {
   let totalDiscount = 0;
   let totalAmount = 0;
 
-  const processedItems = items.map((item) => {
-    const prod = products.find((p) => p.id === item.productId);
-    const variant = prod.variants.find((v) => v.id === item.variantId);
-    const qty = Number(item.quantity);
-    const unitPrice = Number(item.unitPrice || variant.sellingPrice);
-    const discount = Number(item.discountAmount || 0);
-    const lineTotal = qty * unitPrice - discount;
-    const lineTax = lineTotal - lineTotal / 1.16;
+  const processedItems = (items as any[])
+    .map((item: any) => {
+      const prod = products.find((p) => p.id === item.productId);
+      if (!prod) return null;
+      const variant = prod.variants.find((v) => v.id === item.variantId);
+      if (!variant) return null;
+      const qty = Number(item.quantity) || 1;
+      const unitPrice = Number(item.unitPrice || variant.sellingPrice);
+      const discount = Number(item.discountAmount || 0);
+      const lineTotal = qty * unitPrice - discount;
+      const lineTax = lineTotal - lineTotal / 1.16;
 
-    subtotal += lineTotal - lineTax;
-    totalTax += lineTax;
-    totalDiscount += discount;
-    totalAmount += lineTotal;
+      subtotal += lineTotal - lineTax;
+      totalTax += lineTax;
+      totalDiscount += discount;
+      totalAmount += lineTotal;
 
-    return {
-      productId: item.productId,
-      variantId: item.variantId,
-      productName: prod.name,
-      sku: variant.sku,
-      school: prod.school,
-      size: variant.size,
-      quantity: qty,
-      unitPrice,
-      discountAmount: discount,
-      taxAmount: Number(lineTax.toFixed(2)),
-      totalPrice: Number(lineTotal.toFixed(2)),
-    };
-  });
+      return {
+        productId: item.productId,
+        variantId: item.variantId,
+        productName: prod.name,
+        sku: variant.sku,
+        school: prod.school,
+        size: variant.size,
+        quantity: qty,
+        unitPrice,
+        discountAmount: discount,
+        taxAmount: Number(lineTax.toFixed(2)),
+        totalPrice: Number(lineTotal.toFixed(2)),
+      };
+    })
+    .filter(Boolean) as any[];
 
   const receiptNumber = db.getNextSequence("RCP-WEB", db.getData().sales, "receiptNumber");
   const now = new Date().toISOString();
@@ -828,7 +832,7 @@ apiRouter.post('/portal/checkout', async (req, res) => {
     false
   );
 
-  const sale = {
+  const sale: Sale = {
     id: uuidv4(),
     receiptNumber,
     branchId: branch.id,
@@ -843,7 +847,7 @@ apiRouter.post('/portal/checkout', async (req, res) => {
     totalTax: Number(totalTax.toFixed(2)),
     totalDiscount: Number(totalDiscount.toFixed(2)),
     totalAmount: Number(totalAmount.toFixed(2)),
-    paymentMethod: paymentMethod || "MPESA",
+    paymentMethod: (paymentMethod || "MPESA") as any,
     paymentReference: paymentReference || undefined,
     amountTendered: totalAmount,
     changeGiven: 0,
@@ -872,7 +876,8 @@ apiRouter.post('/portal/checkout', async (req, res) => {
 
   for (const item of processedItems) {
     const prod = products.find((p) => p.id === item.productId);
-    const variant = prod.variants.find((v) => v.id === item.variantId);
+    const variant = prod?.variants.find((v) => v.id === item.variantId);
+    if (!variant) continue;
     const previousStock = variant.branchStock[branch.id] ?? 0;
     const newStock = Math.max(0, previousStock - item.quantity);
     variant.branchStock[branch.id] = newStock;
@@ -898,21 +903,22 @@ apiRouter.post('/portal/checkout', async (req, res) => {
 
   db.getData().sales.unshift(sale);
 
-  const receiptRecord = {
+  const receiptRecord: PaymentReceipt = {
     id: uuidv4(),
     receiptNumber,
     saleId: sale.id,
     branchId: branch.id,
     branchName: branch.name,
+    customerId: "cust-online-portal",
     customerName: sale.customerName,
-    amountPaid: totalAmount,
-    paymentMethod: sale.paymentMethod,
-    paymentReference: sale.paymentReference,
-    issuedBy: "Online Web Portal",
-    issuedAt: now,
-    kraControlCode: sale.kraControlCode,
-    cuInvoiceNumber: sale.cuInvoiceNumber,
-    qrCodeUrl: sale.kraQrCodeUrl,
+    amount: totalAmount,
+    paymentMethod: (sale.paymentMethod as any) || "MPESA",
+    paymentReference: sale.paymentReference || "ONLINE-PORTAL",
+    receivedBy: "usr-online-portal",
+    receivedByName: "Online Web Portal",
+    cuNumber: sale.cuInvoiceNumber,
+    kraQrCodeUrl: sale.kraQrCodeUrl,
+    createdAt: now,
   };
   db.getData().receipts.unshift(receiptRecord);
 
