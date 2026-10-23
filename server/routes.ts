@@ -742,6 +742,7 @@ apiRouter.get('/products/schools', requireAuth, (req, res) => {
 // CUSTOMER PORTAL PUBLIC API ROUTES
 // ==========================================
 apiRouter.get('/portal/products', (req, res) => {
+  console.log('[DEBUG] Portal Products API called');
   try {
     const { school, category, search } = req.query;
     let products = (db.getData().products || []).filter((p) => p && p.active !== false);
