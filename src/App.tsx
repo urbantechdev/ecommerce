@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { NotificationProvider } from './context/NotificationContext';
 import { Layout } from './components/Layout';
@@ -26,6 +26,26 @@ const AppContent: React.FC = () => {
   const { user, isLoading } = useAuth();
   const [currentView, setCurrentView] = useState<string>('pos');
   const path = window.location.pathname;
+
+  // Enforce search engine indexing rules:
+  // Customer portal is indexed; admin, cashier, accountant, and ERP are blocked from crawlers
+  useEffect(() => {
+    let robotsMeta = document.querySelector('meta[name="robots"]') as HTMLMetaElement | null;
+    if (!robotsMeta) {
+      robotsMeta = document.createElement('meta');
+      robotsMeta.name = 'robots';
+      document.head.appendChild(robotsMeta);
+    }
+
+    const isInternalArea = path === '/erp' || path === '/login' || (path !== '/' && path !== '/portal');
+    if (isInternalArea) {
+      robotsMeta.content = 'noindex, nofollow, noarchive, nosnippet';
+      document.title = 'Naisiae ERP - Staff & Administration Portal';
+    } else {
+      robotsMeta.content = 'index, follow, max-image-preview:large';
+      document.title = 'Naisiae Textiles - Official School Uniforms & Corporate Garments Portal';
+    }
+  }, [path, user, currentView]);
 
   // Portal is default
   if (path === '/' || path === '/portal') {

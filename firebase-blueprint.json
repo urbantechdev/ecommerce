@@ -259,9 +259,37 @@
         "syncedAt": { "type": "string", "format": "date-time" }
       },
       "required": ["tenantId", "tenantSlug", "offerId", "title", "link", "imageLink", "price", "currency", "availability"]
+    },
+    "inventory_item": {
+      "title": "Inventory Item",
+      "description": "Stock tracking record for uniform items across branch stores.",
+      "type": "object",
+      "properties": {
+        "productId": { "type": "string" },
+        "productName": { "type": "string" },
+        "school": { "type": "string" },
+        "category": { "type": "string" },
+        "variantId": { "type": "string" },
+        "sku": { "type": "string" },
+        "size": { "type": "string" },
+        "branchId": { "type": "string" },
+        "branchName": { "type": "string" },
+        "currentStock": { "type": "number" },
+        "reorderLevel": { "type": "number" },
+        "reorderQuantity": { "type": "number" },
+        "costPrice": { "type": "number" },
+        "sellingPrice": { "type": "number" },
+        "imageUrl": { "type": "string" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["productId", "productName", "sku", "branchId", "currentStock"]
     }
   },
   "firestore": {
+    "/inventory/{docId}": {
+      "schema": "inventory_item",
+      "description": "Stock levels, replenishment thresholds, and multi-branch allocations for uniform garments."
+    },
     "/staging_products/{docId}": {
       "schema": "staging_product",
       "description": "Staging collection for cross-border Google Merchant and Microsoft Ads feed integration."

@@ -19,6 +19,38 @@ async function startServer() {
   app.use(express.json({ limit: '10mb' }));
   app.use(express.urlencoded({ extended: true }));
 
+  // Search Engine Crawler Policy (Block Admin, Cashier, Accountant, ERP, and API from crawling)
+  app.use((req, res, next) => {
+    const rawPath = req.path.toLowerCase();
+    const isDisallowedArea =
+      rawPath.startsWith('/erp') ||
+      rawPath.startsWith('/admin') ||
+      rawPath.startsWith('/login') ||
+      rawPath.startsWith('/cashier') ||
+      rawPath.startsWith('/accountant') ||
+      rawPath.startsWith('/pos') ||
+      rawPath.startsWith('/dashboard') ||
+      rawPath.startsWith('/inventory') ||
+      rawPath.startsWith('/financials') ||
+      rawPath.startsWith('/invoices') ||
+      rawPath.startsWith('/quotations') ||
+      rawPath.startsWith('/receipts') ||
+      rawPath.startsWith('/purchases') ||
+      rawPath.startsWith('/expenses') ||
+      rawPath.startsWith('/transfers') ||
+      rawPath.startsWith('/users') ||
+      rawPath.startsWith('/audit') ||
+      rawPath.startsWith('/settings') ||
+      rawPath.startsWith('/api');
+
+    if (isDisallowedArea) {
+      res.setHeader('X-Robots-Tag', 'noindex, nofollow, noarchive, nosnippet');
+    } else {
+      res.setHeader('X-Robots-Tag', 'index, follow, max-image-preview:large');
+    }
+    next();
+  });
+
   // Mount API router
   app.use('/api', apiRouter);
 

@@ -1,7 +1,56 @@
+# Robots.txt for Naisiae Textiles
+# Only Customer Portal is crawlable. Admin dashboard, Accountant, Cashier/POS, and internal ERP routes are blocked from all search engine crawlers.
+
 User-agent: *
-Allow: /
+
+# Allow Customer Portal and public assets
+Allow: /$
 Allow: /portal
+Allow: /portal/
+Allow: /assets/
+Allow: /logo.png
+Allow: /favicon.ico
+Allow: /favicon.png
+Allow: /sitemap.xml
+
+# Disallow Internal ERP, Admin Dashboard, Accountant, Cashier, POS, and Management Routes
 Disallow: /erp
+Disallow: /erp/
 Disallow: /admin
+Disallow: /admin/
 Disallow: /login
+Disallow: /login/
+Disallow: /cashier
+Disallow: /cashier/
+Disallow: /accountant
+Disallow: /accountant/
+Disallow: /pos
+Disallow: /pos/
+Disallow: /dashboard
+Disallow: /dashboard/
+Disallow: /inventory
+Disallow: /inventory/
+Disallow: /financials
+Disallow: /financials/
+Disallow: /invoices
+Disallow: /invoices/
+Disallow: /quotations
+Disallow: /quotations/
+Disallow: /receipts
+Disallow: /receipts/
+Disallow: /purchases
+Disallow: /purchases/
+Disallow: /expenses
+Disallow: /expenses/
+Disallow: /transfers
+Disallow: /transfers/
+Disallow: /users
+Disallow: /users/
+Disallow: /audit
+Disallow: /audit/
+Disallow: /settings
+Disallow: /settings/
+Disallow: /api/
+
+# Sitemap location
 Sitemap: https://naisiaetextiles.com/sitemap.xml

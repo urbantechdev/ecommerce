@@ -10,7 +10,7 @@ service cloud.firestore {
     }
 
     function isAdmin() {
-      return isSignedIn() && (request.auth.token.email in ['naisiaetext@gmail.com', 'Kirigommk@gmail.com', 'Kgeokom@gmail.com', 'naisiaetextile@gmail.com']);
+      return isSignedIn() && (request.auth.token.email in ['naisiaetext@gmail.com', 'Kirigommk@gmail.com', 'Kgeokom@gmail.com', 'naisiaetextile@gmail.com', 'moraasdorcah@gmail.com']);
     }
 
     function isValidInvite(data) {
@@ -135,6 +135,11 @@ service cloud.firestore {
         incoming().diff(existing()).affectedKeys().hasAny(['name', 'category', 'price', 'description', 'active', 'imageUrl', 'badge', 'tags', 'oldPrice', 'sortOrder', 'updatedAt'])
       );
       allow delete: if isAdmin();
+    }
+
+    match /inventory/{id} {
+      allow get, list: if true;
+      allow write: if isAdmin();
     }
 
     match /staging_products/{id} {

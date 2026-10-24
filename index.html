@@ -3,18 +3,66 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <title>Naisiae ERP - School Uniforms & Multi-Branch Enterprise Management</title>
-    <meta name="description" content="Secure, multi-branch ERP system for Naisia Textiles featuring real-time inventory synchronization, POS, quotations, invoices, receipts, KRA eTIMS tax compliance, and financial management." />
-    <meta property="og:title" content="Naisiae ERP - School Uniforms & Multi-Branch Enterprise Management" />
-    <meta property="og:description" content="Secure, multi-branch ERP system for Naisia Textiles featuring real-time inventory synchronization, POS, quotations, invoices, receipts, KRA eTIMS tax compliance, and financial management." />
+    <script>
+      (function() {
+        var isExt = function(s) {
+          var str = String(s || '');
+          return str.indexOf('chrome-extension://') !== -1 ||
+                 str.indexOf('Could not establish connection') !== -1 ||
+                 str.indexOf('Receiving end does not exist') !== -1;
+        };
+        window.addEventListener('error', function(e) {
+          if (isExt(e.message) || isExt(e.filename) || (e.error && isExt(e.error.stack))) {
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            return true;
+          }
+        }, true);
+        window.addEventListener('unhandledrejection', function(e) {
+          var reason = e.reason;
+          var msg = reason && (reason.message || reason.stack) ? (reason.message || reason.stack) : String(reason || '');
+          if (isExt(msg)) {
+            e.preventDefault();
+            e.stopImmediatePropagation();
+          }
+        }, true);
+      })();
+    </script>
+    <title>Naisiae Textiles - Official School Uniforms & Corporate Garments Portal</title>
+    <meta name="description" content="Shop official Kenya school uniforms, sportswear, medical scrubs, chef coats, and corporate wear online. Instant checkout with official KRA eTIMS fiscal receipts." />
+    <meta name="robots" content="index, follow, max-image-preview:large" />
+    <meta property="og:title" content="Naisiae Textiles - Official School Uniforms & Corporate Garments Portal" />
+    <meta property="og:description" content="Shop official Kenya school uniforms, sportswear, medical scrubs, chef coats, and corporate wear online. Instant checkout with official KRA eTIMS fiscal receipts." />
     <meta property="og:type" content="website" />
+    <meta property="og:image" content="/og-image.png" />
     <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Naisiae Textiles - School Uniforms Portal" />
+    <meta name="twitter:description" content="Official Kenyan school uniforms, sportswear, and corporate workwear. Fast checkout with eTIMS receipts." />
     <meta name="theme-color" content="#030A91" />
     <link rel="icon" type="image/png" href="/logo.png" />
     <link rel="apple-touch-icon" href="/logo.png" />
+    <link rel="canonical" href="https://naisiaetextiles.com/" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,600;1,700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "ClothingStore",
+      "name": "Naisiae Textiles",
+      "url": "https://naisiaetextiles.com/",
+      "logo": "https://naisiaetextiles.com/logo.png",
+      "description": "Leading manufacturer and retailer of official school uniforms, institutional wear, sports kits, and corporate garments in Kenya.",
+      "telephone": "+254792021496",
+      "address": {
+        "@type": "PostalAddress",
+        "streetAddress": "Uhuru Market, Jogoo Road",
+        "addressLocality": "Nairobi",
+        "addressCountry": "KE"
+      },
+      "priceRange": "KES 50 - KES 12,000"
+    }
+    </script>
   </head>
   <body class="bg-[#F8FAFC] text-slate-900 antialiased selection:bg-[#FACB00] selection:text-[#030A91]">
     <div id="root"></div>

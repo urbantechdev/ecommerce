@@ -15,10 +15,14 @@ import {
   ArrowUpRight,
   X,
   CheckCircle2,
-  Image as ImageIcon
+  Image as ImageIcon,
+  CloudUpload,
+  Database,
+  RefreshCw
 } from 'lucide-react';
 import { StatusBadge } from '../components/StatusBadge';
 import { SkuImageManagerModal } from '../components/SkuImageManagerModal';
+import { syncInventoryToFirestore } from '../utils/firestoreInventorySync';
 
 export const InventoryView: React.FC = () => {
   const { branches, activeBranchId, canAccessFinancials, user } = useAuth();
@@ -59,6 +63,41 @@ export const InventoryView: React.FC = () => {
       }
     }
     setIsSkuImageModalOpen(true);
+  };
+
+  // Database Sync State
+  const [isSyncingDb, setIsSyncingDb] = useState(false);
+
+  const handleSaveInventoryToFirestore = async () => {
+    if (inventory.length === 0) {
+      notify({ type: 'WARNING', title: 'Inventory Empty', message: 'No inventory items available to save.' });
+      return;
+    }
+
+    setIsSyncingDb(true);
+    try {
+      let prods = allProducts;
+      if (!prods || prods.length === 0) {
+        prods = await api.getProducts();
+        setAllProducts(prods);
+      }
+
+      const result = await syncInventoryToFirestore(inventory, prods);
+      notify({
+        type: 'SUCCESS',
+        title: 'Inventory Saved to Firestore Database',
+        message: `Successfully saved ${result.inventoryCount} uniform stock records and ${result.productsCount} catalog items directly to your Firestore database.`,
+      });
+    } catch (err: any) {
+      console.error('Failed to sync inventory to database:', err);
+      notify({
+        type: 'ERROR',
+        title: 'Database Save Failed',
+        message: err.message || 'Could not save inventory to Firestore. Please check database permissions.',
+      });
+    } finally {
+      setIsSyncingDb(false);
+    }
   };
 
   const fetchInventory = async () => {
@@ -151,14 +190,30 @@ export const InventoryView: React.FC = () => {
         </div>
 
         {/* Header Actions & Tab Switcher */}
-        <div className="flex flex-col gap-3">
-          <button
-            onClick={() => handleOpenSkuModal()}
-            className="inline-flex items-center justify-center px-3.5 py-2 bg-gradient-to-r from-blue-700 to-[#030A91] hover:from-blue-800 hover:to-blue-950 text-white rounded-xl text-xs font-bold transition-all shadow-xs"
-          >
-            <ImageIcon className="w-3.5 h-3.5 mr-1.5 text-[#FACB00]" />
-            <span>SKU Image Files & Categories</span>
-          </button>
+        <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              onClick={handleSaveInventoryToFirestore}
+              disabled={isSyncingDb || isLoading}
+              className="inline-flex items-center justify-center px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white rounded-xl text-xs font-bold transition-all shadow-xs cursor-pointer"
+              title="Save complete multi-branch inventory into the Firestore database"
+            >
+              {isSyncingDb ? (
+                <RefreshCw className="w-3.5 h-3.5 mr-1.5 animate-spin" />
+              ) : (
+                <Database className="w-3.5 h-3.5 mr-1.5 text-emerald-200" />
+              )}
+              <span>{isSyncingDb ? 'Saving to Database...' : 'Save Inventory to Database'}</span>
+            </button>
+
+            <button
+              onClick={() => handleOpenSkuModal()}
+              className="inline-flex items-center justify-center px-3.5 py-2 bg-gradient-to-r from-blue-700 to-[#030A91] hover:from-blue-800 hover:to-blue-950 text-white rounded-xl text-xs font-bold transition-all shadow-xs"
+            >
+              <ImageIcon className="w-3.5 h-3.5 mr-1.5 text-[#FACB00]" />
+              <span>SKU Image Files & Categories</span>
+            </button>
+          </div>
 
           {/* Tab Switcher */}
           <div className="flex items-center bg-white border border-slate-200 p-1 rounded-xl shadow-xs text-xs font-bold overflow-x-auto">
@@ -220,6 +275,20 @@ export const InventoryView: React.FC = () => {
             </div>
 
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+              <button
+                onClick={handleSaveInventoryToFirestore}
+                disabled={isSyncingDb || isLoading}
+                className="px-3 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-semibold transition-all cursor-pointer flex items-center justify-center gap-1.5 disabled:opacity-50 shadow-xs"
+                title="Save complete multi-branch inventory into Firestore database"
+              >
+                {isSyncingDb ? (
+                  <RefreshCw className="w-3.5 h-3.5 animate-spin text-emerald-400" />
+                ) : (
+                  <Database className="w-3.5 h-3.5 text-emerald-400" />
+                )}
+                <span>{isSyncingDb ? 'Saving to DB...' : 'Save to DB'}</span>
+              </button>
+
               <button
                 onClick={() => {
                   const headers = ['Product', 'School', 'Category', 'SKU', 'Size', 'Branch', 'Stock', 'Selling Price'];

@@ -315,7 +315,7 @@ export const PortalView: React.FC = () => {
             <img
               src="https://plain-eeur-prod-public.komododecks.com/202605/07/1sm3ITZIdJmYjyTcxmiP/image.png"
               alt="Naisia Textiles Logo"
-              className="w-14 h-14 sm:w-20 sm:h-20 object-contain shrink-0 drop-shadow-md rounded-2xl bg-white/10 p-1 ring-2 ring-[#FACB00]/40"
+              className="w-14 h-14 sm:w-20 sm:h-20 object-contain shrink-0 drop-shadow-md"
               onError={(e) => {
                 (e.target as HTMLImageElement).src = "/logo.png";
               }}
@@ -326,14 +326,11 @@ export const PortalView: React.FC = () => {
                   NAISIAE TEXTILES
                 </h1>
                 <span className="bg-[#FACB00] text-[#030A91] text-[10px] sm:text-xs font-black uppercase px-2.5 py-0.5 rounded-full tracking-wider shadow-sm">
-                  Customer POS Portal
+                  Ke
                 </span>
               </div>
               <p className="text-xs sm:text-sm text-blue-100 font-medium mt-1">
                 Official School Uniforms & Corporate Garments Self-Service Checkout
-              </p>
-              <p className="text-[10px] text-[#FACB00]/90 font-mono tracking-wider uppercase mt-0.5">
-                Instant Google Sign-In • KRA eTIMS Fiscalized Receipts
               </p>
             </div>
           </div>
@@ -397,16 +394,6 @@ export const PortalView: React.FC = () => {
                 <span>{isAuthLoading ? "Signing In..." : "Sign in with Google"}</span>
               </button>
             )}
-
-            {/* ERP Staff Portal Link */}
-            <a
-              href="/erp"
-              className="inline-flex items-center space-x-1.5 bg-white/10 hover:bg-white/20 border border-white/20 text-white px-3 py-2.5 rounded-2xl text-xs font-bold transition-colors"
-              title="Staff & Management Login"
-            >
-              <Lock className="w-3.5 h-3.5 text-[#FACB00]" />
-              <span className="hidden sm:inline">Staff / ERP</span>
-            </a>
           </div>
         </div>
 
