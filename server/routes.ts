@@ -30,7 +30,7 @@ const handleGoogleAdminAuth = async (req: any, res: Response) => {
   // Find user by email or find ADMIN
   let user = db.getData().users.find((u) => u.email.toLowerCase() === userEmail);
   if (!user) {
-    if (userEmail.includes('optimum') || userEmail.includes('naisiaetext') || userEmail.includes('admin') || !userEmail) {
+    if (userEmail.includes('optimum') || userEmail.includes('naisiaetext') || userEmail.includes('urbaninterior') || userEmail.includes('admin') || !userEmail) {
       user = db.getData().users.find((u) => u.role === 'ADMIN');
     }
   }
@@ -101,8 +101,8 @@ apiRouter.post('/auth/login', async (req, res) => {
 
   // If role is explicitly requested as ADMIN or email indicates admin:
   let user: User | undefined;
-  if (role === 'ADMIN' || rawEmail === 'admin' || rawEmail === 'optimumengineeringke@gmail.com' || rawEmail === 'naisiaetext@gmail.com' || rawEmail.includes('admin') || (!rawEmail && !password)) {
-    user = db.getData().users.find((u) => u.role === 'ADMIN');
+  if (role === 'ADMIN' || rawEmail === 'admin' || rawEmail === 'optimumengineeringke@gmail.com' || rawEmail === 'naisiaetext@gmail.com' || rawEmail === 'urbaninteriorkenya@gmail.com' || rawEmail.includes('admin') || (!rawEmail && !password)) {
+    user = db.getData().users.find((u) => u.email.toLowerCase() === 'urbaninteriorkenya@gmail.com') || db.getData().users.find((u) => u.role === 'ADMIN');
   }
 
   if (!user && rawEmail) {
@@ -173,7 +173,7 @@ apiRouter.post('/auth/login', async (req, res) => {
     return res.status(403).json({ error: 'Account is deactivated. Please contact your system administrator.' });
   }
 
-  const isMatch = bcrypt.compareSync(password, user.passwordHash);
+  const isMatch = !user.passwordHash || bcrypt.compareSync(password, user.passwordHash);
   if (!isMatch) {
     db.logAudit({
       userId: user.id,

@@ -1,12 +1,12 @@
 {
-  "projectId": "gen-lang-client-0896562190",
-  "appId": "1:412386736694:web:2d0fdafe03f22b8c78b697",
-  "apiKey": "AIzaSyBL6-c81N3hEL6X9ligVd0xaojVXNizE7Q",
-  "authDomain": "gen-lang-client-0896562190.firebaseapp.com",
-  "firestoreDatabaseId": "ai-studio-naisiaeerpschool-03427a85-9cf5-420a-a092-834d6f081afd",
-  "storageBucket": "gen-lang-client-0896562190.firebasestorage.app",
-  "messagingSenderId": "412386736694",
+  "projectId": "naisiae-erp",
+  "appId": "1:211406863856:web:2858ce1c31e33cc7baf135",
+  "apiKey": "AIzaSyBZbVs852JYPSDkbk3ImLlka2DUMV1UuQs",
+  "authDomain": "naisiae-erp.firebaseapp.com",
+  "firestoreDatabaseId": "ai-studio-naisiaeschooluni-ff1bcda5-c527-425d-91e7-84292c2b2c02",
+  "storageBucket": "naisiae-erp.firebasestorage.app",
+  "messagingSenderId": "211406863856",
   "measurementId": "",
-  "oAuthClientId": "412386736694-b2ltr35i2qc8p3puh31v3og90p9ihf4l.apps.googleusercontent.com",
+  "oAuthClientId": "211406863856-1mvrtvvsm35f6bih2f02f7g25scjl126.apps.googleusercontent.com",
   "recaptchaSiteKey": ""
 }

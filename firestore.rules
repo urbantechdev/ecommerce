@@ -10,7 +10,11 @@ service cloud.firestore {
     }
 
     function isAdmin() {
-      return isSignedIn() && (request.auth.token.email in ['naisiaetext@gmail.com', 'Kirigommk@gmail.com', 'Kgeokom@gmail.com', 'naisiaetextile@gmail.com', 'moraasdorcah@gmail.com']);
+      return isSignedIn() && (request.auth.token.email in ['urbaninteriorkenya@gmail.com', 'naisiaetext@gmail.com', 'Kirigommk@gmail.com', 'Kgeokom@gmail.com', 'naisiaetextile@gmail.com', 'moraasdorcah@gmail.com']);
+    }
+
+    function isAccountant() {
+      return isSignedIn() && (request.auth.token.email in ['veronicanjus@gmail.com', 'mike@naisiaetextiles.com']);
     }
 
     function isValidInvite(data) {
@@ -131,14 +135,29 @@ service cloud.firestore {
       allow list: if resource.data.active == true || isAdmin();
       allow create: if isAdmin() && isValidId(id) && isValidProduct(incoming());
       allow update: if isAdmin() && isValidProduct(incoming()) && (
-        // Action: Update details
-        incoming().diff(existing()).affectedKeys().hasAny(['name', 'category', 'price', 'description', 'active', 'imageUrl', 'badge', 'tags', 'oldPrice', 'sortOrder', 'updatedAt'])
+        incoming().diff(existing()).affectedKeys().hasAny(['name', 'category', 'price', 'description', 'active', 'imageUrl', 'badge', 'tags', 'oldPrice', 'sortOrder', 'updatedAt', 'variants', 'variantsCount', 'sector', 'school', 'gender'])
       );
       allow delete: if isAdmin();
     }
 
     match /inventory/{id} {
       allow get, list: if true;
+      allow write: if isAdmin();
+    }
+
+    match /branches/{id} {
+      allow get, list: if true;
+      allow write: if isAdmin();
+    }
+
+    match /customers/{id} {
+      allow get, list: if isSignedIn();
+      allow create, update: if isSignedIn();
+      allow delete: if isAdmin();
+    }
+
+    match /staff/{id} {
+      allow get, list: if isSignedIn();
       allow write: if isAdmin();
     }
 
