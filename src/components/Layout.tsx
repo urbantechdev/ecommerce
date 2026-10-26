@@ -219,55 +219,56 @@ export const Layout: React.FC<LayoutProps> = ({ currentView, onNavigate, childre
             </div>
           </div>
 
-          {/* Right Header Controls: On mobile, ONLY the hamburger menu is displayed. All other buttons are inside the hamburger drawer. On desktop, full toolbar is shown. */}
-          <div className="flex items-center space-x-2 sm:space-x-3">
-            {/* Quick POS action button (Desktop only) */}
+          {/* Right Header Controls: ONLY ICONS AT THE HEADER */}
+          <div className="flex items-center space-x-1.5 sm:space-x-2">
+            {/* 1. Quick POS Launch (Icon Only) */}
             <button
               onClick={() => onNavigate('pos')}
-              className="hidden md:inline-flex items-center px-3.5 py-1.5 rounded-xl bg-[#FACB00] text-[#030A91] text-xs font-black hover:bg-yellow-400 transition-colors shadow-sm"
+              title="Launch POS Terminal"
+              className="p-2 sm:p-2.5 rounded-xl bg-[#FACB00] text-[#030A91] hover:bg-yellow-400 active:scale-95 transition-all shadow-sm"
+              aria-label="Launch POS"
             >
-              <ShoppingCart className="w-3.5 h-3.5 mr-1.5 text-[#030A91]" />
-              <span>Launch POS</span>
+              <ShoppingCart className="w-5 h-5 text-[#030A91]" />
             </button>
 
-            {/* Low stock alerts pill (Desktop only) */}
+            {/* 2. Low Stock Alerts (Icon Only) */}
             <button
               onClick={() => onNavigate('inventory')}
-              className="hidden md:flex relative p-2 rounded-xl text-white/80 hover:text-white hover:bg-white/10 transition-colors"
-              title="Low Stock Alerts"
+              className="relative p-2 sm:p-2.5 rounded-xl bg-white/10 hover:bg-white/20 active:scale-95 text-white transition-all border border-white/15"
+              title={`Low Stock Alerts (${lowStockCount} items)`}
+              aria-label="Low Stock Alerts"
             >
-              <Bell className="w-4 h-4 text-white" />
+              <Bell className="w-5 h-5 text-white" />
               {lowStockCount > 0 && (
-                <span className="absolute top-1 right-1 w-2.5 h-2.5 rounded-full bg-rose-500 ring-2 ring-blue-900 animate-pulse"></span>
+                <span className="absolute top-1 right-1 w-2.5 h-2.5 rounded-full bg-rose-500 ring-2 ring-blue-900 animate-pulse" />
               )}
             </button>
 
-            {/* User display (Desktop only) */}
-            <div className="hidden md:flex items-center space-x-2 pl-2 border-l border-white/20">
-              <div className="w-8 h-8 rounded-full bg-[#FACB00] text-[#030A91] flex items-center justify-center font-black text-xs shadow-xs">
-                {user?.name.charAt(0)}
-              </div>
-              <div className="text-left text-xs leading-none">
-                <span className="font-bold text-white block truncate max-w-[120px]">
-                  {user?.name.split(' ')[0]}
-                </span>
-                <span className="text-[10px] text-[#FACB00] font-bold uppercase mt-0.5 block">{user?.role}</span>
-              </div>
+            {/* 3. User Avatar Profile Icon (Icon Only, opens mobile drawer or displays tooltip) */}
+            <div
+              title={`${user?.name} (${user?.role})`}
+              onClick={() => setMobileMenuOpen(true)}
+              className="w-9 h-9 rounded-xl bg-[#FACB00] text-[#030A91] flex items-center justify-center font-black text-sm shadow-xs cursor-pointer active:scale-95 transition-transform"
+              aria-label="User Profile"
+            >
+              {user?.name.charAt(0)}
             </div>
 
-            {/* Desktop Direct Logout Button */}
+            {/* 4. Logout Session Icon Button */}
             <button
               onClick={logout}
-              title="Logout session"
-              className="hidden md:block p-1.5 rounded-xl text-white/70 hover:text-rose-300 hover:bg-white/10 transition-colors"
+              title="Logout Session"
+              className="p-2 sm:p-2.5 rounded-xl bg-white/10 hover:bg-rose-500/25 active:scale-95 text-white/80 hover:text-white transition-all border border-white/15"
+              aria-label="Logout"
             >
-              <LogOut className="w-4 h-4" />
+              <LogOut className="w-5 h-5" />
             </button>
 
-            {/* MOBILE ONLY: Pristine Hamburger Menu Button (Native Mobile App Style) */}
+            {/* 5. Hamburger Menu Icon Button */}
             <button
               onClick={() => setMobileMenuOpen(true)}
-              className="flex md:hidden items-center justify-center p-2.5 rounded-xl bg-white/10 hover:bg-white/20 active:scale-95 text-[#FACB00] transition-all border border-white/15 shadow-sm"
+              className="p-2 sm:p-2.5 rounded-xl bg-white/15 hover:bg-white/25 active:scale-95 text-[#FACB00] transition-all border border-white/20 shadow-sm"
+              title="Open Navigation Menu"
               aria-label="Open Navigation Menu"
             >
               <Menu className="w-5 h-5 text-[#FACB00]" />

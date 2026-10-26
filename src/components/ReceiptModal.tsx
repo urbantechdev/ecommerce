@@ -334,8 +334,8 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/75 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 select-none thermal-print-portal">
-      <div className="bg-white rounded-3xl shadow-2xl max-w-xl w-full overflow-hidden border border-slate-200 flex flex-col max-h-[92vh] animate-in fade-in zoom-in-95 duration-200">
+    <div className="fixed inset-0 z-50 overflow-y-auto bg-white sm:bg-slate-900/75 sm:backdrop-blur-sm flex sm:items-center sm:justify-center p-0 sm:p-4 select-none thermal-print-portal">
+      <div className="bg-white rounded-none sm:rounded-3xl shadow-none sm:shadow-2xl w-full h-full sm:h-auto sm:max-h-[92vh] max-w-xl overflow-hidden border-0 sm:border border-slate-200 flex flex-col animate-in fade-in zoom-in-95 duration-200">
         {/* ==================================================== */}
         {/* MODAL CONTROLS HEADER (HIDDEN DURING PRINT)          */}
         {/* ==================================================== */}

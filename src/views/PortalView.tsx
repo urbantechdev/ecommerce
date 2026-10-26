@@ -21,7 +21,17 @@ import {
   Lock,
   ChevronDown,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Menu,
+  User as UserIcon,
+  GraduationCap,
+  Layers,
+  Award,
+  Sparkles,
+  BookOpen,
+  Briefcase,
+  Tag,
+  LayoutGrid
 } from "lucide-react";
 import { signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut, User } from "firebase/auth";
 import { auth } from "../firebase";
@@ -58,6 +68,8 @@ export const PortalView: React.FC = () => {
   const [cart, setCart] = useState<CartItem[]>([]);
   const [isCartExpanded, setIsCartExpanded] = useState(false);
   const [mobileTab, setMobileTab] = useState<"catalog" | "cart">("catalog");
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<"MPESA" | "CARD">("MPESA");
   const [mpesaPhone, setMpesaPhone] = useState("");
   const [isCheckingOut, setIsCheckingOut] = useState(false);
@@ -303,97 +315,68 @@ export const PortalView: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#F4F4F4] text-slate-900 flex flex-col font-sans select-none">
+    <div className="min-h-screen bg-[#F4F4F4] text-slate-900 flex flex-col font-sans select-none pb-20 md:pb-0">
       {/* ==================================================== */}
       {/* TALL HEADER WITH CURVED SINGLE WAVE BOTTOM EDGE      */}
       {/* ==================================================== */}
       <header className="w-full relative bg-gradient-to-r from-[#02066F] via-[#030A91] to-[#0412B3] text-white shadow-md">
         {/* Double-height Inner Content Bar */}
-        <div className="max-w-7xl mx-auto px-4 pt-6 pb-4 sm:pt-12 sm:pb-8 flex flex-col md:flex-row md:items-center justify-between gap-4 relative z-10">
+        {/* Content Bar */}
+        <div className="max-w-7xl mx-auto px-4 py-3.5 sm:py-6 md:py-8 flex items-center justify-between gap-3 relative z-10">
           {/* Logo & Brand Identity */}
-          <div className="flex items-center space-x-3.5 sm:space-x-5">
+          <div className="flex items-center space-x-3 sm:space-x-5 min-w-0">
             <img
               src="https://plain-eeur-prod-public.komododecks.com/202605/07/1sm3ITZIdJmYjyTcxmiP/image.png"
               alt="Naisia Textiles Logo"
-              className="w-14 h-14 sm:w-20 sm:h-20 object-contain shrink-0 drop-shadow-md"
+              className="w-11 h-11 sm:w-16 sm:h-16 md:w-20 md:h-20 object-contain shrink-0 drop-shadow-md"
               onError={(e) => {
                 (e.target as HTMLImageElement).src = "/logo.png";
               }}
             />
-            <div>
-              <div className="flex flex-wrap items-center gap-2">
-                <h1 className="text-xl sm:text-3xl font-black tracking-tight text-white leading-none drop-shadow-sm">
-                  NAISIAE TEXTILES
+            <div className="min-w-0">
+              <div className="flex items-center gap-2">
+                <h1 className="text-lg sm:text-2xl md:text-3xl font-black tracking-tight text-white leading-none drop-shadow-sm truncate">
+                  NAISIAE
                 </h1>
-                <span className="bg-[#FACB00] text-[#030A91] text-[10px] sm:text-xs font-black uppercase px-2.5 py-0.5 rounded-full tracking-wider shadow-sm">
+                <span className="bg-[#FACB00] text-[#030A91] text-[10px] sm:text-xs font-black uppercase px-2 py-0.5 rounded-full tracking-wider shadow-sm shrink-0">
                   Ke
                 </span>
               </div>
-              <p className="text-xs sm:text-sm text-blue-100 font-medium mt-1">
-                Official School Uniforms & Corporate Garments Self-Service Checkout
+              <p className="text-[11px] sm:text-xs md:text-sm text-blue-100 font-medium mt-0.5 sm:mt-1 line-clamp-1">
+                Textiles
               </p>
             </div>
           </div>
 
-          {/* Right Header Controls: Google User Profile & ERP Portal Link */}
-          <div className="flex items-center space-x-2.5 self-start md:self-center shrink-0">
-            {/* Google Authentication Box */}
-            {currentUser ? (
-              <div className="flex items-center space-x-2 bg-white/15 backdrop-blur-sm px-3 py-2 rounded-2xl border border-white/20 shadow-sm">
-                {currentUser.photoURL ? (
-                  <img
-                    src={currentUser.photoURL}
-                    alt={currentUser.displayName || "User"}
-                    className="w-7 h-7 rounded-full object-cover ring-2 ring-[#FACB00]"
-                  />
-                ) : (
-                  <div className="w-7 h-7 rounded-full bg-[#FACB00] text-[#030A91] flex items-center justify-center font-black text-xs">
-                    {(currentUser.displayName || currentUser.email || "C")[0].toUpperCase()}
-                  </div>
-                )}
-                <div className="text-left text-xs leading-tight">
-                  <p className="font-bold text-white truncate max-w-[140px]">
-                    {currentUser.displayName || "Google Customer"}
-                  </p>
-                  <p className="text-[10px] text-blue-200 truncate max-w-[140px]">
-                    {currentUser.email}
-                  </p>
-                </div>
-                <button
-                  onClick={handleSignOut}
-                  title="Sign Out"
-                  className="p-1.5 text-white/70 hover:text-white hover:bg-white/20 rounded-xl transition-colors ml-1 cursor-pointer"
-                >
-                  <LogOut className="w-3.5 h-3.5" />
-                </button>
-              </div>
-            ) : (
-              <button
-                onClick={handleGoogleSignIn}
-                disabled={isAuthLoading}
-                className="inline-flex items-center space-x-2 bg-white text-slate-900 hover:bg-slate-100 px-4 py-2.5 rounded-2xl text-xs font-black shadow-md transition-all active:scale-95 cursor-pointer"
-              >
-                <svg className="w-4 h-4" viewBox="0 0 24 24">
-                  <path
-                    fill="#4285F4"
-                    d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-                  />
-                  <path
-                    fill="#34A853"
-                    d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-                  />
-                  <path
-                    fill="#FBBC05"
-                    d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"
-                  />
-                  <path
-                    fill="#EA4335"
-                    d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
-                  />
-                </svg>
-                <span>{isAuthLoading ? "Signing In..." : "Sign in with Google"}</span>
-              </button>
-            )}
+          {/* Header Action Controls: ONLY TWO ICONS (Cart & Hamburger) */}
+          <div className="flex items-center space-x-2 sm:space-x-2.5 shrink-0">
+            {/* 1. Shopping Bag Icon Button with Counter Badge */}
+            <button
+              onClick={() => {
+                setMobileTab("cart");
+                window.scrollTo({ top: 300, behavior: 'smooth' });
+              }}
+              className="relative p-2.5 sm:p-3 rounded-2xl bg-white hover:bg-slate-100 active:scale-95 text-[#030A91] transition-all border border-slate-200 shadow-sm"
+              title={`Shopping Bag (${totalQuantity} items)`}
+              aria-label="Open Shopping Bag"
+            >
+              <ShoppingCart className="w-5 h-5 text-[#030A91]" />
+              {totalQuantity > 0 && (
+                <span className="absolute -top-1 -right-1 bg-[#FACB00] text-[#030A91] text-[10px] font-black w-4 h-4 rounded-full flex items-center justify-center shadow-xs">
+                  {totalQuantity}
+                </span>
+              )}
+            </button>
+
+            {/* 2. Hamburger Menu Icon Button (Google Account & Profile Drawer) */}
+            <button
+              onClick={() => setIsMobileMenuOpen(true)}
+              className="p-2.5 sm:p-3 rounded-2xl bg-white hover:bg-slate-100 active:scale-95 text-[#030A91] transition-all border border-slate-200 shadow-sm"
+              title="Menu & Google Account"
+              aria-label="Open Menu & Google Account"
+            >
+              <Menu className="w-5 h-5 text-[#030A91]" />
+            </button>
           </div>
         </div>
 
@@ -521,7 +504,7 @@ export const PortalView: React.FC = () => {
                 <ChevronLeft className="w-4 h-4" />
               </button>
 
-              {/* Scrollable Container with wheel & drag support */}
+               {/* Scrollable Container with wheel & drag support */}
               <div
                 ref={categoryScrollRef}
                 onWheel={(e) => {
@@ -531,19 +514,31 @@ export const PortalView: React.FC = () => {
                 }}
                 className="flex items-center space-x-2 overflow-x-auto pb-2 pt-0.5 px-0.5 scroll-smooth touch-pan-x cursor-grab active:cursor-grabbing text-xs [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar-track]:bg-slate-100 [&::-webkit-scrollbar-track]:rounded-full [&::-webkit-scrollbar-thumb]:bg-slate-300 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-slate-400"
               >
-                {categories.map((c) => (
-                  <button
-                    key={c}
-                    onClick={() => setSelectedCategory(c)}
-                    className={`shrink-0 px-3.5 py-1.5 rounded-xl font-bold whitespace-nowrap text-xs transition-all cursor-pointer select-none ${
-                      selectedCategory === c
-                        ? "bg-[#030A91] text-white shadow-xs scale-[1.02]"
-                        : "bg-slate-100 text-slate-700 hover:bg-slate-200"
-                    }`}
-                  >
-                    {c === "ALL" ? "All Garments" : c}
-                  </button>
-                ))}
+                {categories.map((c) => {
+                  const lower = c.toLowerCase();
+                  const CatIcon = lower === 'all' ? Layers :
+                    lower.includes('sport') || lower.includes('game') || lower.includes('track') || lower.includes('pe') ? Award :
+                    lower.includes('shirt') || lower.includes('blouse') || lower.includes('top') ? Shirt :
+                    lower.includes('sweater') || lower.includes('blazer') || lower.includes('knit') ? Sparkles :
+                    lower.includes('trous') || lower.includes('skirt') || lower.includes('short') ? Tag :
+                    lower.includes('board') || lower.includes('bedd') ? BookOpen :
+                    lower.includes('corpo') || lower.includes('staff') ? Briefcase : Shirt;
+
+                  return (
+                    <button
+                      key={c}
+                      onClick={() => setSelectedCategory(c)}
+                      className={`shrink-0 px-3.5 py-2 rounded-xl font-bold whitespace-nowrap text-xs transition-all cursor-pointer select-none inline-flex items-center space-x-2 ${
+                        selectedCategory === c
+                          ? "bg-[#030A91] text-white shadow-sm scale-[1.02]"
+                          : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                      }`}
+                    >
+                      <CatIcon className={`w-4 h-4 ${selectedCategory === c ? "text-[#FACB00]" : "text-[#030A91]"}`} />
+                      <span>{c === "ALL" ? "All Garments" : c}</span>
+                    </button>
+                  );
+                })}
               </div>
 
               {/* Right Scroll Button */}
@@ -1024,8 +1019,8 @@ export const PortalView: React.FC = () => {
       {/* SIZE VARIANT SELECTION MODAL                        */}
       {/* ==================================================== */}
       {activeProductForVariant && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl shadow-2xl max-w-md w-full overflow-hidden border border-slate-200 animate-in zoom-in-95 duration-150">
+        <div className="fixed inset-0 z-50 bg-white sm:bg-slate-900/60 sm:backdrop-blur-xs flex sm:items-center sm:justify-center sm:p-4">
+          <div className="bg-white rounded-none sm:rounded-3xl shadow-none sm:shadow-2xl w-full h-full sm:h-auto sm:max-h-[85vh] max-w-md flex flex-col overflow-hidden border-0 sm:border border-slate-200 animate-in zoom-in-95 duration-150">
             <div className="p-4 bg-[#030A91] text-white flex items-center justify-between">
               <div>
                 <span className="text-[10px] uppercase font-bold text-[#FACB00]">
@@ -1087,6 +1082,56 @@ export const PortalView: React.FC = () => {
         </div>
       )}
 
+      {/* ==================================================== */}
+      {/* FULL-SCREEN CATEGORIES MODAL (MOBILE)               */}
+      {/* ==================================================== */}
+      {isCategoryModalOpen && (
+        <div className="fixed inset-0 z-50 bg-white flex flex-col md:hidden animate-in fade-in slide-in-from-bottom duration-200">
+          {/* Header */}
+          <div className="p-4 bg-gradient-to-r from-[#02066F] via-[#030A91] to-[#0412B3] text-white flex items-center justify-between shrink-0 shadow-sm">
+            <h2 className="font-black text-lg">Product Categories</h2>
+            <button
+              onClick={() => setIsCategoryModalOpen(false)}
+              className="p-1.5 rounded-xl bg-white/10 hover:bg-white/20 active:scale-95 text-white transition-colors"
+            >
+              <X className="w-6 h-6" />
+            </button>
+          </div>
+          {/* Grid */}
+          <div className="flex-1 overflow-y-auto p-4 grid grid-cols-2 gap-4">
+            {categories.map((c) => {
+              const lower = c.toLowerCase();
+              const CatIcon = lower === 'all' ? Layers :
+                lower.includes('sport') || lower.includes('game') || lower.includes('track') || lower.includes('pe') ? Award :
+                lower.includes('shirt') || lower.includes('blouse') || lower.includes('top') ? Shirt :
+                lower.includes('sweater') || lower.includes('blazer') || lower.includes('knit') ? Sparkles :
+                lower.includes('trous') || lower.includes('skirt') || lower.includes('short') ? Tag :
+                lower.includes('board') || lower.includes('bedd') ? BookOpen :
+                lower.includes('corpo') || lower.includes('staff') ? Briefcase : Shirt;
+              
+              return (
+                <button
+                  key={c}
+                  onClick={() => {
+                    setSelectedCategory(c);
+                    setIsCategoryModalOpen(false);
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                  }}
+                  className={`flex flex-col items-center justify-center p-6 rounded-3xl border-2 transition-all ${
+                    selectedCategory === c 
+                      ? "bg-[#030A91] text-[#FACB00] border-[#030A91] shadow-lg scale-105" 
+                      : "bg-white text-slate-700 border-slate-100 shadow-sm hover:border-[#FACB00]"
+                  }`}
+                >
+                  <CatIcon className="w-10 h-10 mb-3" />
+                  <span className="font-black text-xs text-center">{c === "ALL" ? "All Garments" : c}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       {/* Official Thermal Receipt & eTIMS QR Modal */}
       <ReceiptModal
         sale={completedSale}
@@ -1095,6 +1140,345 @@ export const PortalView: React.FC = () => {
         isOpen={isReceiptModalOpen}
         onClose={() => setIsReceiptModalOpen(false)}
       />
+
+      {/* ==================================================== */}
+      {/* MOBILE HAMBURGER MENU DRAWER (SLIDE-OVER FROM RIGHT) */}
+      {/* ==================================================== */}
+      {isMobileMenuOpen && (
+        <div className="fixed inset-0 z-50 flex justify-end md:hidden animate-in fade-in duration-200">
+          {/* Backdrop */}
+          <div
+            className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs transition-opacity"
+            onClick={() => setIsMobileMenuOpen(false)}
+          />
+
+          {/* Drawer Container (Full Screen on Mobile) */}
+          <div className="relative w-full md:max-w-sm bg-white h-full shadow-2xl flex flex-col z-10 animate-in slide-in-from-right duration-250 select-none">
+            {/* Drawer App Bar Header */}
+            <div className="p-4 bg-gradient-to-r from-[#02066F] via-[#030A91] to-[#0412B3] text-white flex items-center justify-between shrink-0 shadow-sm">
+              <div className="flex items-center space-x-2.5">
+                <img
+                  src="https://plain-eeur-prod-public.komododecks.com/202605/07/1sm3ITZIdJmYjyTcxmiP/image.png"
+                  alt="Naisia Textiles"
+                  className="w-9 h-9 object-contain drop-shadow-sm"
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).src = "/logo.png";
+                  }}
+                />
+                <div>
+                  <h3 className="font-black text-sm text-white tracking-tight leading-none">
+                    NAISIAE TEXTILES
+                  </h3>
+                  <span className="text-[10px] text-[#FACB00] font-bold uppercase tracking-wider block mt-0.5">
+                    Customer Account & Menu
+                  </span>
+                </div>
+              </div>
+
+              <button
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="p-1.5 rounded-xl bg-white/10 hover:bg-white/20 active:scale-95 text-white transition-colors"
+                aria-label="Close menu"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Drawer Body */}
+            <div className="flex-1 overflow-y-auto p-4 space-y-4">
+              {/* GOOGLE AUTHENTICATION & USER PROFILE CARD (STAYS PROMINENT INSIDE HAMBURGER) */}
+              <div className="bg-slate-50 border border-slate-200/90 rounded-2xl p-3.5 shadow-2xs">
+                <div className="text-[10px] font-black uppercase tracking-wider text-slate-400 mb-2.5 flex items-center justify-between">
+                  <span>Google Account</span>
+                  <span className="text-emerald-700 font-bold flex items-center gap-1">
+                    <ShieldCheck className="w-3.5 h-3.5" />
+                    Verified Customer
+                  </span>
+                </div>
+
+                {currentUser ? (
+                  <div className="space-y-3">
+                    <div className="flex items-center space-x-3">
+                      {currentUser.photoURL ? (
+                        <img
+                          src={currentUser.photoURL}
+                          alt={currentUser.displayName || "User"}
+                          className="w-12 h-12 rounded-2xl object-cover ring-2 ring-[#030A91] shadow-xs"
+                        />
+                      ) : (
+                        <div className="w-12 h-12 rounded-2xl bg-[#030A91] text-[#FACB00] flex items-center justify-center font-black text-lg shadow-xs">
+                          {(currentUser.displayName || currentUser.email || "C")[0].toUpperCase()}
+                        </div>
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <p className="font-black text-sm text-slate-900 truncate">
+                          {currentUser.displayName || "Google Customer"}
+                        </p>
+                        <p className="text-xs text-slate-500 truncate">{currentUser.email}</p>
+                        <span className="inline-flex items-center text-[10px] font-bold text-[#030A91] bg-blue-50 px-2 py-0.5 rounded-md mt-1">
+                          Online Portal Active
+                        </span>
+                      </div>
+                    </div>
+
+                    <button
+                      onClick={() => {
+                        handleSignOut();
+                        setIsMobileMenuOpen(false);
+                      }}
+                      className="w-full flex items-center justify-center space-x-2 py-2.5 px-3 rounded-xl border border-rose-200 bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-bold transition-colors cursor-pointer active:scale-98"
+                    >
+                      <LogOut className="w-4 h-4" />
+                      <span>Sign Out from Google</span>
+                    </button>
+                  </div>
+                ) : (
+                  <div className="space-y-2.5">
+                    <p className="text-xs text-slate-600 font-medium leading-relaxed">
+                      Sign in with Google for instantaneous 1-click checkout and automated KRA eTIMS purchase receipts.
+                    </p>
+                    <button
+                      onClick={async () => {
+                        await handleGoogleSignIn();
+                        setIsMobileMenuOpen(false);
+                      }}
+                      disabled={isAuthLoading}
+                      className="w-full flex items-center justify-center space-x-2.5 bg-white border border-slate-300 hover:bg-slate-100 active:scale-95 text-slate-800 py-2.5 px-3 rounded-xl text-xs font-black shadow-xs transition-all cursor-pointer"
+                    >
+                      <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24">
+                        <path
+                          fill="#4285F4"
+                          d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+                        />
+                        <path
+                          fill="#34A853"
+                          d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                        />
+                        <path
+                          fill="#FBBC05"
+                          d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"
+                        />
+                        <path
+                          fill="#EA4335"
+                          d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
+                        />
+                      </svg>
+                      <span>{isAuthLoading ? "Connecting..." : "Sign in with Google"}</span>
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {/* Portal Quick Navigation Links */}
+              <div className="space-y-1">
+                <p className="px-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                  Quick Access
+                </p>
+
+                <button
+                  onClick={() => {
+                    setMobileTab("catalog");
+                    setIsMobileMenuOpen(false);
+                    window.scrollTo({ top: 300, behavior: 'smooth' });
+                  }}
+                  className="w-full flex items-center justify-between p-2.5 rounded-xl hover:bg-slate-100 text-xs font-bold text-slate-800 transition-colors"
+                >
+                  <div className="flex items-center space-x-2.5">
+                    <Shirt className="w-4 h-4 text-[#030A91]" />
+                    <span>Uniforms Catalogue</span>
+                  </div>
+                  <span className="text-[10px] bg-blue-50 text-[#030A91] px-2 py-0.5 rounded-full font-bold">
+                    {filteredProducts.length} items
+                  </span>
+                </button>
+
+                <button
+                  onClick={() => {
+                    setMobileTab("cart");
+                    setIsMobileMenuOpen(false);
+                    window.scrollTo({ top: 300, behavior: 'smooth' });
+                  }}
+                  className="w-full flex items-center justify-between p-2.5 rounded-xl hover:bg-slate-100 text-xs font-bold text-slate-800 transition-colors"
+                >
+                  <div className="flex items-center space-x-2.5">
+                    <ShoppingCart className="w-4 h-4 text-[#030A91]" />
+                    <span>Shopping Cart</span>
+                  </div>
+                  {totalQuantity > 0 ? (
+                    <span className="bg-[#FACB00] text-[#030A91] text-[10px] font-black px-2 py-0.5 rounded-full">
+                      {totalQuantity} items (KES {totalAmount.toLocaleString()})
+                    </span>
+                  ) : (
+                    <span className="text-[10px] text-slate-400">0 items</span>
+                  )}
+                </button>
+
+                <button
+                  onClick={() => {
+                    setSelectedSchool("ALL");
+                    setSelectedCategory("ALL");
+                    setIsMobileMenuOpen(false);
+                  }}
+                  className="w-full flex items-center justify-between p-2.5 rounded-xl hover:bg-slate-100 text-xs font-bold text-slate-800 transition-colors"
+                >
+                  <div className="flex items-center space-x-2.5">
+                    <RefreshCw className="w-4 h-4 text-emerald-600" />
+                    <span>Reset All Filters</span>
+                  </div>
+                  <span className="text-[10px] text-slate-400">Clear</span>
+                </button>
+              </div>
+
+              {/* Physical Branch & Customer Care */}
+              <div className="bg-blue-50/70 rounded-2xl p-3 border border-blue-100 space-y-1.5">
+                <p className="text-[10px] font-black uppercase tracking-wider text-[#030A91] flex items-center gap-1.5">
+                  <Building className="w-3.5 h-3.5" /> Flagship Store
+                </p>
+                <p className="text-xs text-slate-700 font-medium">
+                  Nairobi Uhuru Market Flagship HQ, Stalls 412–415 & Westlands
+                </p>
+                <p className="text-xs text-slate-600 font-bold">
+                  Customer Hotline: <a href="tel:+254792021496" className="text-[#030A91] hover:underline font-black">+254 792 021 496</a>
+                </p>
+              </div>
+
+              {/* Staff / Admin ERP Access Link */}
+              <div className="pt-2 border-t border-slate-200">
+                <a
+                  href="/erp"
+                  className="w-full flex items-center justify-center space-x-2 py-3 px-4 rounded-xl bg-gradient-to-r from-[#02066F] to-[#030A91] text-[#FACB00] text-xs font-black shadow-md hover:opacity-95 active:scale-98 transition-all"
+                >
+                  <Lock className="w-4 h-4" />
+                  <span>Staff & Admin ERP Portal</span>
+                  <ArrowRight className="w-3.5 h-3.5 ml-1" />
+                </a>
+                <p className="text-[10px] text-slate-400 text-center mt-1.5">
+                  Restricted to authorized cashiers, accountants, and managers
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ==================================================== */}
+      {/* MOBILE BOTTOM NAVIGATION BAR FOR CUSTOMER PORTAL     */}
+      {/* ==================================================== */}
+      {/* ==================================================== */}
+      {/* MOBILE BOTTOM NAVIGATION BAR FOR CUSTOMER PORTAL     */}
+      {/* ==================================================== */}
+      <nav className="fixed bottom-0 left-0 right-0 z-40 bg-gradient-to-r from-[#02066F] via-[#030A91] to-[#0412B3] border-t border-white/10 md:hidden shadow-2xl px-2 pt-3 pb-1 select-none text-white">
+        {/* Single Wave Top Edge with Yellow Accent Line */}
+        <div className="absolute top-0 left-0 right-0 -translate-y-full w-full leading-none overflow-hidden select-none pointer-events-none">
+          <svg
+            viewBox="0 0 1440 60"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+            className="w-full h-5 block"
+            preserveAspectRatio="none"
+          >
+            <path
+              d="M0,60 C360,0 1080,60 1440,10"
+              stroke="#FACB00"
+              strokeWidth="4"
+            />
+            <path
+              d="M0,60 C360,0 1080,60 1440,10 L1440,60 L0,60 Z"
+              fill="currentColor"
+              className="text-[#030A91]"
+            />
+          </svg>
+        </div>
+        <div className="flex items-center justify-around max-w-md mx-auto relative z-10">
+          {/* 1. Catalog */}
+          <button
+            onClick={() => {
+              setMobileTab("catalog");
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }}
+            className={`flex flex-col items-center justify-center py-1 px-2.5 rounded-xl transition-all ${
+              mobileTab === "catalog" ? "text-[#FACB00] font-black" : "text-blue-200 hover:text-white"
+            }`}
+          >
+            <Shirt className={`w-5 h-5 transition-transform ${mobileTab === "catalog" ? "text-[#FACB00] scale-110" : "text-blue-200"}`} />
+            <span className={`text-[10px] mt-1 tracking-tight ${mobileTab === "catalog" ? "font-black" : "font-medium"}`}>
+              Catalog
+            </span>
+          </button>
+
+          {/* 2. Schools Filter */}
+          <button
+            onClick={() => {
+              setMobileTab("catalog");
+              const el = document.getElementById("schools-selector");
+              if (el) {
+                el.scrollIntoView({ behavior: 'smooth' });
+              } else {
+                window.scrollTo({ top: 380, behavior: 'smooth' });
+              }
+            }}
+            className="flex flex-col items-center justify-center py-1 px-2.5 rounded-xl text-blue-200 hover:text-white transition-all"
+          >
+            <GraduationCap className="w-5 h-5 text-blue-200" />
+            <span className="text-[10px] mt-1 tracking-tight font-medium">Schools</span>
+          </button>
+
+          {/* 3. Center Big Animated Search Icon Button */}
+          <button
+            onClick={() => {
+              setMobileTab("catalog");
+              const el = document.getElementById("search-input");
+              if (el) {
+                el.focus();
+                el.scrollIntoView({ behavior: 'smooth' });
+              } else {
+                window.scrollTo({ top: 250, behavior: 'smooth' });
+              }
+            }}
+            className="flex flex-col items-center justify-center -mt-6 group active:scale-95 transition-transform"
+            aria-label="Search Uniforms"
+          >
+            <div className="w-14 h-14 rounded-full bg-[#FACB00] text-[#030A91] flex items-center justify-center shadow-2xl ring-4 ring-[#030A91] animate-[pulse_2s_ease-in-out_infinite] group-hover:rotate-12 transition-transform">
+              <Search className="w-7 h-7 text-[#030A91]" />
+            </div>
+            <span className="text-[10px] mt-1 font-black text-[#FACB00] tracking-tight drop-shadow-sm">
+              Search
+            </span>
+          </button>
+
+          {/* 4. Cart / Bag with Badge */}
+          <button
+            onClick={() => {
+              setMobileTab("cart");
+              window.scrollTo({ top: 300, behavior: 'smooth' });
+            }}
+            className={`flex flex-col items-center justify-center py-1 px-2.5 rounded-xl transition-all relative ${
+              mobileTab === "cart" ? "text-[#FACB00] font-black" : "text-blue-200 hover:text-white"
+            }`}
+          >
+            <div className="relative">
+              <ShoppingCart className={`w-5 h-5 transition-transform ${mobileTab === "cart" ? "text-[#FACB00] scale-110" : "text-blue-200"}`} />
+              {totalQuantity > 0 && (
+                <span className="absolute -top-1.5 -right-2.5 bg-[#FACB00] text-[#030A91] text-[9px] font-black px-1.5 py-0.2 rounded-full shadow-xs">
+                  {totalQuantity}
+                </span>
+              )}
+            </div>
+            <span className={`text-[10px] mt-1 tracking-tight ${mobileTab === "cart" ? "font-black" : "font-medium"}`}>
+              Bag
+            </span>
+          </button>
+
+          {/* 5. Categories & Menu */}
+          <button
+            onClick={() => setIsCategoryModalOpen(true)}
+            className="flex flex-col items-center justify-center py-1 px-2.5 rounded-xl text-blue-200 hover:text-white transition-all"
+          >
+            <LayoutGrid className="w-5 h-5 text-blue-200" />
+            <span className="text-[10px] mt-1 tracking-tight font-medium">Categories</span>
+          </button>
+        </div>
+      </nav>
     </div>
   );
 };
