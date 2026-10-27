@@ -43,6 +43,7 @@ import { ReceiptModal } from "../components/ReceiptModal";
 import { MpesaStkWaitingModal } from "../components/MpesaStkWaitingModal";
 import { StatementPreviewModal } from "../components/StatementPreviewModal";
 import { SmartImage } from "../components/SmartImage";
+import { ProductPreviewModal } from "../components/ProductPreviewModal";
 import { normalizeImageUrl } from "./ProductsView";
 
 interface CartItem {
@@ -160,6 +161,22 @@ export const PortalView: React.FC = () => {
   useEffect(() => {
     loadPortalData();
   }, []);
+
+  // Handle direct product linking (e.g., from UniformsView)
+  useEffect(() => {
+    if (!isLoading && products.length > 0) {
+      const params = new URLSearchParams(window.location.search);
+      const prodId = params.get('product');
+      if (prodId) {
+        const found = products.find(p => p.id === prodId);
+        if (found) {
+          setActiveProductForVariant(found);
+          // Clean up URL without reload
+          window.history.replaceState({}, '', '/portal');
+        }
+      }
+    }
+  }, [isLoading, products]);
 
   const handleGoogleSignIn = async () => {
     setIsAuthLoading(true);
@@ -1075,69 +1092,11 @@ export const PortalView: React.FC = () => {
       {/* ==================================================== */}
       {/* SIZE VARIANT SELECTION MODAL                        */}
       {/* ==================================================== */}
-      {activeProductForVariant && (
-        <div className="fixed inset-0 z-50 bg-white sm:bg-slate-900/60 sm:backdrop-blur-xs flex sm:items-center sm:justify-center sm:p-4">
-          <div className="bg-white rounded-none sm:rounded-3xl shadow-none sm:shadow-2xl w-full h-full sm:h-auto sm:max-h-[85vh] max-w-md flex flex-col overflow-hidden border-0 sm:border border-slate-200 animate-in zoom-in-95 duration-150">
-            <div className="p-4 bg-[#030A91] text-white flex items-center justify-between">
-              <div>
-                <span className="text-[10px] uppercase font-bold text-[#FACB00]">
-                  {activeProductForVariant.school}
-                </span>
-                <h3 className="font-black text-sm leading-tight">
-                  {activeProductForVariant.name}
-                </h3>
-              </div>
-              <button
-                onClick={() => setActiveProductForVariant(null)}
-                className="text-white/70 hover:text-white p-1 rounded-lg cursor-pointer"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <div className="p-5 space-y-3">
-              <p className="text-xs font-bold text-slate-700 uppercase tracking-wider">
-                Select Your Required Uniform Size:
-              </p>
-              <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
-                {activeProductForVariant.variants.map((v: any) => {
-                  const stock = Number(Object.values(v.branchStock || {}).reduce((a: number, b: any) => a + Number(b), 0));
-                  const isAvailable = stock > 0;
-                  return (
-                    <button
-                      key={v.id}
-                      onClick={() => handleAddToCart(activeProductForVariant, v)}
-                      className="w-full p-3.5 rounded-2xl border border-slate-200 hover:border-[#030A91] hover:bg-blue-50/50 transition-all text-left flex items-center justify-between group cursor-pointer"
-                    >
-                      <div>
-                        <div className="flex items-center space-x-2">
-                          <span className="text-xs font-black text-slate-900 group-hover:text-[#030A91]">
-                            Size {v.size}
-                          </span>
-                          <span className="text-[10px] text-slate-400 font-mono">
-                            ({v.sku})
-                          </span>
-                        </div>
-                        <span className="text-[10px] font-bold text-emerald-700 mt-0.5 block">
-                          In Stock ({stock} units)
-                        </span>
-                      </div>
-                      <div className="text-right">
-                        <span className="text-xs font-black text-[#030A91] block">
-                          KES {v.sellingPrice.toLocaleString()}
-                        </span>
-                        <span className="inline-block bg-[#FACB00] text-[#030A91] text-[10px] font-black px-2 py-0.5 rounded-md mt-1 group-hover:scale-105 transition-transform">
-                          Add to Cart +
-                        </span>
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      <ProductPreviewModal 
+        product={activeProductForVariant}
+        onClose={() => setActiveProductForVariant(null)}
+        onAddToCart={handleAddToCart}
+      />
 
       {/* ==================================================== */}
       {/* FULL-SCREEN CATEGORIES MODAL (MOBILE)               */}

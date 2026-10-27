@@ -54,19 +54,21 @@ const AppContent: React.FC = () => {
   }, [path, user, currentView]);
 
   // Portal is default
-  if (path === '/' || path === '/portal') {
+  const normalizedPath = path.toLowerCase().replace(/\/$/, '') || '/';
+
+  if (normalizedPath === '/' || normalizedPath === '/portal') {
     return <PortalView />;
   }
-  if (path === '/about') return <AboutView />;
-  if (path === '/policy') return <PolicyView />;
-  if (path === '/contact') return <ContactUsView />;
-  if (path === '/school-uniforms') return <UniformsView type="School Uniforms" />;
-  if (path === '/kmtc-uniforms') return <UniformsView type="KMTC Uniforms" />;
-  if (path === '/customized-uniforms') return <UniformsView type="Customized Uniforms" />;
+  if (normalizedPath === '/about') return <AboutView />;
+  if (normalizedPath === '/policy') return <PolicyView />;
+  if (normalizedPath === '/contact') return <ContactUsView />;
+  if (normalizedPath === '/school-uniforms') return <UniformsView type="School Uniforms" />;
+  if (normalizedPath === '/kmtc-uniforms') return <UniformsView type="KMTC Uniforms" />;
+  if (normalizedPath === '/customized-uniforms') return <UniformsView type="Customized Uniforms" />;
 
 
   // ERP Login and Admin
-  if (path === '/erp' || path === '/login') {
+  if (normalizedPath === '/erp' || normalizedPath === '/login' || normalizedPath === '/admin') {
     if (isLoading) {
       return (
         <div className="min-h-screen bg-[#F4F4F4] flex flex-col items-center justify-center space-y-3">

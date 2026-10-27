@@ -3,6 +3,7 @@ import { api } from '../../api';
 import { Product } from '../../types';
 import { CustomerLayout } from '../../components/CustomerLayout';
 import { SmartImage } from '../../components/SmartImage';
+import { ProductPreviewModal } from '../../components/ProductPreviewModal';
 import { normalizeImageUrl } from '../ProductsView';
 
 interface UniformsViewProps {
@@ -12,6 +13,7 @@ interface UniformsViewProps {
 export const UniformsView: React.FC<UniformsViewProps> = ({ type }) => {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
+  const [activeProduct, setActiveProduct] = useState<Product | null>(null);
 
   useEffect(() => {
     api.getPortalProducts().then((res) => {
@@ -21,13 +23,17 @@ export const UniformsView: React.FC<UniformsViewProps> = ({ type }) => {
   }, []);
 
   // Filter based on 'type'
-  // School Uniforms (contains 'School'), KMTC (contains 'KMTC'), Customized (Corporate/Service)
   const filteredProducts = products.filter(p => {
     if (type === 'School Uniforms') return p.school && !p.school.toLowerCase().includes('kmtc');
     if (type === 'KMTC Uniforms') return p.school && p.school.toLowerCase().includes('kmtc');
     if (type === 'Customized Uniforms') return p.garmentType === 'Corporate' || p.professionalDomain === 'Corporate';
     return false;
   });
+
+  const handleAddToCart = (product: Product) => {
+    // Redirect to portal with this product selected to finalize cart addition
+    window.location.href = `/portal?product=${product.id}`;
+  };
 
   return (
     <CustomerLayout>
@@ -44,25 +50,35 @@ export const UniformsView: React.FC<UniformsViewProps> = ({ type }) => {
         ) : (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3.5 md:gap-6">
             {filteredProducts.map(p => (
-              <div key={p.id} className="bg-white p-4 rounded-3xl border border-slate-100 shadow-sm">
+              <div 
+                key={p.id} 
+                onClick={() => setActiveProduct(p)}
+                className="bg-white p-4 rounded-3xl border border-slate-100 shadow-sm hover:shadow-md transition-all cursor-pointer group"
+              >
                 <div className="relative overflow-hidden rounded-2xl mb-3">
                   <div className="scanner-beam" />
                   <img 
                     src={normalizeImageUrl(p.imageUrl || "")} 
                     alt={p.name} 
-                    className="w-full h-40 object-cover" 
+                    className="w-full h-40 object-cover group-hover:scale-105 transition-transform duration-500" 
                     onError={(e) => {
                       (e.target as HTMLImageElement).src = "/logo.png";
                     }}
                   />
                 </div>
-                <h3 className="font-bold text-slate-900">{p.name}</h3>
+                <h3 className="font-bold text-slate-900 group-hover:text-[#030A91] transition-colors">{p.name}</h3>
                 <p className="text-xs text-slate-500">{p.school}</p>
               </div>
             ))}
           </div>
         )}
       </div>
+
+      <ProductPreviewModal 
+        product={activeProduct}
+        onClose={() => setActiveProduct(null)}
+        onAddToCart={handleAddToCart}
+      />
     </CustomerLayout>
   );
 };

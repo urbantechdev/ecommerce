@@ -535,6 +535,7 @@ export const ProductsView: React.FC = () => {
   const [editActive, setEditActive] = useState(true);
   const [editVariants, setEditVariants] = useState<ProductVariant[]>([]);
   const [newVariantSize, setNewVariantSize] = useState('');
+  const [newVariantColor, setNewVariantColor] = useState('Standard');
   const [newVariantCost, setNewVariantCost] = useState(600);
   const [newVariantPrice, setNewVariantPrice] = useState(1000);
 
@@ -822,8 +823,8 @@ export const ProductsView: React.FC = () => {
     }
   };
 
-  // Handle Variant Price Update inside Edit Modal
-  const handleVariantPriceChange = (variantId: string, field: 'sellingPrice' | 'costPrice' | 'reorderLevel', value: number) => {
+  // Handle Variant Field Update inside Edit Modal
+  const handleVariantFieldChange = (variantId: string, field: keyof ProductVariant, value: any) => {
     setEditVariants((prev) =>
       prev.map((v) => (v.id === variantId ? { ...v, [field]: value } : v))
     );
@@ -846,7 +847,7 @@ export const ProductsView: React.FC = () => {
       sku: `SKU-${Date.now()}`,
       barcode: `616${Math.floor(100000000 + Math.random() * 900000000)}`,
       size: newVariantSize.trim(),
-      color: 'Standard',
+      color: newVariantColor.trim() || 'Standard',
       costPrice: Number(newVariantCost) || 0,
       sellingPrice: Number(newVariantPrice) || 0,
       branchStock,
@@ -856,7 +857,8 @@ export const ProductsView: React.FC = () => {
 
     setEditVariants((prev) => [...prev, newV]);
     setNewVariantSize('');
-    notify({ type: 'SUCCESS', title: 'Size Added', message: `Added Size ${newV.size} variant.` });
+    setNewVariantColor('Standard');
+    notify({ type: 'SUCCESS', title: 'Variant Added', message: `Added Size ${newV.size} (${newV.color}) variant.` });
   };
 
   // Handle Removing variant inside Edit Modal
@@ -1708,12 +1710,23 @@ export const ProductsView: React.FC = () => {
                       className="p-2.5 bg-white rounded-xl border border-slate-200 flex flex-wrap items-center justify-between gap-2"
                     >
                       <div className="flex items-center space-x-2">
-                        <span className="px-2 py-1 rounded bg-[#030A91] text-[#FACB00] font-mono font-bold text-xs">
+                        <span className="px-2 py-1 rounded bg-[#030A91] text-[#FACB00] font-mono font-bold text-[10px]">
                           Size {v.size}
                         </span>
-                        <span className="text-[10px] text-slate-400 font-mono">
-                          {v.sku}
-                        </span>
+                        <div>
+                          <label className="text-[9px] font-bold text-slate-500 uppercase block">
+                            Color:
+                          </label>
+                          <input
+                            type="text"
+                            value={v.color || ''}
+                            onChange={(e) =>
+                              handleVariantFieldChange(v.id, 'color', e.target.value)
+                            }
+                            placeholder="e.g. Navy"
+                            className="w-20 px-2 py-1 bg-slate-50 border border-slate-300 rounded font-mono text-[10px]"
+                          />
+                        </div>
                       </div>
 
                       <div className="flex items-center space-x-2">
@@ -1725,9 +1738,9 @@ export const ProductsView: React.FC = () => {
                             type="number"
                             value={v.costPrice}
                             onChange={(e) =>
-                              handleVariantPriceChange(v.id, 'costPrice', Number(e.target.value))
+                              handleVariantFieldChange(v.id, 'costPrice', Number(e.target.value))
                             }
-                            className="w-20 px-2 py-1 bg-slate-50 border border-slate-300 rounded font-mono text-xs"
+                            className="w-16 px-2 py-1 bg-slate-50 border border-slate-300 rounded font-mono text-[10px]"
                           />
                         </div>
 
@@ -1739,9 +1752,9 @@ export const ProductsView: React.FC = () => {
                             type="number"
                             value={v.sellingPrice}
                             onChange={(e) =>
-                              handleVariantPriceChange(v.id, 'sellingPrice', Number(e.target.value))
+                              handleVariantFieldChange(v.id, 'sellingPrice', Number(e.target.value))
                             }
-                            className="w-24 px-2 py-1 bg-blue-50 border border-blue-200 text-[#030A91] font-bold rounded font-mono text-xs"
+                            className="w-16 px-2 py-1 bg-blue-50 border border-blue-200 text-[#030A91] font-bold rounded font-mono text-[10px]"
                           />
                         </div>
 
@@ -1775,6 +1788,19 @@ export const ProductsView: React.FC = () => {
 
                   <div className="w-24">
                     <label className="text-[9px] font-bold text-slate-600 uppercase block mb-0.5">
+                      New Color:
+                    </label>
+                    <input
+                      type="text"
+                      value={newVariantColor}
+                      onChange={(e) => setNewVariantColor(e.target.value)}
+                      placeholder="e.g. Navy"
+                      className="w-full px-2 py-1.5 bg-white border border-slate-300 rounded-lg text-xs font-mono"
+                    />
+                  </div>
+
+                  <div className="w-20">
+                    <label className="text-[9px] font-bold text-slate-600 uppercase block mb-0.5">
                       Cost (KES):
                     </label>
                     <input
@@ -1785,7 +1811,7 @@ export const ProductsView: React.FC = () => {
                     />
                   </div>
 
-                  <div className="w-24">
+                  <div className="w-20">
                     <label className="text-[9px] font-bold text-slate-600 uppercase block mb-0.5">
                       Selling (KES):
                     </label>
