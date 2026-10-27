@@ -149,9 +149,31 @@ export const api = {
     return request<any[]>(`/portal/products?${query.toString()}`);
   },
   getPortalSchools: () => request<string[]>('/portal/schools'),
+  getPortalOrders: (email: string) => request<any[]>(`/portal/orders?email=${encodeURIComponent(email)}`),
   checkoutPortal: (data: any) =>
     request<{ sale: any; receipt: any; qrCodeDataUrl: string }>('/portal/checkout', {
       method: "POST",
+      body: JSON.stringify(data),
+    }),
+  initiateMpesaStkPush: (data: { phone: string; amount: number; accountReference?: string }) =>
+    request<{
+      MerchantRequestID?: string;
+      CheckoutRequestID?: string;
+      ResponseCode?: string;
+      ResponseDescription?: string;
+      CustomerMessage?: string;
+    }>('/mpesa/stkpush', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+  initiateMpesaB2C: (data: { phone: string; amount: number }) =>
+    request<{ success: boolean; message: string; transactionId: string }>('/mpesa/b2c', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+  initiateMpesaB2B: (data: { shortcode: string; amount: number }) =>
+    request<{ success: boolean; message: string; transactionId: string }>('/mpesa/b2b', {
+      method: 'POST',
       body: JSON.stringify(data),
     }),
   createProduct: (data: any) =>

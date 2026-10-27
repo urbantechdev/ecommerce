@@ -33,11 +33,22 @@ import {
   Shield,
   BookOpen,
   Award,
-  RefreshCw
+  RefreshCw,
+  Cloud,
+  Database,
+  CheckCircle2
 } from 'lucide-react';
 
 import { StatusBadge } from '../components/StatusBadge';
 import { ProductPriceSetModal } from '../components/ProductPriceSetModal';
+import {
+  syncCatalogueToFirestore,
+  saveProductToFirestore,
+  deleteProductFromFirestore,
+  getFirestoreInventoryStats,
+  authenticateWithGoogle,
+} from '../utils/firestoreInventorySync';
+import { auth } from '../firebase';
 import { SkuImageManagerModal } from '../components/SkuImageManagerModal';
 import {
   INVENTORY_SECTORS,
@@ -271,6 +282,68 @@ export const ProductsView: React.FC = () => {
   const [selectedProfDomain, setSelectedProfDomain] = useState<string>('ALL');
   const [isLoading, setIsLoading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Firestore Catalogue Sync States
+  const [isSyncingFirestore, setIsSyncingFirestore] = useState(false);
+  const [syncProgress, setSyncProgress] = useState<{ current: number; total: number } | null>(null);
+  const [firestoreStats, setFirestoreStats] = useState<{
+    productsTotal: number;
+    inventoryTotal: number;
+    databaseId: string;
+    lastSyncedAt?: string;
+  } | null>(null);
+
+  const loadFirestoreStats = async () => {
+    try {
+      const stats = await getFirestoreInventoryStats();
+      if (stats) setFirestoreStats(stats);
+    } catch (err) {
+      console.warn('Could not load Firestore stats:', err);
+    }
+  };
+
+  const handleSaveCatalogueToFirestore = async (promptAuth = true) => {
+    if (!products || products.length === 0) {
+      notify({ type: 'WARNING', title: 'Catalogue Empty', message: 'No items in the catalogue to save to Firestore.' });
+      return;
+    }
+
+    setIsSyncingFirestore(true);
+    setSyncProgress({ current: 0, total: products.length });
+
+    try {
+      if (!auth.currentUser && promptAuth) {
+        notify({
+          type: 'INFO',
+          title: 'Google Admin Authentication',
+          message: 'Connecting with your Google Account (moraasdorcah@gmail.com) for secure Firestore write access...',
+        });
+        await authenticateWithGoogle();
+      }
+
+      const res = await syncCatalogueToFirestore(products, (saved, total) => {
+        setSyncProgress({ current: saved, total });
+      });
+
+      await loadFirestoreStats();
+
+      notify({
+        type: 'SUCCESS',
+        title: 'All Catalogue Saved to Firestore',
+        message: `Successfully saved all ${res.savedCount} uniform catalogue items to Google Firestore (${res.databaseId}).`,
+      });
+    } catch (err: any) {
+      console.error('Firestore catalogue sync error:', err);
+      notify({
+        type: 'ERROR',
+        title: 'Firestore Save Failed',
+        message: err.message || 'Could not save catalogue to Firestore. Please check permissions.',
+      });
+    } finally {
+      setIsSyncingFirestore(false);
+      setSyncProgress(null);
+    }
+  };
 
   // Export Catalogue as clean CSV
   const exportCatalogue = () => {
@@ -555,6 +628,7 @@ export const ProductsView: React.FC = () => {
 
   useEffect(() => {
     fetchProducts();
+    loadFirestoreStats();
   }, []);
 
   // Handle File Upload from Drive or Local Computer
@@ -630,6 +704,15 @@ export const ProductsView: React.FC = () => {
         title: 'Product Updated',
         message: `${editName} catalog specifications and images saved successfully.`,
       });
+
+      // Automatically sync updated product to Firestore
+      if (updated) {
+        saveProductToFirestore(updated).then(() => {
+          loadFirestoreStats();
+        }).catch((fsErr) => {
+          console.warn('Background Firestore save failed:', fsErr);
+        });
+      }
 
       setIsEditModalOpen(false);
       setEditingProduct(null);
@@ -713,6 +796,21 @@ export const ProductsView: React.FC = () => {
         title: 'Product Created',
         message: `Added ${createName} with ${sizes.length} size variants and image.`,
       });
+
+      // Background auto-save newly created item to Firestore
+      try {
+        const fullProdList = await api.getProducts();
+        const found = fullProdList.find((p) => p.name === createName);
+        if (found) {
+          saveProductToFirestore(found).then(() => {
+            loadFirestoreStats();
+          }).catch((fsErr) => {
+            console.warn('Background Firestore save failed:', fsErr);
+          });
+        }
+      } catch (err) {
+        console.warn('Could not auto-save new product to Firestore:', err);
+      }
 
       setIsCreateModalOpen(false);
       setCreateName('');
@@ -915,6 +1013,20 @@ export const ProductsView: React.FC = () => {
               </button>
 
               <button
+                onClick={() => handleSaveCatalogueToFirestore(true)}
+                disabled={isSyncingFirestore}
+                className="w-full sm:w-auto inline-flex items-center justify-center px-3.5 py-2 bg-[#030A91] hover:bg-blue-900 text-[#FACB00] rounded-xl text-xs font-black transition-all shadow-md hover:scale-[1.02] cursor-pointer"
+                title="Save entire catalogue directly to Google Firestore database"
+              >
+                <Cloud className={`w-3.5 h-3.5 mr-1.5 ${isSyncingFirestore ? 'animate-bounce text-amber-300' : 'text-[#FACB00]'} shrink-0`} />
+                <span className="truncate">
+                  {isSyncingFirestore
+                    ? `Saving (${syncProgress?.current || 0}/${syncProgress?.total || products.length})...`
+                    : `Save to Firestore (${products.length})`}
+                </span>
+              </button>
+
+              <button
                 onClick={handleRepairCatalogue}
                 disabled={isRepairing}
                 className="w-full sm:w-auto inline-flex items-center justify-center px-3.5 py-2 bg-amber-50 text-amber-900 border border-amber-300 hover:bg-amber-100 rounded-xl text-xs font-bold transition-all shadow-xs cursor-pointer"
@@ -926,6 +1038,62 @@ export const ProductsView: React.FC = () => {
             </div>
           </div>
         )}
+      </div>
+
+      {/* Google Cloud Firestore Live Sync Banner */}
+      <div className="bg-gradient-to-r from-[#030A91] via-indigo-900 to-slate-900 text-white p-4 sm:p-5 rounded-2xl border border-blue-800 shadow-md flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+        <div className="flex items-start sm:items-center space-x-3.5">
+          <div className="w-11 h-11 rounded-2xl bg-[#FACB00]/20 border border-[#FACB00]/40 flex items-center justify-center text-[#FACB00] shrink-0">
+            <Database className="w-6 h-6" />
+          </div>
+          <div>
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-xs font-black uppercase tracking-wider text-[#FACB00]">
+                Google Cloud Firestore Database
+              </span>
+              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 flex items-center">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse mr-1"></span>
+                Connected
+              </span>
+              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-500/20 text-blue-300 border border-blue-400/30">
+                100% Catalogue Sync
+              </span>
+            </div>
+            <p className="text-xs text-blue-200 font-mono mt-1 select-all">
+              ai-studio-naisiaeschooluni-ff1bcda5-c527-425d-91e7-84292c2b2c02
+            </p>
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-blue-200 mt-1.5">
+              <span>
+                Catalogue in Firestore: <strong className="text-white font-bold">{firestoreStats?.productsTotal ?? products.length}</strong> products
+              </span>
+              <span>•</span>
+              <span>
+                Master Catalogue: <strong className="text-white font-bold">{products.length}</strong> items
+              </span>
+              {firestoreStats?.lastSyncedAt && (
+                <>
+                  <span>•</span>
+                  <span>
+                    Last Synced: <strong className="text-[#FACB00]">{new Date(firestoreStats.lastSyncedAt).toLocaleString()}</strong>
+                  </span>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full md:w-auto shrink-0">
+          <button
+            onClick={() => handleSaveCatalogueToFirestore(true)}
+            disabled={isSyncingFirestore}
+            className="inline-flex items-center justify-center px-4 py-2.5 bg-[#FACB00] hover:bg-amber-400 text-[#030A91] rounded-xl text-xs font-black shadow-md hover:scale-105 active:scale-95 transition-all cursor-pointer"
+          >
+            <Cloud className={`w-4 h-4 mr-2 ${isSyncingFirestore ? 'animate-spin' : ''}`} />
+            {isSyncingFirestore
+              ? `Saving ${syncProgress?.current || 0}/${syncProgress?.total || products.length}...`
+              : 'Save All to Firestore Database'}
+          </button>
+        </div>
       </div>
 
 

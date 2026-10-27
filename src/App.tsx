@@ -21,6 +21,10 @@ import { UsersView } from './views/UsersView';
 import { AuditLogsView } from './views/AuditLogsView';
 import { SettingsView } from './views/SettingsView';
 import { PortalView } from './views/PortalView';
+import { AboutView } from './views/pages/AboutView';
+import { PolicyView } from './views/pages/PolicyView';
+import { ContactUsView } from './views/pages/ContactUsView';
+import { UniformsView } from './views/pages/UniformsView';
 
 const AppContent: React.FC = () => {
   const { user, isLoading } = useAuth();
@@ -37,7 +41,9 @@ const AppContent: React.FC = () => {
       document.head.appendChild(robotsMeta);
     }
 
-    const isInternalArea = path === '/erp' || path === '/login' || (path !== '/' && path !== '/portal');
+    const publicPaths = ['/', '/portal', '/about', '/policy', '/contact', '/school-uniforms', '/kmtc-uniforms', '/customized-uniforms'];
+    const isInternalArea = !publicPaths.includes(path) && path !== '/erp' && path !== '/login';
+    
     if (isInternalArea) {
       robotsMeta.content = 'noindex, nofollow, noarchive, nosnippet';
       document.title = 'Naisiae ERP - Staff & Administration Portal';
@@ -51,6 +57,13 @@ const AppContent: React.FC = () => {
   if (path === '/' || path === '/portal') {
     return <PortalView />;
   }
+  if (path === '/about') return <AboutView />;
+  if (path === '/policy') return <PolicyView />;
+  if (path === '/contact') return <ContactUsView />;
+  if (path === '/school-uniforms') return <UniformsView type="School Uniforms" />;
+  if (path === '/kmtc-uniforms') return <UniformsView type="KMTC Uniforms" />;
+  if (path === '/customized-uniforms') return <UniformsView type="Customized Uniforms" />;
+
 
   // ERP Login and Admin
   if (path === '/erp' || path === '/login') {

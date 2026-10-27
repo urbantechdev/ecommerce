@@ -25,6 +25,7 @@ import {
   ArrowLeft
 } from 'lucide-react';
 import { ReceiptModal } from '../components/ReceiptModal';
+import { MpesaStkWaitingModal } from '../components/MpesaStkWaitingModal';
 import { BarcodeScannerModal } from '../components/BarcodeScannerModal';
 import { normalizeImageUrl } from './ProductsView';
 
@@ -46,6 +47,8 @@ interface CartItem {
 export const PosView: React.FC = () => {
   const { user, activeBranchId, branches } = useAuth();
   const { notify } = useNotification();
+  const activeBranch = branches.find((b) => b.id === activeBranchId);
+  const activeBranchName = activeBranch?.name || 'Naisiae Flagship';
 
   const [products, setProducts] = useState<Product[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
@@ -71,6 +74,11 @@ export const PosView: React.FC = () => {
   const [completedSale, setCompletedSale] = useState<any>(null);
   const [completedQrCode, setCompletedQrCode] = useState<string>('');
   const [isReceiptModalOpen, setIsReceiptModalOpen] = useState(false);
+
+  // M-Pesa STK Push Modal
+  const [isPosMpesaModalOpen, setIsPosMpesaModalOpen] = useState(false);
+  const [posMpesaPhone, setPosMpesaPhone] = useState('');
+  const [posStkCheckoutId, setPosStkCheckoutId] = useState('');
 
   // Recent Sales & Reprint Modal
   const [isRecentModalOpen, setIsRecentModalOpen] = useState(false);
@@ -786,17 +794,65 @@ export const PosView: React.FC = () => {
 
             {/* Conditional tender inputs */}
             {paymentMethod === 'MPESA' && (
-              <div>
-                <label className="text-[10px] font-bold text-slate-600 uppercase block mb-1">
-                  M-PESA Confirmation Ref / STK Code:
-                </label>
-                <input
-                  type="text"
-                  value={paymentReference}
-                  onChange={(e) => setPaymentReference(e.target.value.toUpperCase())}
-                  placeholder="e.g. QKJ892318M"
-                  className="w-full px-3 py-1.5 text-xs font-mono uppercase bg-white border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                />
+              <div className="space-y-2">
+                <div>
+                  <label className="text-[10px] font-bold text-slate-600 uppercase block mb-1">
+                    M-PESA Confirmation Ref / STK Code:
+                  </label>
+                  <input
+                    type="text"
+                    value={paymentReference}
+                    onChange={(e) => setPaymentReference(e.target.value.toUpperCase())}
+                    placeholder="e.g. QKJ892318M"
+                    className="w-full px-3 py-1.5 text-xs font-mono uppercase bg-white border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  />
+                </div>
+
+                {/* Instant STK Push Trigger Widget */}
+                <div className="p-2.5 bg-emerald-50/70 border border-emerald-200/80 rounded-xl space-y-1.5">
+                  <div className="flex items-center justify-between text-[10.5px] font-bold text-emerald-900">
+                    <span>📲 Prompt Customer Phone (STK Push)</span>
+                    <span className="text-[9.5px] text-emerald-700">SIM Toolkit</span>
+                  </div>
+                  <div className="flex gap-1.5">
+                    <input
+                      type="tel"
+                      value={posMpesaPhone}
+                      onChange={(e) => setPosMpesaPhone(e.target.value)}
+                      placeholder="e.g. 0712345678"
+                      className="flex-1 px-2.5 py-1 text-xs bg-white border border-emerald-300 rounded-lg font-mono focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                    />
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        if (!posMpesaPhone.trim()) {
+                          notify({ type: 'WARNING', title: 'Phone Required', message: 'Enter customer phone number for STK push' });
+                          return;
+                        }
+                        if (totalPayable <= 0) {
+                          notify({ type: 'WARNING', title: 'Empty Cart', message: 'Add items before initiating STK push' });
+                          return;
+                        }
+                        try {
+                          const res = await api.initiateMpesaStkPush({
+                            phone: posMpesaPhone.trim(),
+                            amount: totalPayable,
+                            accountReference: `POS-${activeBranchName?.replace(/\s+/g, '') || 'NAISIAE'}`
+                          });
+                          if (res?.CheckoutRequestID) {
+                            setPosStkCheckoutId(res.CheckoutRequestID);
+                          }
+                          setIsPosMpesaModalOpen(true);
+                        } catch (err: any) {
+                          setIsPosMpesaModalOpen(true);
+                        }
+                      }}
+                      className="px-3 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-[11px] font-bold shadow-xs transition-colors shrink-0 cursor-pointer"
+                    >
+                      Send STK Push
+                    </button>
+                  </div>
+                </div>
               </div>
             )}
 
@@ -1065,6 +1121,27 @@ export const PosView: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* M-Pesa STK Push Animated Ring Loading Waiting for PIN Modal */}
+      <MpesaStkWaitingModal
+        isOpen={isPosMpesaModalOpen}
+        phone={posMpesaPhone}
+        amount={totalPayable}
+        accountReference={`POS - ${activeBranchName || 'Naisiae'}`}
+        checkoutRequestId={posStkCheckoutId}
+        onSuccess={(refCode) => {
+          if (refCode) {
+            setPaymentReference(refCode);
+          }
+          setIsPosMpesaModalOpen(false);
+          notify({
+            type: 'SUCCESS',
+            title: 'M-Pesa PIN Entered',
+            message: `Payment reference ${refCode || posStkCheckoutId} confirmed. Ready to finalize checkout.`,
+          });
+        }}
+        onCancel={() => setIsPosMpesaModalOpen(false)}
+      />
 
       {/* Printable Thermal Receipt modal */}
       <ReceiptModal

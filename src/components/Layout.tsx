@@ -149,15 +149,15 @@ export const Layout: React.FC<LayoutProps> = ({ currentView, onNavigate, childre
               />
               <div className="leading-none">
                 <div className="flex items-center space-x-1.5">
-                  <h1 className="font-black text-sm sm:text-base tracking-tight text-white drop-shadow-xs">
-                    NAISIAE ERP
+                  <h1 className="font-black text-sm sm:text-base md:text-lg tracking-tight text-white drop-shadow-xs">
+                    Naisiae Textile
                   </h1>
                   <span className="md:hidden text-[9px] font-black uppercase px-1.5 py-0.5 rounded bg-white/15 text-[#FACB00]">
                     {user?.role === 'ADMIN' ? 'Admin' : user?.role === 'ACCOUNTANT' ? 'Accounts' : 'Staff'}
                   </span>
                 </div>
                 <p className="text-[9px] sm:text-[10px] text-[#FACB00] font-bold tracking-widest uppercase mt-0.5">
-                  TEXTILES & UNIFORMS
+                  ENTERPRISE SYSTEM
                 </p>
               </div>
             </div>
@@ -513,39 +513,47 @@ export const Layout: React.FC<LayoutProps> = ({ currentView, onNavigate, childre
 
       {/* ==================================================== */}
       {/* ==================================================== */}
-      {/* MOBILE FULL-SCREEN MENU (WHITE BACKGROUND)           */}
+      {/* NAVIGATION MENU DRAWER (RESPONSIVE: MOBILE & DESKTOP) */}
       {/* ==================================================== */}
       {mobileMenuOpen && (
-        <div className="fixed inset-0 z-50 bg-white text-slate-800 flex flex-col md:hidden animate-in fade-in duration-200 w-full h-full select-none">
-          {/* Drawer App Bar Header */}
-          <div className="p-4 bg-white border-b border-slate-200 flex items-center justify-between shrink-0 shadow-2xs">
-            <div className="flex items-center space-x-2.5">
-              <img
-                src="https://plain-eeur-prod-public.komododecks.com/202605/07/1sm3ITZIdJmYjyTcxmiP/image.png"
-                alt="Naisia Textiles"
-                className="w-9 h-9 object-contain shrink-0 drop-shadow-sm"
-                onError={(e) => {
-                  (e.target as HTMLImageElement).src = '/logo.png';
-                }}
-              />
-              <div>
-                <h3 className="font-black text-base text-[#030A91] tracking-tight leading-none">
-                  NAISIAE ERP
-                </h3>
-                <span className="text-[10px] text-amber-600 font-bold uppercase tracking-wider block mt-0.5">
-                  Mobile Menu
-                </span>
-              </div>
-            </div>
+        <div className="fixed inset-0 z-50 flex justify-end animate-in fade-in duration-200 select-none">
+          {/* Backdrop */}
+          <div
+            className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs transition-opacity cursor-pointer"
+            onClick={() => setMobileMenuOpen(false)}
+          />
 
-            <button
-              onClick={() => setMobileMenuOpen(false)}
-              className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 hover:text-slate-900 transition-colors"
-              aria-label="Close menu"
-            >
-              <X className="w-5 h-5" />
-            </button>
-          </div>
+          {/* Drawer Container: Full screen on mobile (<sm), max-w-md on desktop */}
+          <div className="relative w-full sm:max-w-md bg-white text-slate-800 h-full shadow-2xl flex flex-col z-10 animate-in slide-in-from-right duration-250">
+            {/* Drawer App Bar Header */}
+            <div className="p-4 bg-gradient-to-r from-[#02066F] via-[#030A91] to-[#0412B3] text-white flex items-center justify-between shrink-0 shadow-sm">
+              <div className="flex items-center space-x-2.5">
+                <img
+                  src="https://plain-eeur-prod-public.komododecks.com/202605/07/1sm3ITZIdJmYjyTcxmiP/image.png"
+                  alt="Naisiae Textile"
+                  className="w-9 h-9 object-contain shrink-0 drop-shadow-sm"
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).src = '/logo.png';
+                  }}
+                />
+                <div>
+                  <h3 className="font-black text-base text-white tracking-tight leading-none">
+                    Naisiae Textile
+                  </h3>
+                  <span className="text-[10px] text-[#FACB00] font-bold uppercase tracking-wider block mt-0.5">
+                    Navigation & Workspaces
+                  </span>
+                </div>
+              </div>
+
+              <button
+                onClick={() => setMobileMenuOpen(false)}
+                className="p-2 rounded-xl bg-white/10 hover:bg-white/20 text-white transition-colors cursor-pointer"
+                aria-label="Close menu"
+              >
+                <X className="w-5 h-5 text-white" />
+              </button>
+            </div>
 
           {/* Mobile User Profile Card */}
           <div className="p-4 bg-slate-50 border-b border-slate-200 shrink-0">
@@ -677,6 +685,7 @@ export const Layout: React.FC<LayoutProps> = ({ currentView, onNavigate, childre
             </button>
           </div>
         </div>
+      </div>
       )}
     </div>
   );

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
-import { api } from "../api";
-import { Product, ProductVariant, Sale, PaymentReceipt } from "../types";
-import { useNotification } from "../context/NotificationContext";
+import { api } from "@/api";
+import { Product, ProductVariant, Sale, PaymentReceipt } from "@/types";
+import { useNotification } from "@/context/NotificationContext";
 import {
   Search,
   ShoppingCart,
@@ -31,11 +31,18 @@ import {
   BookOpen,
   Briefcase,
   Tag,
-  LayoutGrid
+  LayoutGrid,
+  Download,
+  Info,
+  FileText,
+  Phone
 } from "lucide-react";
 import { signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut, User } from "firebase/auth";
 import { auth } from "../firebase";
 import { ReceiptModal } from "../components/ReceiptModal";
+import { MpesaStkWaitingModal } from "../components/MpesaStkWaitingModal";
+import { StatementPreviewModal } from "../components/StatementPreviewModal";
+import { SmartImage } from "../components/SmartImage";
 import { normalizeImageUrl } from "./ProductsView";
 
 interface CartItem {
@@ -74,6 +81,29 @@ export const PortalView: React.FC = () => {
   const [mpesaPhone, setMpesaPhone] = useState("");
   const [isCheckingOut, setIsCheckingOut] = useState(false);
 
+  // Customer Historical Orders & Purchases
+  const [customerOrders, setCustomerOrders] = useState<any[]>([]);
+  const [isLoadingOrders, setIsLoadingOrders] = useState(false);
+
+  useEffect(() => {
+    const fetchOrders = async () => {
+      if (!currentUser?.email) {
+        setCustomerOrders([]);
+        return;
+      }
+      setIsLoadingOrders(true);
+      try {
+        const orders = await api.getPortalOrders(currentUser.email);
+        setCustomerOrders(orders || []);
+      } catch (err) {
+        console.warn('Could not load customer historical orders:', err);
+      } finally {
+        setIsLoadingOrders(false);
+      }
+    };
+    fetchOrders();
+  }, [currentUser]);
+
   // Modals
   const [activeProductForVariant, setActiveProductForVariant] = useState<Product | null>(null);
   const categoryScrollRef = useRef<HTMLDivElement>(null);
@@ -88,6 +118,10 @@ export const PortalView: React.FC = () => {
   const [completedReceipt, setCompletedReceipt] = useState<PaymentReceipt | null>(null);
   const [completedQrCode, setCompletedQrCode] = useState<string>("");
   const [isReceiptModalOpen, setIsReceiptModalOpen] = useState(false);
+  const [isMpesaModalOpen, setIsMpesaModalOpen] = useState(false);
+  const [stkCheckoutId, setStkCheckoutId] = useState<string>("");
+  const [isStatementModalOpen, setIsStatementModalOpen] = useState(false);
+  const [statementText, setStatementText] = useState("");
 
   // Listen to Firebase Google auth state
   useEffect(() => {
@@ -175,7 +209,7 @@ export const PortalView: React.FC = () => {
         const matchesName = p.name.toLowerCase().includes(q);
         const matchesSchool = p.school.toLowerCase().includes(q);
         const matchesCategory = p.category && p.category.toLowerCase().includes(q);
-        const matchesVariant = p.variants?.some((v) => v.sku.toLowerCase().includes(q) || v.size.toLowerCase().includes(q));
+        const matchesVariant = p.variants?.some((v: any) => v.sku.toLowerCase().includes(q) || v.size.toLowerCase().includes(q));
         return matchesName || matchesSchool || matchesCategory || matchesVariant;
       }
       return true;
@@ -268,16 +302,41 @@ export const PortalView: React.FC = () => {
         });
         return;
       }
+
+      setIsCheckingOut(true);
+      try {
+        const stkRes = await api.initiateMpesaStkPush({
+          phone: mpesaPhone.trim(),
+          amount: totalAmount,
+          accountReference: `ORDER-${Date.now().toString().slice(-6)}`,
+        });
+        if (stkRes?.CheckoutRequestID) {
+          setStkCheckoutId(stkRes.CheckoutRequestID);
+        }
+      } catch (stkErr) {
+        console.warn("STK push notice:", stkErr);
+      } finally {
+        setIsCheckingOut(false);
+        setIsMpesaModalOpen(true);
+      }
+      return;
     }
 
+    // Direct checkout for CARD / Other
+    await executeCheckoutFinalize();
+  };
+
+  const executeCheckoutFinalize = async (overrideRef?: string) => {
     setIsCheckingOut(true);
     try {
+      const paymentRef = overrideRef || stkCheckoutId || `MPESA-${mpesaPhone.trim()}-${Date.now().toString().slice(-6)}`;
+
       const payload = {
-        customerName: currentUser.displayName || "Online Customer",
-        customerEmail: currentUser.email || undefined,
+        customerName: currentUser?.displayName || "Online Customer",
+        customerEmail: currentUser?.email || undefined,
         customerPhone: mpesaPhone.trim() || undefined,
         paymentMethod,
-        paymentReference: `MPESA-STK-${mpesaPhone.trim()}-${Date.now().toString().slice(-6)}`,
+        paymentReference: paymentRef,
         items: cart.map((i) => ({
           productId: i.productId,
           variantId: i.variantId,
@@ -294,6 +353,7 @@ export const PortalView: React.FC = () => {
       setCompletedSale(res.sale);
       setCompletedReceipt(res.receipt);
       setCompletedQrCode(res.qrCodeDataUrl || res.sale?.kraQrCodeUrl || "");
+      setIsMpesaModalOpen(false);
       setIsReceiptModalOpen(true);
       setCart([]);
       setMpesaPhone("");
@@ -319,7 +379,8 @@ export const PortalView: React.FC = () => {
       {/* ==================================================== */}
       {/* TALL HEADER WITH CURVED SINGLE WAVE BOTTOM EDGE      */}
       {/* ==================================================== */}
-      <header className="w-full relative bg-gradient-to-r from-[#02066F] via-[#030A91] to-[#0412B3] text-white shadow-md">
+      <header className="w-full relative bg-gradient-to-r from-[#02066F] via-[#030A91] to-[#0412B3] text-white shadow-md overflow-hidden">
+        <div className="scanner-beam" />
         {/* Double-height Inner Content Bar */}
         {/* Content Bar */}
         <div className="max-w-7xl mx-auto px-4 py-3.5 sm:py-6 md:py-8 flex items-center justify-between gap-3 relative z-10">
@@ -329,6 +390,8 @@ export const PortalView: React.FC = () => {
               src="https://plain-eeur-prod-public.komododecks.com/202605/07/1sm3ITZIdJmYjyTcxmiP/image.png"
               alt="Naisia Textiles Logo"
               className="w-11 h-11 sm:w-16 sm:h-16 md:w-20 md:h-20 object-contain shrink-0 drop-shadow-md"
+              fetchPriority="high"
+              loading="eager"
               onError={(e) => {
                 (e.target as HTMLImageElement).src = "/logo.png";
               }}
@@ -336,14 +399,15 @@ export const PortalView: React.FC = () => {
             <div className="min-w-0">
               <div className="flex items-center gap-2">
                 <h1 className="text-lg sm:text-2xl md:text-3xl font-black tracking-tight text-white leading-none drop-shadow-sm truncate">
-                  NAISIAE
+                  <span className="sm:hidden">Naisiae</span>
+                  <span className="hidden sm:inline">Naisiae Textile</span>
                 </h1>
                 <span className="bg-[#FACB00] text-[#030A91] text-[10px] sm:text-xs font-black uppercase px-2 py-0.5 rounded-full tracking-wider shadow-sm shrink-0">
                   Ke
                 </span>
               </div>
               <p className="text-[11px] sm:text-xs md:text-sm text-blue-100 font-medium mt-0.5 sm:mt-1 line-clamp-1">
-                Textiles
+                Official School Uniforms & Corporate Garments
               </p>
             </div>
           </div>
@@ -380,6 +444,15 @@ export const PortalView: React.FC = () => {
           </div>
         </div>
 
+        <div className="hidden lg:flex justify-center py-2 bg-white/10 backdrop-blur-xs border-t border-white/5 text-[11px] font-bold tracking-wider text-white gap-8 relative z-10">
+          <a href="/school-uniforms" className="hover:text-[#FACB00] transition-colors">School Uniforms</a>
+          <a href="/kmtc-uniforms" className="hover:text-[#FACB00] transition-colors">KMTC Uniforms</a>
+          <a href="/customized-uniforms" className="hover:text-[#FACB00] transition-colors">Customized Uniforms</a>
+          <a href="/about" className="hover:text-[#FACB00] transition-colors">About</a>
+          <a href="/policy" className="hover:text-[#FACB00] transition-colors">Policy</a>
+          <a href="/contact" className="hover:text-[#FACB00] transition-colors">Contact Us</a>
+        </div>
+
         {/* SINGLE WAVE CURVED BOTTOM EDGE */}
         <div className="w-full leading-none overflow-hidden select-none -mb-[1px]">
           <svg
@@ -404,34 +477,7 @@ export const PortalView: React.FC = () => {
         </div>
       </header>
 
-      {/* ==================================================== */}
-      {/* MOBILE SWITCHER: CATALOG VS CART                    */}
-      {/* ==================================================== */}
-      <div className="lg:hidden p-2 bg-slate-200/90 shadow-inner select-none flex space-x-1.5">
-        <button
-          onClick={() => setMobileTab("catalog")}
-          className={`flex-1 py-2 rounded-xl text-xs font-black flex items-center justify-center space-x-1.5 transition-all ${
-            mobileTab === "catalog" ? "bg-[#030A91] text-white shadow-sm" : "text-slate-700 hover:text-slate-900"
-          }`}
-        >
-          <Shirt className="w-4 h-4 text-[#FACB00]" />
-          <span>Uniform Catalog ({filteredProducts.length})</span>
-        </button>
-        <button
-          onClick={() => setMobileTab("cart")}
-          className={`flex-1 py-2 rounded-xl text-xs font-black flex items-center justify-center space-x-1.5 transition-all ${
-            mobileTab === "cart" ? "bg-[#030A91] text-white shadow-sm" : "text-slate-700 hover:text-slate-900"
-          }`}
-        >
-          <ShoppingCart className="w-4 h-4 text-[#FACB00]" />
-          <span>Cart ({totalQuantity})</span>
-          {totalAmount > 0 && (
-            <span className="bg-[#FACB00] text-[#030A91] px-1.5 py-0.2 rounded-full font-black text-[10px]">
-              KES {totalAmount.toLocaleString()}
-            </span>
-          )}
-        </button>
-      </div>
+
 
       {/* ==================================================== */}
       {/* MAIN CONTENT: POS LAYOUT WITH CATALOG & CART         */}
@@ -598,8 +644,8 @@ export const PortalView: React.FC = () => {
             <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-3.5">
               {filteredProducts.map((p) => {
                 const variants = p.variants || [];
-                const minPrice = variants.length ? Math.min(...variants.map((v) => v.sellingPrice)) : 0;
-                const maxPrice = variants.length ? Math.max(...variants.map((v) => v.sellingPrice)) : 0;
+                const minPrice = variants.length ? Math.min(...variants.map((v: any) => v.sellingPrice)) : 0;
+                const maxPrice = variants.length ? Math.max(...variants.map((v: any) => v.sellingPrice)) : 0;
                 const hasMultiplePrices = minPrice !== maxPrice && maxPrice > 0;
 
                 return (
@@ -610,6 +656,7 @@ export const PortalView: React.FC = () => {
                   >
                     {/* Image Box */}
                     <div className="aspect-square bg-slate-100 relative overflow-hidden flex items-center justify-center">
+                      <div className="scanner-beam" />
                       <img
                         src={normalizeImageUrl(p.imageUrl || "")}
                         alt={p.name}
@@ -968,6 +1015,16 @@ export const PortalView: React.FC = () => {
                 </span>
               </div>
             )}
+            
+            {/* Powered by Link */}
+            <a 
+              href="https://urbantechdev.com" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="text-[10px] font-bold text-slate-400 hover:text-[#030A91] transition-colors"
+            >
+              Powered by UrbanTechDev
+            </a>
           </div>
 
           {/* Right: Big Bold Total Checkout Amount & Action Button */}
@@ -1043,8 +1100,8 @@ export const PortalView: React.FC = () => {
                 Select Your Required Uniform Size:
               </p>
               <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
-                {activeProductForVariant.variants.map((v) => {
-                  const stock = Object.values(v.branchStock || {}).reduce((a, b) => Number(a) + Number(b), 0);
+                {activeProductForVariant.variants.map((v: any) => {
+                  const stock = Number(Object.values(v.branchStock || {}).reduce((a: number, b: any) => a + Number(b), 0));
                   const isAvailable = stock > 0;
                   return (
                     <button
@@ -1132,6 +1189,39 @@ export const PortalView: React.FC = () => {
         </div>
       )}
 
+      {/* M-Pesa STK Push Animated Ring Loading Waiting for PIN Modal */}
+      <MpesaStkWaitingModal
+        isOpen={isMpesaModalOpen}
+        phone={mpesaPhone}
+        amount={totalAmount}
+        accountReference="Naisiae Uniforms"
+        checkoutRequestId={stkCheckoutId}
+        onSuccess={(refCode) => executeCheckoutFinalize(refCode)}
+        onCancel={() => setIsMpesaModalOpen(false)}
+      />
+
+      {/* Statement Preview Modal */}
+      <StatementPreviewModal
+        isOpen={isStatementModalOpen}
+        onClose={() => setIsStatementModalOpen(false)}
+        statementText={statementText}
+        onDownload={() => {
+          const blob = new Blob([statementText], { type: 'text/plain;charset=utf-8;' });
+          const url = URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.href = url;
+          link.download = `Naisia_Purchase_Statement_Thermal_${currentUser?.email?.split('@')[0] || 'Customer'}_${Date.now()}.txt`;
+          link.click();
+          URL.revokeObjectURL(url);
+          notify({
+            type: 'SUCCESS',
+            title: 'Thermal Statement Saved',
+            message: 'Customer purchase statement saved in thermal receipt format.'
+          });
+          setIsStatementModalOpen(false);
+        }}
+      />
+
       {/* Official Thermal Receipt & eTIMS QR Modal */}
       <ReceiptModal
         sale={completedSale}
@@ -1145,29 +1235,29 @@ export const PortalView: React.FC = () => {
       {/* MOBILE HAMBURGER MENU DRAWER (SLIDE-OVER FROM RIGHT) */}
       {/* ==================================================== */}
       {isMobileMenuOpen && (
-        <div className="fixed inset-0 z-50 flex justify-end md:hidden animate-in fade-in duration-200">
+        <div className="fixed inset-0 z-50 flex justify-end animate-in fade-in duration-200">
           {/* Backdrop */}
           <div
-            className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs transition-opacity"
+            className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs transition-opacity cursor-pointer"
             onClick={() => setIsMobileMenuOpen(false)}
           />
 
-          {/* Drawer Container (Full Screen on Mobile) */}
-          <div className="relative w-full md:max-w-sm bg-white h-full shadow-2xl flex flex-col z-10 animate-in slide-in-from-right duration-250 select-none">
+          {/* Drawer Container (Full Screen on Mobile, max-w-md on Desktop) */}
+          <div className="relative w-full sm:max-w-md bg-white h-full shadow-2xl flex flex-col z-10 animate-in slide-in-from-right duration-250 select-none">
             {/* Drawer App Bar Header */}
             <div className="p-4 bg-gradient-to-r from-[#02066F] via-[#030A91] to-[#0412B3] text-white flex items-center justify-between shrink-0 shadow-sm">
               <div className="flex items-center space-x-2.5">
                 <img
                   src="https://plain-eeur-prod-public.komododecks.com/202605/07/1sm3ITZIdJmYjyTcxmiP/image.png"
-                  alt="Naisia Textiles"
+                  alt="Naisiae Textile"
                   className="w-9 h-9 object-contain drop-shadow-sm"
                   onError={(e) => {
                     (e.target as HTMLImageElement).src = "/logo.png";
                   }}
                 />
                 <div>
-                  <h3 className="font-black text-sm text-white tracking-tight leading-none">
-                    NAISIAE TEXTILES
+                  <h3 className="font-black text-sm sm:text-base text-white tracking-tight leading-none">
+                    Naisiae Textile
                   </h3>
                   <span className="text-[10px] text-[#FACB00] font-bold uppercase tracking-wider block mt-0.5">
                     Customer Account & Menu
@@ -1186,6 +1276,33 @@ export const PortalView: React.FC = () => {
 
             {/* Drawer Body */}
             <div className="flex-1 overflow-y-auto p-4 space-y-4">
+              {/* BRAND QUICK NAVIGATION (MOBILE ONLY ACCESSIBILITY) */}
+              <div className="bg-[#FACB00]/10 border border-[#FACB00]/30 rounded-2xl p-3.5 shadow-2xs">
+                <div className="text-[10px] font-black uppercase tracking-wider text-[#030A91] mb-2.5 flex items-center gap-1.5">
+                  <LayoutGrid className="w-3.5 h-3.5" />
+                  <span>Quick Navigation</span>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  {[
+                    { label: 'School Uniforms', href: '/school-uniforms', icon: Shirt },
+                    { label: 'KMTC Uniforms', href: '/kmtc-uniforms', icon: Building },
+                    { label: 'Customized', href: '/customized-uniforms', icon: ShieldCheck },
+                    { label: 'About Us', href: '/about', icon: Info },
+                    { label: 'Our Policy', href: '/policy', icon: FileText },
+                    { label: 'Contact', href: '/contact', icon: Phone },
+                  ].map((link) => (
+                    <a
+                      key={link.href}
+                      href={link.href}
+                      className="flex flex-col items-center justify-center p-2.5 bg-white border border-slate-100 rounded-xl hover:border-[#030A91] transition-all"
+                    >
+                      <link.icon className="w-4 h-4 text-[#030A91] mb-1" />
+                      <span className="text-[9px] font-bold text-slate-700 text-center leading-tight">{link.label}</span>
+                    </a>
+                  ))}
+                </div>
+              </div>
+
               {/* GOOGLE AUTHENTICATION & USER PROFILE CARD (STAYS PROMINENT INSIDE HAMBURGER) */}
               <div className="bg-slate-50 border border-slate-200/90 rounded-2xl p-3.5 shadow-2xs">
                 <div className="text-[10px] font-black uppercase tracking-wider text-slate-400 mb-2.5 flex items-center justify-between">
@@ -1231,6 +1348,144 @@ export const PortalView: React.FC = () => {
                       <LogOut className="w-4 h-4" />
                       <span>Sign Out from Google</span>
                     </button>
+
+                    {/* Historical Orders & Purchases */}
+                    <div className="mt-3 pt-3 border-t border-slate-200/80 space-y-2.5">
+                      <div className="text-[10px] font-black uppercase tracking-wider text-[#030A91] flex items-center justify-between">
+                        <span>My Historical Orders & Purchases</span>
+                        <span className="px-2 py-0.5 rounded-full bg-blue-100 text-[#030A91] font-bold">
+                          {customerOrders.length}
+                        </span>
+                      </div>
+
+                      {isLoadingOrders ? (
+                        <div className="py-4 text-center text-xs text-slate-500 animate-pulse">
+                          Loading past purchases...
+                        </div>
+                      ) : customerOrders.length === 0 ? (
+                        <div className="py-3 text-center text-xs text-slate-500 bg-white rounded-xl border border-dashed border-slate-200 p-2">
+                          No previous orders yet. Your online purchases will appear here instantly.
+                        </div>
+                      ) : (
+                        <div className="space-y-3">
+                          {/* Download Statement Options (Thermal Receipt or CSV) */}
+                          <div className="flex gap-1.5">
+                            <button
+                              onClick={() => {
+                                const totalSpent = customerOrders.reduce((acc, o) => acc + (o.totalAmount || 0), 0);
+                                const customerName = currentUser?.displayName || currentUser?.email || 'Valued Customer';
+                                const customerEmail = currentUser?.email || '';
+                                
+                                let text = `==========================================\n`;
+                                text += `         NAISIA TEXTILES LTD            \n`;
+                                text += `      CUSTOMER PURCHASE STATEMENT       \n`;
+                                text += `==========================================\n`;
+                                text += `CUSTOMER:  ${customerName}\n`;
+                                text += `EMAIL:     ${customerEmail}\n`;
+                                text += `DATE:      ${new Date().toLocaleString()}\n`;
+                                text += `ORDERS:    ${customerOrders.length}\n`;
+                                text += `LIFETIME:  KES ${totalSpent.toLocaleString()}\n`;
+                                text += `==========================================\n\n`;
+
+                                for (const o of customerOrders) {
+                                  text += `RECEIPT #: ${o.receiptNumber}\n`;
+                                  text += `DATE:      ${new Date(o.createdAt).toLocaleString()}\n`;
+                                  text += `BRANCH:    ${o.branchName || 'Nairobi HQ'}\n`;
+                                  text += `PAYMENT:   ${o.paymentMethod || 'CASH'} (${o.paymentReference || 'N/A'})\n`;
+                                  text += `------------------------------------------\n`;
+                                  text += `ITEM DESCRIPTION        QTY  UNIT   TOTAL\n`;
+                                  if (o.items && o.items.length > 0) {
+                                    for (const it of o.items) {
+                                      const desc = `${it.productName} (${it.size})`.slice(0, 20).padEnd(21);
+                                      const q = String(it.quantity).padStart(3);
+                                      const pr = String(it.unitPrice).padStart(6);
+                                      const tot = String(it.total || (it.quantity * it.unitPrice)).padStart(6);
+                                      text += `${desc} ${q} ${pr} ${tot}\n`;
+                                    }
+                                  }
+                                  text += `------------------------------------------\n`;
+                                  text += `Subtotal: KES ${(o.subtotal || 0).toLocaleString()}\n`;
+                                  text += `VAT 16%:  KES ${(o.totalTax || 0).toLocaleString()}\n`;
+                                  text += `TOTAL:    KES ${(o.totalAmount || 0).toLocaleString()}\n`;
+                                  text += `==========================================\n\n`;
+                                }
+                                text += `THANK YOU FOR SHOPPING WITH NAISIA TEXTILES\n`;
+                                
+                                setStatementText(text);
+                                setIsStatementModalOpen(true);
+                              }}
+                              className="flex-1 py-2 px-2 bg-[#030A91] hover:bg-blue-900 active:scale-98 text-white rounded-xl text-[11px] font-bold flex items-center justify-center space-x-1 shadow-xs transition-all cursor-pointer"
+                              title="Preview Thermal Receipt format statement"
+                            >
+                              <Download className="w-3.5 h-3.5 text-[#FACB00] shrink-0" />
+                              <span>Preview Statement</span>
+                            </button>
+
+                            <button
+                              onClick={() => {
+                                const totalSpent = customerOrders.reduce((acc, o) => acc + (o.totalAmount || 0), 0);
+                                let csv = `NAISIA TEXTILES LTD - CUSTOMER PURCHASE STATEMENT\n`;
+                                csv += `Customer: "${currentUser?.displayName || currentUser?.email || 'Valued Customer'}"\n`;
+                                csv += `Email: "${currentUser?.email || ''}\n`;
+                                csv += `Statement Date: "${new Date().toLocaleString()}"\n`;
+                                csv += `Total Orders: ${customerOrders.length}\n`;
+                                csv += `Total Lifetime Spend (KES): ${totalSpent.toLocaleString()}\n`;
+                                csv += `---------------------------------------------------\n\n`;
+                                csv += `Receipt Number,Date,Branch,Payment Method,Payment Reference,Subtotal (KES),VAT (KES),Total Amount (KES),Items Summary\n`;
+
+                                for (const o of customerOrders) {
+                                  const itemsSummary = (o.items || [])
+                                    .map((i: any) => `${i.productName} (Size ${i.size}) x${i.quantity}`)
+                                    .join('; ');
+                                  csv += `"${o.receiptNumber}","${new Date(o.createdAt).toLocaleString()}","${o.branchName || 'Nairobi'}","${o.paymentMethod || 'CASH'}","${o.paymentReference || ''}",${o.subtotal || 0},${o.totalTax || 0},${o.totalAmount || 0},"${itemsSummary}"\n`;
+                                }
+
+                                const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+                                const url = URL.createObjectURL(blob);
+                                const link = document.createElement('a');
+                                link.href = url;
+                                link.download = `Naisia_Purchase_Statement_${currentUser?.email?.split('@')[0] || 'Customer'}_${Date.now()}.csv`;
+                                link.click();
+                                URL.revokeObjectURL(url);
+                                notify({
+                                  type: 'SUCCESS',
+                                  title: 'CSV Statement Downloaded',
+                                  message: `Purchase statement with ${customerOrders.length} orders downloaded as CSV.`
+                                });
+                              }}
+                              className="flex-1 py-2 px-2 bg-slate-800 hover:bg-slate-900 active:scale-98 text-white rounded-xl text-[11px] font-bold flex items-center justify-center space-x-1 shadow-xs transition-all cursor-pointer"
+                              title="Download Spreadsheet CSV format statement"
+                            >
+                              <Download className="w-3.5 h-3.5 text-slate-300 shrink-0" />
+                              <span>Spreadsheet CSV</span>
+                            </button>
+                          </div>
+
+                          <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
+                            {customerOrders.map((order) => (
+                              <div key={order.id} className="bg-white p-2.5 rounded-xl border border-slate-200 shadow-2xs space-y-1.5 text-xs">
+                                <div className="flex items-center justify-between">
+                                  <span className="font-black text-[#030A91] font-mono text-[11px]">
+                                    {order.receiptNumber}
+                                  </span>
+                                  <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                    {order.status || 'COMPLETED'}
+                                  </span>
+                                </div>
+                                <div className="text-[11px] text-slate-600 space-y-0.5">
+                                  <p className="font-semibold text-slate-800">
+                                    {order.items?.length || 0} items • KES {(order.totalAmount || 0).toLocaleString()}
+                                  </p>
+                                  <p className="text-[10px] text-slate-400">
+                                    {new Date(order.createdAt).toLocaleString()} • {order.branchName || 'Nairobi'}
+                                  </p>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 ) : (
                   <div className="space-y-2.5">
@@ -1356,6 +1611,13 @@ export const PortalView: React.FC = () => {
                   Restricted to authorized cashiers, accountants, and managers
                 </p>
               </div>
+
+              {/* Powered by Link (Mobile Drawer) */}
+              <div className="pt-4 text-center">
+                <a href="https://urbantechdev.com" target="_blank" rel="noopener noreferrer" className="text-[10px] font-bold text-slate-400 hover:text-[#030A91] transition-colors">
+                  Powered by UrbanTechDev
+                </a>
+              </div>
             </div>
           </div>
         </div>
@@ -1367,7 +1629,10 @@ export const PortalView: React.FC = () => {
       {/* ==================================================== */}
       {/* MOBILE BOTTOM NAVIGATION BAR FOR CUSTOMER PORTAL     */}
       {/* ==================================================== */}
-      <nav className="fixed bottom-0 left-0 right-0 z-40 bg-gradient-to-r from-[#02066F] via-[#030A91] to-[#0412B3] border-t border-white/10 md:hidden shadow-2xl px-2 pt-3 pb-1 select-none text-white">
+      <nav className="fixed bottom-0 left-0 right-0 z-50 bg-gradient-to-r from-[#02066F] via-[#030A91] to-[#0412B3] border-t border-white/10 md:hidden shadow-2xl px-2 pt-3 pb-1 select-none text-white overflow-visible">
+        <div className="absolute inset-0 overflow-hidden pointer-events-none rounded-t-3xl">
+          <div className="scanner-beam" />
+        </div>
         {/* Single Wave Top Edge with Yellow Accent Line */}
         <div className="absolute top-0 left-0 right-0 -translate-y-full w-full leading-none overflow-hidden select-none pointer-events-none">
           <svg
@@ -1435,7 +1700,7 @@ export const PortalView: React.FC = () => {
                 window.scrollTo({ top: 250, behavior: 'smooth' });
               }
             }}
-            className="flex flex-col items-center justify-center -mt-6 group active:scale-95 transition-transform"
+            className="flex flex-col items-center justify-center -mt-8 relative z-20 group active:scale-95 transition-transform"
             aria-label="Search Uniforms"
           >
             <div className="w-14 h-14 rounded-full bg-[#FACB00] text-[#030A91] flex items-center justify-center shadow-2xl ring-4 ring-[#030A91] animate-[pulse_2s_ease-in-out_infinite] group-hover:rotate-12 transition-transform">

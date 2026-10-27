@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { api } from '../api';
-import { User, Branch } from '../types';
-import { useNotification } from '../context/NotificationContext';
+import { api } from "@/api";
+import { User, Branch } from "@/types";
+import { useNotification } from "@/context/NotificationContext";
 import { UserCheck, Plus, Search, Shield, Lock, X, Edit2, UserCog } from 'lucide-react';
-import { StatusBadge } from '../components/StatusBadge';
+import { StatusBadge } from "@/components/StatusBadge";
 
 export const UsersView: React.FC = () => {
   const { notify } = useNotification();
