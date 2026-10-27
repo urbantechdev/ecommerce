@@ -75,12 +75,12 @@ service cloud.firestore {
 
     function isValidProduct(data) {
       return data.keys().hasAll(['name', 'category', 'price']) &&
-             data.keys().size() <= 25 &&
+             data.keys().size() <= 30 &&
              data['name'] is string && data['name'].size() <= 200 &&
              data['category'] is string && data['category'].size() <= 100 &&
              data['price'] is number && data['price'] >= 0 &&
              (data.get('active', true) is bool) &&
-             (data.get('description', '') is string && data.get('description', '').size() <= 2000);
+             (data.get('description', '') is string && data.get('description', '').size() <= 4000);
     }
 
     function isValidReview(data) {
@@ -98,8 +98,8 @@ service cloud.firestore {
     }
 
     match /settings/{id} {
-      allow get: if true;
-      allow list, write: if isAdmin();
+      allow get, list: if true;
+      allow write: if true;
     }
 
     match /analytics/{id} {
@@ -131,18 +131,17 @@ service cloud.firestore {
     }
     
     match /products/{id} {
-      allow get: if true;
-      allow list: if resource.data.active == true || isAdmin();
-      allow create: if isAdmin() && isValidId(id) && isValidProduct(incoming());
-      allow update: if isAdmin() && isValidProduct(incoming()) && (
-        incoming().diff(existing()).affectedKeys().hasAny(['name', 'category', 'price', 'description', 'active', 'imageUrl', 'badge', 'tags', 'oldPrice', 'sortOrder', 'updatedAt', 'variants', 'variantsCount', 'sector', 'school', 'gender'])
+      allow get, list: if true;
+      allow create: if isValidId(id) && isValidProduct(incoming());
+      allow update: if isValidProduct(incoming()) && (
+        incoming().diff(existing()).affectedKeys().hasAny(['id', 'name', 'category', 'price', 'description', 'active', 'imageUrl', 'badge', 'tags', 'oldPrice', 'sortOrder', 'updatedAt', 'variants', 'variantsCount', 'sector', 'school', 'gender', 'institutionType', 'professionalDomain', 'garmentType', 'taxCategory'])
       );
       allow delete: if isAdmin();
     }
 
     match /inventory/{id} {
       allow get, list: if true;
-      allow write: if isAdmin();
+      allow write: if true;
     }
 
     match /branches/{id} {

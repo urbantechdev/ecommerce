@@ -446,7 +446,8 @@ class DatabaseEngine {
         if (parsed.products && Array.isArray(parsed.products) && parsed.products.length > 0) {
           // Sync image URLs from inventory CSV
           const csvProducts = this.seedProductsFromInventoryCsv();
-          const csvImageMap = new Map(csvProducts.map((cp) => [cp.name.split(' (')[0].toLowerCase().trim(), cp.imageUrl]));
+          const csvById = new Map(csvProducts.map((cp) => [cp.id, cp.imageUrl]));
+          const csvByName = new Map(csvProducts.map((cp) => [cp.name.toLowerCase().trim(), cp.imageUrl]));
           
           for (const p of parsed.products) {
             if (!p.sector) {
@@ -458,9 +459,8 @@ class DatabaseEngine {
               if (!p.garmentType) p.garmentType = p.category;
               updated = true;
             }
-            const baseName = (p.garmentType || p.name.split(' (')[0]).toLowerCase().trim();
-            const matchedImg = csvImageMap.get(baseName);
-            if (matchedImg && (!p.imageUrl || p.imageUrl.includes('placeholder') || p.imageUrl.includes('category_school'))) {
+            const matchedImg = csvById.get(p.id) || csvByName.get(p.name.toLowerCase().trim());
+            if (matchedImg && p.imageUrl !== matchedImg) {
               p.imageUrl = matchedImg;
               p.variants.forEach((v) => {
                 v.imageUrl = matchedImg;
