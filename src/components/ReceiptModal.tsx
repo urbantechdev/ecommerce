@@ -26,7 +26,7 @@ interface ReceiptModalProps {
   onClose: () => void;
 }
 
-const ReceiptModalInner: React.FC<ReceiptModalProps> = ({
+export const ReceiptModal: React.FC<ReceiptModalProps> = ({
   sale: initialSale,
   receipt,
   qrCodeDataUrl: initialQrCode,
@@ -257,15 +257,14 @@ const ReceiptModalInner: React.FC<ReceiptModalProps> = ({
 
     if (activeSale?.items) {
       for (const it of activeSale.items) {
-        const nameDesc = `${it.productName || 'Uniform Garment'} (${it.size || 'Std'})`.slice(0, 22).padEnd(23);
-        const qty = String(it.quantity || 1).padStart(3);
-        const pr = String(it.unitPrice || 0).padStart(7);
-        const itemTot = it.total ?? (it as any).totalPrice ?? ((it.quantity || 1) * (it.unitPrice || 0));
-        const tot = String(itemTot).padStart(7);
+        const nameDesc = `${it.productName} (${it.size})`.slice(0, 22).padEnd(23);
+        const qty = String(it.quantity).padStart(3);
+        const pr = String(it.unitPrice).padStart(7);
+        const tot = String(it.total).padStart(7);
         text += `${nameDesc} ${qty} ${pr} ${tot}\n`;
       }
     } else {
-      text += `General Payment Tender                ${(totalAmount || 0).toLocaleString()}\n`;
+      text += `General Payment Tender                ${totalAmount.toLocaleString()}\n`;
     }
 
     text += `${divider}\n`;
@@ -519,30 +518,27 @@ const ReceiptModalInner: React.FC<ReceiptModalProps> = ({
                 {/* Items List */}
                 {activeSale?.items && activeSale.items.length > 0 ? (
                   <div className="space-y-1.5 mt-1.5">
-                    {activeSale.items.map((item: any, idx) => {
-                      const itemTot = item.total ?? item.totalPrice ?? ((item.quantity || 1) * (item.unitPrice || 0));
-                      return (
-                        <div key={idx} className="text-[10px]">
-                          <div className="font-bold text-black leading-tight">
-                            {item.productName || 'Uniform Garment'}
-                          </div>
-                          <div className="flex justify-between text-slate-600 text-[9px] mt-0.5">
-                            <span>
-                              Size {item.size || 'Standard'} • {item.school || 'General'}
-                            </span>
-                            <span>
-                              {item.quantity || 1} x {(item.unitPrice || 0).toLocaleString()} ={' '}
-                              <strong className="font-bold text-black">{itemTot.toLocaleString()}</strong>
-                            </span>
-                          </div>
+                    {activeSale.items.map((item, idx) => (
+                      <div key={idx} className="text-[10px]">
+                        <div className="font-bold text-black leading-tight">
+                          {item.productName}
                         </div>
-                      );
-                    })}
+                        <div className="flex justify-between text-slate-600 text-[9px] mt-0.5">
+                          <span>
+                            Size {item.size} • {item.school}
+                          </span>
+                          <span>
+                            {item.quantity} x {item.unitPrice.toLocaleString()} ={' '}
+                            <strong className="font-bold text-black">{item.total.toLocaleString()}</strong>
+                          </span>
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 ) : (
                   <div className="py-1.5 text-slate-600 text-xs flex justify-between">
                     <span>Payment Tender</span>
-                    <strong className="text-black">KES {(totalAmount || 0).toLocaleString()}</strong>
+                    <strong className="text-black">KES {totalAmount.toLocaleString()}</strong>
                   </div>
                 )}
               </div>
@@ -553,16 +549,16 @@ const ReceiptModalInner: React.FC<ReceiptModalProps> = ({
                   <>
                     <div className="flex justify-between">
                       <span className="text-slate-600">Subtotal (Net Excl. VAT):</span>
-                      <span>KES {(activeSale.subtotal || 0).toLocaleString()}</span>
+                      <span>KES {activeSale.subtotal.toLocaleString()}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-slate-600">Standard 16% VAT:</span>
-                      <span>KES {(activeSale.totalTax || 0).toLocaleString()}</span>
+                      <span>KES {activeSale.totalTax.toLocaleString()}</span>
                     </div>
-                    {(activeSale.totalDiscount || 0) > 0 && (
+                    {activeSale.totalDiscount > 0 && (
                       <div className="flex justify-between font-bold text-black">
                         <span>Discount Savings:</span>
-                        <span>-KES {(activeSale.totalDiscount || 0).toLocaleString()}</span>
+                        <span>-KES {activeSale.totalDiscount.toLocaleString()}</span>
                       </div>
                     )}
                   </>
@@ -570,7 +566,7 @@ const ReceiptModalInner: React.FC<ReceiptModalProps> = ({
 
                 <div className="flex justify-between text-xs sm:text-sm font-black pt-1 border-t border-slate-400 text-black">
                   <span>TOTAL PAYABLE:</span>
-                  <span>KES {(totalAmount || 0).toLocaleString()}</span>
+                  <span>KES {totalAmount.toLocaleString()}</span>
                 </div>
 
                 <div className="flex justify-between text-[10px] pt-1">
@@ -584,12 +580,12 @@ const ReceiptModalInner: React.FC<ReceiptModalProps> = ({
                   <>
                     <div className="flex justify-between text-[10px]">
                       <span className="text-slate-600">Amount Tendered:</span>
-                      <span>KES {(activeSale.amountTendered || totalAmount || 0).toLocaleString()}</span>
+                      <span>KES {activeSale.amountTendered.toLocaleString()}</span>
                     </div>
                     <div className="flex justify-between text-[10px]">
                       <span className="text-slate-600">Change Given:</span>
                       <strong className="font-bold text-black">
-                        KES {(activeSale.changeGiven || 0).toLocaleString()}
+                        KES {activeSale.changeGiven.toLocaleString()}
                       </strong>
                     </div>
                   </>
@@ -664,53 +660,5 @@ const ReceiptModalInner: React.FC<ReceiptModalProps> = ({
         </div>
       </div>
     </div>
-  );
-};
-
-class ReceiptErrorBoundary extends React.Component<
-  { isOpen: boolean; onClose: () => void; children: React.ReactNode },
-  { hasError: boolean }
-> {
-  constructor(props: any) {
-    super(props);
-    this.state = { hasError: false };
-  }
-  static getDerivedStateFromError() {
-    return { hasError: true };
-  }
-  componentDidCatch(error: any) {
-    console.warn('ReceiptModal Error Boundary caught:', error);
-  }
-  render() {
-    if (this.state.hasError && this.props.isOpen) {
-      return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4 select-none">
-          <div className="bg-white rounded-2xl p-6 max-w-sm w-full text-center space-y-3 shadow-xl">
-            <h3 className="font-bold text-slate-900 text-sm">Receipt Processed Successfully</h3>
-            <p className="text-xs text-slate-600">
-              Your transaction has been recorded and the receipt was created.
-            </p>
-            <button
-              onClick={() => {
-                this.setState({ hasError: false });
-                this.props.onClose();
-              }}
-              className="px-4 py-2 bg-[#030A91] text-white rounded-xl text-xs font-bold hover:bg-blue-900 transition-colors cursor-pointer"
-            >
-              Done & Close
-            </button>
-          </div>
-        </div>
-      );
-    }
-    return this.props.children;
-  }
-}
-
-export const ReceiptModal: React.FC<ReceiptModalProps> = (props) => {
-  return (
-    <ReceiptErrorBoundary isOpen={props.isOpen} onClose={props.onClose}>
-      <ReceiptModalInner {...props} />
-    </ReceiptErrorBoundary>
   );
 };

@@ -578,10 +578,10 @@ export const LoginView: React.FC = () => {
             />
             <div className="text-left">
               <h1 className="text-xl sm:text-4xl font-black tracking-tight leading-none text-white drop-shadow-sm">
-                Naisiae Textile
+                NAISIAE ERP
               </h1>
               <p className="text-[10px] sm:text-sm text-[#FACB00] font-bold tracking-widest mt-0.5 sm:mt-1 uppercase">
-                ENTERPRISE SYSTEM
+                TEXTILES & UNIFORMS
               </p>
             </div>
           </div>

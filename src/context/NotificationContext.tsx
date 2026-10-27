@@ -73,42 +73,42 @@ const ToastItem: React.FC<ToastItemProps> = ({ notification, onClose }) => {
     };
   }, [duration, handleDismiss, isPaused]);
 
-  // Theme styling based on notification type (White with a touch of blue brand identity)
+  // Theme styling based on notification type
   const theme = {
     SUCCESS: {
-      border: 'border-[#030A91]/30',
-      bg: 'bg-gradient-to-r from-blue-50/90 via-white to-white text-slate-900',
-      iconBg: 'bg-[#030A91] text-[#FACB00] shadow-[#030A91]/30',
-      progressBar: 'bg-gradient-to-r from-[#030A91] to-blue-600',
-      shadow: 'shadow-[0_15px_35px_-5px_rgba(3,10,145,0.2)]',
-      icon: <CheckCircle2 className="w-5 h-5 animate-icon-success text-[#FACB00]" />,
-      accentGlow: 'before:absolute before:inset-0 before:rounded-2xl before:ring-1 before:ring-blue-400/30',
+      border: 'border-emerald-500/40',
+      bg: 'bg-gradient-to-r from-emerald-50/98 via-white to-emerald-50/90 text-emerald-950',
+      iconBg: 'bg-emerald-500 text-white shadow-emerald-500/30',
+      progressBar: 'bg-gradient-to-r from-emerald-400 to-emerald-600',
+      shadow: 'shadow-[0_10px_30px_-5px_rgba(16,185,129,0.25)]',
+      icon: <CheckCircle2 className="w-5 h-5 animate-icon-success" />,
+      accentGlow: 'before:absolute before:inset-0 before:rounded-2xl before:ring-1 before:ring-emerald-400/30',
     },
     ERROR: {
-      border: 'border-rose-500/30',
-      bg: 'bg-gradient-to-r from-rose-50/90 via-white to-white text-slate-900',
-      iconBg: 'bg-rose-600 text-white shadow-rose-600/30',
-      progressBar: 'bg-gradient-to-r from-rose-500 to-rose-700',
-      shadow: 'shadow-[0_15px_35px_-5px_rgba(244,63,94,0.2)]',
+      border: 'border-rose-500/50',
+      bg: 'bg-gradient-to-r from-rose-50/98 via-white to-rose-50/90 text-rose-950',
+      iconBg: 'bg-rose-600 text-white shadow-rose-600/35',
+      progressBar: 'bg-gradient-to-r from-rose-400 to-rose-600',
+      shadow: 'shadow-[0_10px_30px_-5px_rgba(244,63,94,0.3)]',
       icon: <AlertOctagon className="w-5 h-5 animate-icon-error" />,
       accentGlow: 'before:absolute before:inset-0 before:rounded-2xl before:ring-1 before:ring-rose-400/30',
     },
     WARNING: {
-      border: 'border-amber-500/30',
-      bg: 'bg-gradient-to-r from-amber-50/90 via-white to-white text-slate-900',
-      iconBg: 'bg-[#030A91] text-[#FACB00] shadow-[#030A91]/30',
-      progressBar: 'bg-gradient-to-r from-amber-500 to-[#FACB00]',
-      shadow: 'shadow-[0_15px_35px_-5px_rgba(3,10,145,0.2)]',
-      icon: <AlertTriangle className="w-5 h-5 animate-icon-pop text-[#FACB00]" />,
+      border: 'border-amber-500/40',
+      bg: 'bg-gradient-to-r from-amber-50/98 via-white to-amber-50/90 text-amber-950',
+      iconBg: 'bg-amber-500 text-slate-950 shadow-amber-500/30',
+      progressBar: 'bg-gradient-to-r from-amber-400 to-[#FACB00]',
+      shadow: 'shadow-[0_10px_30px_-5px_rgba(245,158,11,0.25)]',
+      icon: <AlertTriangle className="w-5 h-5 animate-icon-pop" />,
       accentGlow: 'before:absolute before:inset-0 before:rounded-2xl before:ring-1 before:ring-amber-400/30',
     },
     INFO: {
       border: 'border-[#030A91]/30',
-      bg: 'bg-gradient-to-r from-blue-50/90 via-white to-white text-slate-900',
+      bg: 'bg-gradient-to-r from-blue-50/98 via-white to-blue-50/90 text-slate-900',
       iconBg: 'bg-[#030A91] text-[#FACB00] shadow-[#030A91]/30',
       progressBar: 'bg-gradient-to-r from-[#030A91] to-blue-500',
-      shadow: 'shadow-[0_15px_35px_-5px_rgba(3,10,145,0.2)]',
-      icon: <Info className="w-5 h-5 animate-icon-pop text-[#FACB00]" />,
+      shadow: 'shadow-[0_10px_30px_-5px_rgba(3,10,145,0.2)]',
+      icon: <Info className="w-5 h-5 animate-icon-pop" />,
       accentGlow: 'before:absolute before:inset-0 before:rounded-2xl before:ring-1 before:ring-blue-400/30',
     },
   }[type];
@@ -117,9 +117,9 @@ const ToastItem: React.FC<ToastItemProps> = ({ notification, onClose }) => {
     <div
       onMouseEnter={() => setIsPaused(true)}
       onMouseLeave={() => setIsPaused(false)}
-      className={`pointer-events-auto relative overflow-hidden rounded-2xl border w-full max-w-md ${theme.border} ${theme.bg} ${theme.shadow} backdrop-blur-md p-4 transition-all duration-200 select-none ${
+      className={`pointer-events-auto relative overflow-hidden rounded-2xl border ${theme.border} ${theme.bg} ${theme.shadow} backdrop-blur-md p-4 transition-all duration-200 select-none ${
         isClosing
-          ? 'opacity-0 -translate-y-4 scale-95 duration-200'
+          ? 'opacity-0 translate-x-12 scale-95 duration-200'
           : 'animate-toast-in'
       }`}
     >
@@ -188,10 +188,10 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
   return (
     <NotificationContext.Provider value={{ notifications, notify, removeNotification }}>
       {children}
-      {/* Toast Notification Container Centered in the Middle of the Page */}
+      {/* Toast Notification Container with High Z-Index & Clean Positioning */}
       <div
         aria-live="assertive"
-        className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-3 max-w-md w-full mx-auto px-4 pointer-events-none select-none"
+        className="fixed top-5 right-5 z-50 flex flex-col gap-2.5 max-w-sm w-full pointer-events-none"
       >
         {notifications.map((n) => (
           <ToastItem key={n.id} notification={n} onClose={removeNotification} />

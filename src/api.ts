@@ -1,3 +1,6 @@
+import { db } from './firebase';
+import { collection, getDocs } from 'firebase/firestore';
+
 const API_BASE = '/api';
 
 export function getAuthToken(): string | null {
@@ -141,14 +144,78 @@ export const api = {
     }),
   getSchools: () => request<string[]>('/products/schools'),
 
-  getPortalProducts: (params?: { school?: string; category?: string; search?: string }) => {
-    const query = new URLSearchParams();
-    if (params?.school && params.school !== "ALL") query.append("school", params.school);
-    if (params?.category && params.category !== "ALL") query.append("category", params.category);
-    if (params?.search) query.append("search", params.search);
-    return request<any[]>(`/portal/products?${query.toString()}`);
+  getPortalProducts: async (params?: { school?: string; category?: string; search?: string }) => {
+    try {
+      const query = new URLSearchParams();
+      if (params?.school && params.school !== "ALL") query.append("school", params.school);
+      if (params?.category && params.category !== "ALL") query.append("category", params.category);
+      if (params?.search) query.append("search", params.search);
+      return await request<any[]>(`/portal/products?${query.toString()}`);
+    } catch (apiErr) {
+      console.warn('[Portal API Fallback] API request failed (404/Network). Querying Firestore directly...', apiErr);
+      try {
+        const querySnapshot = await getDocs(collection(db, 'products'));
+        let products: any[] = [];
+        querySnapshot.forEach((docSnap) => {
+          products.push(docSnap.data());
+        });
+        if (products.length === 0) {
+          const invSnap = await getDocs(collection(db, 'inventory'));
+          const prodMap = new Map();
+          invSnap.forEach((invDoc) => {
+            const d = invDoc.data();
+            if (!prodMap.has(d.productId)) {
+              prodMap.set(d.productId, {
+                id: d.productId,
+                name: d.productName,
+                school: d.school,
+                category: d.category,
+                imageUrl: d.imageUrl,
+                active: true,
+                variants: [{ id: d.variantId, sku: d.sku, size: d.size, sellingPrice: d.sellingPrice, branchStock: { [d.branchId]: d.currentStock } }]
+              });
+            } else {
+              const p = prodMap.get(d.productId);
+              p.variants.push({ id: d.variantId, sku: d.sku, size: d.size, sellingPrice: d.sellingPrice, branchStock: { [d.branchId]: d.currentStock } });
+            }
+          });
+          products = Array.from(prodMap.values());
+        }
+
+        if (params?.school && params.school !== 'ALL') {
+          products = products.filter(p => (p.school || '').toLowerCase().includes(params.school!.toLowerCase()));
+        }
+        if (params?.category && params.category !== 'ALL') {
+          products = products.filter(p => p.category === params.category || p.garmentType === params.category);
+        }
+        if (params?.search) {
+          const q = params.search.toLowerCase();
+          products = products.filter(p => (p.name || '').toLowerCase().includes(q) || (p.school || '').toLowerCase().includes(q));
+        }
+        return products;
+      } catch (fsErr) {
+        console.error('[Portal Firestore Fallback Error]', fsErr);
+        throw apiErr;
+      }
+    }
   },
-  getPortalSchools: () => request<string[]>('/portal/schools'),
+  getPortalSchools: async () => {
+    try {
+      return await request<string[]>('/portal/schools');
+    } catch {
+      try {
+        const querySnapshot = await getDocs(collection(db, 'products'));
+        const schoolsSet = new Set<string>();
+        querySnapshot.forEach((docSnap) => {
+          const d = docSnap.data();
+          if (d.school) schoolsSet.add(String(d.school).trim());
+        });
+        return Array.from(schoolsSet).sort();
+      } catch {
+        return [];
+      }
+    }
+  },
   getPortalOrders: (email: string) => request<any[]>(`/portal/orders?email=${encodeURIComponent(email)}`),
   checkoutPortal: (data: any) =>
     request<{ sale: any; receipt: any; qrCodeDataUrl: string }>('/portal/checkout', {
