@@ -506,7 +506,7 @@ export const PortalView: React.FC = () => {
       {/* ==================================================== */}
       {/* MAIN CONTENT: POS LAYOUT WITH CATALOG & CART         */}
       {/* ==================================================== */}
-      <main className="max-w-7xl mx-auto w-full px-4 pt-32 sm:pt-40 pb-28 md:pb-32 flex-1 flex flex-col lg:flex-row gap-5 items-start">
+      <main className="max-w-7xl mx-auto w-full px-4 pt-40 sm:pt-48 pb-28 md:pb-32 flex-1 flex flex-col lg:flex-row gap-5 items-start">
         {/* LEFT COLUMN: FILTERS & PRODUCT GRID */}
         <section
           className={`flex-1 flex flex-col space-y-4 w-full min-w-0 ${
