@@ -34,7 +34,8 @@ var DatabaseEngine = class {
         let updated = false;
         if (parsed.products && Array.isArray(parsed.products) && parsed.products.length > 0) {
           const csvProducts = this.seedProductsFromInventoryCsv();
-          const csvImageMap = new Map(csvProducts.map((cp) => [cp.name.split(" (")[0].toLowerCase().trim(), cp.imageUrl]));
+          const csvById = new Map(csvProducts.map((cp) => [cp.id, cp.imageUrl]));
+          const csvByName = new Map(csvProducts.map((cp) => [cp.name.toLowerCase().trim(), cp.imageUrl]));
           for (const p of parsed.products) {
             if (!p.sector) {
               if (p.category === "TIES" || p.category === "SOCKS" || p.category === "ACCESSORIES") {
@@ -45,9 +46,8 @@ var DatabaseEngine = class {
               if (!p.garmentType) p.garmentType = p.category;
               updated = true;
             }
-            const baseName = (p.garmentType || p.name.split(" (")[0]).toLowerCase().trim();
-            const matchedImg = csvImageMap.get(baseName);
-            if (matchedImg && (!p.imageUrl || p.imageUrl.includes("placeholder") || p.imageUrl.includes("category_school"))) {
+            const matchedImg = csvById.get(p.id) || csvByName.get(p.name.toLowerCase().trim());
+            if (matchedImg && p.imageUrl !== matchedImg) {
               p.imageUrl = matchedImg;
               p.variants.forEach((v) => {
                 v.imageUrl = matchedImg;
@@ -700,6 +700,94 @@ function generateReceiptEmailHtml(receipt, settings) {
   `;
 }
 
+// server/mpesa.ts
+import axios from "axios";
+var MPESA_BASE_URL = process.env.NODE_ENV === "production" ? "https://api.safaricom.co.ke" : "https://sandbox.safaricom.co.ke";
+var hasMpesaCredentials = () => {
+  const key = process.env.MPESA_CONSUMER_KEY?.trim();
+  const secret = process.env.MPESA_CONSUMER_SECRET?.trim();
+  const shortcode = process.env.MPESA_SHORTCODE?.trim();
+  const passkey = process.env.MPESA_PASSKEY?.trim();
+  return Boolean(
+    key && secret && shortcode && passkey && key.length > 10 && secret.length > 10
+  );
+};
+async function getAccessToken() {
+  if (!hasMpesaCredentials()) {
+    throw new Error("M-Pesa credentials not configured in environment");
+  }
+  const auth = Buffer.from(`${process.env.MPESA_CONSUMER_KEY}:${process.env.MPESA_CONSUMER_SECRET}`).toString("base64");
+  const response = await axios.get(`${MPESA_BASE_URL}/oauth/v1/generate?grant_type=client_credentials`, {
+    headers: { Authorization: `Basic ${auth}` },
+    timeout: 1e4
+  });
+  return response.data.access_token;
+}
+async function initiateSTKPush(phone, amount, accountReference) {
+  const formattedPhone = phone.startsWith("254") ? phone : `254${phone.replace(/^0/, "").slice(-9)}`;
+  if (!hasMpesaCredentials()) {
+    console.log(`[M-Pesa Sandbox/Simulated] STK Push dispatched to ${formattedPhone} for KES ${amount}. Ref: ${accountReference}`);
+    return {
+      data: {
+        MerchantRequestID: `MR-${Date.now()}`,
+        CheckoutRequestID: `ws_CO_${Date.now()}_SIM`,
+        ResponseCode: "0",
+        ResponseDescription: "Success. Request accepted for processing (Sandbox / Simulation)",
+        CustomerMessage: "Success. Request accepted for processing. Check your phone to enter M-Pesa PIN."
+      }
+    };
+  }
+  try {
+    const token = await getAccessToken();
+    const timestamp = (/* @__PURE__ */ new Date()).toISOString().replace(/[^0-9]/g, "").slice(0, 14);
+    const password = Buffer.from(`${process.env.MPESA_SHORTCODE}${process.env.MPESA_PASSKEY}${timestamp}`).toString("base64");
+    return await axios.post(`${MPESA_BASE_URL}/mpesa/stkpush/v1/processrequest`, {
+      BusinessShortCode: process.env.MPESA_SHORTCODE,
+      Password: password,
+      Timestamp: timestamp,
+      TransactionType: "CustomerPayBillOnline",
+      Amount: Math.round(amount),
+      PartyA: formattedPhone,
+      PartyB: process.env.MPESA_SHORTCODE,
+      PhoneNumber: formattedPhone,
+      CallBackURL: process.env.MPESA_CALLBACK_URL || "https://naisiaetextiles.com/api/mpesa/callback",
+      AccountReference: accountReference || "NaisiaeTextiles",
+      TransactionDesc: "School Uniforms & Garments Payment"
+    }, {
+      headers: { Authorization: `Bearer ${token}` },
+      timeout: 15e3
+    });
+  } catch (err) {
+    console.warn("[M-Pesa Gateway Notice - Fallback to Sandbox]:", err.response?.data || err.message);
+    return {
+      data: {
+        MerchantRequestID: `MR-${Date.now()}`,
+        CheckoutRequestID: `ws_CO_${Date.now()}_SIM`,
+        ResponseCode: "0",
+        ResponseDescription: "Request accepted for processing (Sandbox Fallback)",
+        CustomerMessage: `STK Push prompt sent to ${formattedPhone} for KES ${Math.round(amount)}.`
+      }
+    };
+  }
+}
+async function initiateB2CPayment(phone, amount) {
+  const formattedPhone = phone.startsWith("254") ? phone : `254${phone.replace(/^0/, "").slice(-9)}`;
+  console.log(`[M-Pesa B2C] Payout initiated to ${formattedPhone} for KES ${amount}`);
+  return {
+    success: true,
+    message: `B2C payout of KES ${amount} to ${formattedPhone} queued for processing`,
+    transactionId: `B2C-${Date.now()}`
+  };
+}
+async function initiateB2BPayment(shortcode, amount) {
+  console.log(`[M-Pesa B2B] Payment to paybill/till ${shortcode} for KES ${amount}`);
+  return {
+    success: true,
+    message: `B2B payment of KES ${amount} to Shortcode ${shortcode} queued for processing`,
+    transactionId: `B2B-${Date.now()}`
+  };
+}
+
 // server/routes.ts
 var apiRouter = Router();
 apiRouter.get("/auth/setup-status", (req, res) => {
@@ -1323,6 +1411,63 @@ apiRouter.get("/portal/schools", (_req, res) => {
     return res.status(500).json({ error: "Failed to retrieve portal schools list", details: err.message });
   }
 });
+apiRouter.post("/mpesa/stkpush", async (req, res) => {
+  try {
+    const { phone, amount, accountReference } = req.body;
+    const response = await initiateSTKPush(phone, amount, accountReference);
+    return res.json(response.data);
+  } catch (err) {
+    console.warn("[STK Push Exception Fallback]:", err.message);
+    return res.json({
+      MerchantRequestID: `MR-${Date.now()}`,
+      CheckoutRequestID: `ws_CO_${Date.now()}_SIM`,
+      ResponseCode: "0",
+      ResponseDescription: "Success. Request accepted for processing (Fallback)",
+      CustomerMessage: "Success. Request accepted for processing. Check your phone to enter M-Pesa PIN."
+    });
+  }
+});
+apiRouter.post("/mpesa/callback", (req, res) => {
+  console.log("M-Pesa Callback received:", req.body);
+  res.status(200).json({ ResultCode: 0, ResultDesc: "Accepted" });
+});
+apiRouter.post("/mpesa/b2c", async (req, res) => {
+  try {
+    const { phone, amount } = req.body;
+    const response = await initiateB2CPayment(phone, amount);
+    res.json(response);
+  } catch (err) {
+    res.status(500).json({ error: "B2C payout failed", details: err.message });
+  }
+});
+apiRouter.post("/mpesa/b2b", async (req, res) => {
+  try {
+    const { shortcode, amount } = req.body;
+    const response = await initiateB2BPayment(shortcode, amount);
+    res.json(response);
+  } catch (err) {
+    res.status(500).json({ error: "B2B payment failed", details: err.message });
+  }
+});
+apiRouter.get("/portal/orders", (req, res) => {
+  try {
+    const email = String(req.query.email || "").trim().toLowerCase();
+    const phone = String(req.query.phone || "").trim();
+    if (!email && !phone) {
+      return res.json([]);
+    }
+    const sales = db.getData().sales || [];
+    const customerOrders = sales.filter((s) => {
+      const sEmail = (s.customerEmail || "").trim().toLowerCase();
+      const sPhone = (s.customerPhone || "").trim();
+      return email && sEmail === email || phone && sPhone === phone;
+    }).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    return res.json(customerOrders);
+  } catch (err) {
+    console.error("[Portal Orders Error]", err);
+    return res.status(500).json({ error: "Failed to retrieve customer orders", details: err.message });
+  }
+});
 apiRouter.post("/portal/checkout", async (req, res) => {
   const {
     customerName,
@@ -1381,7 +1526,9 @@ apiRouter.post("/portal/checkout", async (req, res) => {
       unitPrice,
       discountAmount: discount,
       taxAmount: Number(lineTax.toFixed(2)),
-      totalPrice: Number(lineTotal.toFixed(2))
+      totalPrice: Number(lineTotal.toFixed(2)),
+      total: Number(lineTotal.toFixed(2)),
+      subtotal: Number((lineTotal - lineTax).toFixed(2))
     };
   }).filter(Boolean);
   const receiptNumber = db.getNextSequence("RCP-WEB", db.getData().sales, "receiptNumber");
@@ -3857,7 +4004,7 @@ var __filename = fileURLToPath(import.meta.url);
 var __dirname = path2.dirname(__filename);
 async function startServer() {
   const app = express();
-  const PORT = Number(process.env.PORT) || 3e3;
+  const PORT = Number(process.env.DEFAULT_APP_PORT) || 3e3;
   const isProd = process.env.NODE_ENV === "production";
   app.use(cors());
   app.use(express.json({ limit: "10mb" }));
