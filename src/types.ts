@@ -419,9 +419,13 @@ export interface SystemSettings {
   smtpPort: number;
   smtpUser: string;
   smtpSecure: boolean;
+  smtpPassword?: string;
+  emailProvider?: 'ZOHO' | 'CUSTOM_SMTP' | 'RESEND';
+  resendApiKey?: string;
   lowStockNotificationThreshold: number;
   receiptFooterMessage: string;
   logoUrl?: string;
+  isSmtpConfigured?: boolean;
 }
 
 export interface DashboardMetrics {

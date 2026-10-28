@@ -20,7 +20,7 @@ export const CustomerLayout: React.FC<CustomerLayoutProps> = ({ children }) => {
   return (
     <div className="min-h-screen bg-[#F4F4F4] text-slate-900 flex flex-col font-sans select-none">
       {/* Shared Portal Header */}
-      <header className="w-full relative bg-gradient-to-r from-[#02066F] via-[#030A91] to-[#0412B3] text-white shadow-md overflow-hidden">
+      <header className="w-full sticky top-0 z-40 bg-gradient-to-r from-[#02066F] via-[#030A91] to-[#0412B3] text-white shadow-md overflow-hidden">
         <div className="scanner-beam" />
         <div className="max-w-7xl mx-auto px-4 py-3.5 sm:py-6 md:py-8 flex items-center justify-between gap-3 relative z-10">
           <div className="flex items-center space-x-3 sm:space-x-5 min-w-0">

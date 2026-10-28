@@ -150,6 +150,11 @@ export const api = {
   },
   getPortalSchools: () => request<string[]>('/portal/schools'),
   getPortalOrders: (email: string) => request<any[]>(`/portal/orders?email=${encodeURIComponent(email)}`),
+  sendCustomerWelcome: (name: string, email: string) =>
+    request<{ success: boolean; result?: any }>('/portal/customer-welcome', {
+      method: 'POST',
+      body: JSON.stringify({ name, email }),
+    }),
   checkoutPortal: (data: any) =>
     request<{ sale: any; receipt: any; qrCodeDataUrl: string }>('/portal/checkout', {
       method: "POST",
@@ -396,4 +401,10 @@ export const api = {
   },
   getEmails: () => request<any[]>('/emails'),
   testEmail: (to?: string) =>
-    request<any>('/emails/test', { method: 'POST', body: JSON.stringify({ to }) }),};
+    request<any>('/emails/test', { method: 'POST', body: JSON.stringify({ to }) }),
+  getVapidPublicKey: () => request<{ publicKey: string }>('/push/vapid-key'),
+  subscribePush: (subscription: any) =>
+    request<{ success: boolean }>('/push/subscribe', { method: 'POST', body: JSON.stringify(subscription) }),
+  broadcastPush: (payload: { title: string; body: string; url?: string }) =>
+    request<{ success: boolean; sentCount: number }>('/push/broadcast', { method: 'POST', body: JSON.stringify(payload) }),
+};

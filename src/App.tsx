@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { NotificationProvider } from './context/NotificationContext';
+import { ErrorBoundary } from './components/ErrorBoundary';
 import { Layout } from './components/Layout';
 import { LoginView } from './views/LoginView';
 import { DashboardView } from './views/DashboardView';
@@ -72,10 +73,12 @@ const AppContent: React.FC = () => {
     if (isLoading) {
       return (
         <div className="min-h-screen bg-[#F4F4F4] flex flex-col items-center justify-center space-y-3">
-          <div className="w-12 h-12 rounded-2xl bg-[#030A91] text-[#FACB00] flex items-center justify-center font-black text-xl shadow-lg animate-bounce">
-            NT
-          </div>
-          <p className="text-xs font-bold text-slate-700 tracking-wider uppercase">
+          <img
+            src="https://plain-eeur-prod-public.komododecks.com/202605/07/1sm3ITZIdJmYjyTcxmiP/image.png"
+            alt="Naisiae Textiles Logo"
+            className="w-16 h-16 object-contain animate-bounce drop-shadow-md"
+          />
+          <p className="text-xs font-bold text-slate-800 tracking-wider uppercase">
             Loading Naisiae ERP...
           </p>
         </div>
@@ -136,10 +139,12 @@ const AppContent: React.FC = () => {
 };
 export default function App() {
   return (
-    <AuthProvider>
-      <NotificationProvider>
-        <AppContent />
-      </NotificationProvider>
-    </AuthProvider>
+    <ErrorBoundary>
+      <AuthProvider>
+        <NotificationProvider>
+          <AppContent />
+        </NotificationProvider>
+      </AuthProvider>
+    </ErrorBoundary>
   );
 }

@@ -189,6 +189,12 @@ export const PortalView: React.FC = () => {
         title: "Signed In with Google",
         message: `Welcome ${result.user.displayName || "Customer"}! You can now checkout seamlessly.`,
       });
+
+      // Dispatch welcome email if email is present
+      if (result.user.email) {
+        api.sendCustomerWelcome(result.user.displayName || "Customer", result.user.email)
+          .catch((e) => console.warn("Welcome email notice:", e));
+      }
     } catch (err: any) {
       if (err.code !== "auth/popup-closed-by-user") {
         notify({ type: "ERROR", title: "Sign-In Failed", message: err.message });
@@ -234,12 +240,13 @@ export const PortalView: React.FC = () => {
   }, [products, selectedSchool, selectedCategory, searchQuery]);
 
   // Cart operations
-  const handleAddToCart = (product: Product, variant: ProductVariant) => {
+  const handleAddToCart = (product: Product, variant: ProductVariant, customColor?: string) => {
+    const selectedColor = customColor || variant.color || "Standard";
     setCart((prev) => {
-      const existing = prev.find((item) => item.variantId === variant.id);
+      const existing = prev.find((item) => item.variantId === variant.id && (item.color || "Standard") === selectedColor);
       if (existing) {
         return prev.map((item) =>
-          item.variantId === variant.id ? { ...item, quantity: item.quantity + 1 } : item
+          item.variantId === variant.id && (item.color || "Standard") === selectedColor ? { ...item, quantity: item.quantity + 1 } : item
         );
       }
       return [
@@ -251,7 +258,7 @@ export const PortalView: React.FC = () => {
           sku: variant.sku,
           school: product.school,
           size: variant.size,
-          color: variant.color || "Standard",
+          color: selectedColor,
           unitPrice: variant.sellingPrice,
           quantity: 1,
           imageUrl: variant.imageUrl || product.imageUrl,
@@ -262,7 +269,7 @@ export const PortalView: React.FC = () => {
     notify({
       type: "SUCCESS",
       title: "Added to Cart",
-      message: `${product.name} (Size ${variant.size}) added to your cart.`,
+      message: `${product.name} (${selectedColor} • Size ${variant.size}) added to your cart.`,
     });
     setActiveProductForVariant(null);
   };
@@ -396,7 +403,7 @@ export const PortalView: React.FC = () => {
       {/* ==================================================== */}
       {/* TALL HEADER WITH CURVED SINGLE WAVE BOTTOM EDGE      */}
       {/* ==================================================== */}
-      <header className="w-full relative bg-gradient-to-r from-[#02066F] via-[#030A91] to-[#0412B3] text-white shadow-md overflow-hidden">
+      <header className="fixed top-0 left-0 right-0 z-50 bg-gradient-to-r from-[#02066F] via-[#030A91] to-[#0412B3] text-white shadow-md overflow-hidden">
         <div className="scanner-beam" />
         {/* Double-height Inner Content Bar */}
         {/* Content Bar */}
@@ -499,7 +506,7 @@ export const PortalView: React.FC = () => {
       {/* ==================================================== */}
       {/* MAIN CONTENT: POS LAYOUT WITH CATALOG & CART         */}
       {/* ==================================================== */}
-      <main className="max-w-7xl mx-auto w-full px-4 py-4 sm:py-6 pb-28 md:pb-32 flex-1 flex flex-col lg:flex-row gap-5 items-start">
+      <main className="max-w-7xl mx-auto w-full px-4 pt-32 sm:pt-40 pb-28 md:pb-32 flex-1 flex flex-col lg:flex-row gap-5 items-start">
         {/* LEFT COLUMN: FILTERS & PRODUCT GRID */}
         <section
           className={`flex-1 flex flex-col space-y-4 w-full min-w-0 ${
@@ -513,6 +520,7 @@ export const PortalView: React.FC = () => {
               <div className="relative flex-1">
                 <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
                 <input
+                  id="search-input"
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
@@ -533,6 +541,7 @@ export const PortalView: React.FC = () => {
               <div className="flex gap-2 w-full sm:w-auto">
                 <div className="flex-1 sm:w-64">
                   <select
+                    id="schools-selector"
                     value={selectedSchool}
                     onChange={(e) => setSelectedSchool(e.target.value)}
                     className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#030A91]"

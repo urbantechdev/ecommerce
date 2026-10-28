@@ -130,7 +130,7 @@ export const Layout: React.FC<LayoutProps> = ({ currentView, onNavigate, childre
       {/* ==================================================== */}
       {/* FULL-WIDTH TOP HEADER BAR (PASSES ABOVE SIDEBAR)    */}
       {/* ==================================================== */}
-      <header className="sticky top-0 z-30 bg-gradient-to-r from-[#02066F] via-[#030A91] to-[#0412B3] text-white shadow-md w-full">
+      <header className="fixed top-0 left-0 right-0 z-50 bg-gradient-to-r from-[#02066F] via-[#030A91] to-[#0412B3] text-white shadow-md w-full">
         <div className="h-16 px-3.5 sm:px-4 md:px-8 flex items-center justify-between">
           {/* Left: Brand Identity & Active Branch */}
           <div className="flex items-center space-x-2.5 sm:space-x-4">
@@ -219,22 +219,22 @@ export const Layout: React.FC<LayoutProps> = ({ currentView, onNavigate, childre
             </div>
           </div>
 
-          {/* Right Header Controls: ONLY ICONS AT THE HEADER */}
+          {/* Right Header Controls: Mobile only has hamburger; other controls hidden on mobile */}
           <div className="flex items-center space-x-1.5 sm:space-x-2">
-            {/* 1. Quick POS Launch (Icon Only) */}
+            {/* 1. Quick POS Launch (Desktop Only - accessible via hamburger menu on mobile) */}
             <button
               onClick={() => onNavigate('pos')}
               title="Launch POS Terminal"
-              className="p-2 sm:p-2.5 rounded-xl bg-[#FACB00] text-[#030A91] hover:bg-yellow-400 active:scale-95 transition-all shadow-sm"
+              className="hidden md:flex p-2 sm:p-2.5 rounded-xl bg-[#FACB00] text-[#030A91] hover:bg-yellow-400 active:scale-95 transition-all shadow-sm items-center justify-center cursor-pointer"
               aria-label="Launch POS"
             >
               <ShoppingCart className="w-5 h-5 text-[#030A91]" />
             </button>
 
-            {/* 2. Low Stock Alerts (Icon Only) */}
+            {/* 2. Low Stock Alerts (Desktop Only - accessible via hamburger menu on mobile) */}
             <button
               onClick={() => onNavigate('inventory')}
-              className="relative p-2 sm:p-2.5 rounded-xl bg-white/10 hover:bg-white/20 active:scale-95 text-white transition-all border border-white/15"
+              className="hidden md:flex relative p-2 sm:p-2.5 rounded-xl bg-white/10 hover:bg-white/20 active:scale-95 text-white transition-all border border-white/15 items-center justify-center cursor-pointer"
               title={`Low Stock Alerts (${lowStockCount} items)`}
               aria-label="Low Stock Alerts"
             >
@@ -244,34 +244,34 @@ export const Layout: React.FC<LayoutProps> = ({ currentView, onNavigate, childre
               )}
             </button>
 
-            {/* 3. User Avatar Profile Icon (Icon Only, opens mobile drawer or displays tooltip) */}
+            {/* 3. User Avatar Profile Icon (Desktop Only - inside drawer on mobile) */}
             <div
               title={`${user?.name} (${user?.role})`}
               onClick={() => setMobileMenuOpen(true)}
-              className="w-9 h-9 rounded-xl bg-[#FACB00] text-[#030A91] flex items-center justify-center font-black text-sm shadow-xs cursor-pointer active:scale-95 transition-transform"
+              className="hidden md:flex w-9 h-9 rounded-xl bg-[#FACB00] text-[#030A91] items-center justify-center font-black text-sm shadow-xs cursor-pointer active:scale-95 transition-transform"
               aria-label="User Profile"
             >
               {user?.name.charAt(0)}
             </div>
 
-            {/* 4. Logout Session Icon Button */}
+            {/* 4. Logout Session Icon Button (Desktop Only - inside drawer on mobile) */}
             <button
               onClick={logout}
               title="Logout Session"
-              className="p-2 sm:p-2.5 rounded-xl bg-white/10 hover:bg-rose-500/25 active:scale-95 text-white/80 hover:text-white transition-all border border-white/15"
+              className="hidden md:flex p-2 sm:p-2.5 rounded-xl bg-white/10 hover:bg-rose-500/25 active:scale-95 text-white/80 hover:text-white transition-all border border-white/15 items-center justify-center cursor-pointer"
               aria-label="Logout"
             >
               <LogOut className="w-5 h-5" />
             </button>
 
-            {/* 5. Hamburger Menu Icon Button */}
+            {/* 5. Hamburger Menu Icon Button: On mobile, ONLY this icon is visible in header bar with white background */}
             <button
               onClick={() => setMobileMenuOpen(true)}
-              className="p-2 sm:p-2.5 rounded-xl bg-white/15 hover:bg-white/25 active:scale-95 text-[#FACB00] transition-all border border-white/20 shadow-sm"
+              className="p-2 sm:p-2.5 rounded-xl bg-white hover:bg-slate-100 active:scale-95 text-[#030A91] transition-all border border-slate-200 shadow-sm flex items-center justify-center cursor-pointer"
               title="Open Navigation Menu"
               aria-label="Open Navigation Menu"
             >
-              <Menu className="w-5 h-5 text-[#FACB00]" />
+              <Menu className="w-5 h-5 text-[#030A91]" />
             </button>
           </div>
         </div>
@@ -303,7 +303,7 @@ export const Layout: React.FC<LayoutProps> = ({ currentView, onNavigate, childre
       {/* ==================================================== */}
       {/* WORKSPACE: SIDEBAR & MAIN BODY (BELOW THE HEADER)    */}
       {/* ==================================================== */}
-      <div className="flex-1 flex min-w-0">
+      <div className="flex-1 flex min-w-0 pt-20 sm:pt-24">
         {/* ==================================================== */}
         {/* DESKTOP SIDEBAR (PASSES BELOW HEADER BAR)            */}
         {/* ==================================================== */}
@@ -381,7 +381,7 @@ export const Layout: React.FC<LayoutProps> = ({ currentView, onNavigate, childre
       {/* ==================================================== */}
       {/* MOBILE BOTTOM NAVIGATION BAR (NATIVE APP STYLE)      */}
       {/* ==================================================== */}
-      <nav className="md:hidden fixed bottom-0 inset-x-0 z-40 bg-white/95 backdrop-blur-md border-t border-slate-200/90 shadow-[0_-4px_20px_rgba(0,0,0,0.06)] select-none">
+      <nav className="md:hidden fixed bottom-0 inset-x-0 z-40 bg-white/95 backdrop-blur-md border-t border-slate-200/90 shadow-[0_-4px_20px_rgba(0,0,0,0.06)] select-none overflow-visible">
         <div className="max-w-md mx-auto px-2 py-1.5 flex items-center justify-around">
           {/* 1. Dashboard / Home */}
           <button
@@ -436,10 +436,10 @@ export const Layout: React.FC<LayoutProps> = ({ currentView, onNavigate, childre
             </span>
           </button>
 
-          {/* 3. POS Terminal (Elevated Center Button) */}
+          {/* 3. POS Terminal (Elevated Center Button - guaranteed top z-index) */}
           <button
             onClick={() => handleSelectNav('pos')}
-            className="flex flex-col items-center justify-center -mt-4 group active:scale-95 transition-transform"
+            className="flex flex-col items-center justify-center -mt-6 relative z-20 group active:scale-95 transition-transform"
           >
             <div
               className={`w-12 h-12 rounded-2xl flex items-center justify-center shadow-lg transition-all ${

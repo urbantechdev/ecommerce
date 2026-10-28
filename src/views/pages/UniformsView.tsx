@@ -30,7 +30,7 @@ export const UniformsView: React.FC<UniformsViewProps> = ({ type }) => {
     return false;
   });
 
-  const handleAddToCart = (product: Product) => {
+  const handleAddToCart = (product: Product, _variant?: any, _chosenColor?: string) => {
     // Redirect to portal with this product selected to finalize cart addition
     window.location.href = `/portal?product=${product.id}`;
   };
