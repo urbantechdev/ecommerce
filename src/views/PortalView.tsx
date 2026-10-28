@@ -38,7 +38,8 @@ import {
   Phone
 } from "lucide-react";
 import { signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut, User } from "firebase/auth";
-import { auth } from "../firebase";
+import { auth, db } from "../firebase";
+import { doc, setDoc } from "firebase/firestore";
 import { ReceiptModal } from "../components/ReceiptModal";
 import { MpesaStkWaitingModal } from "../components/MpesaStkWaitingModal";
 import { StatementPreviewModal } from "../components/StatementPreviewModal";
@@ -374,6 +375,42 @@ export const PortalView: React.FC = () => {
       setIsReceiptModalOpen(true);
       setCart([]);
       setMpesaPhone("");
+
+      // Real-time Firestore sync for Admin Analytics & Customer Records
+      try {
+        const nowIso = new Date().toISOString();
+        const saleId = res.sale?.id || `sale-${Date.now()}`;
+        
+        // 1. Save sale record to Firestore /sales
+        await setDoc(doc(db, 'sales', saleId), {
+          ...res.sale,
+          createdAt: nowIso,
+          syncedFrom: 'CustomerPortal',
+        }, { merge: true });
+
+        // 2. Save customer analytics record to /customer_analytics
+        if (currentUser?.email) {
+          const custId = currentUser.email.replace(/[^a-zA-Z0-9_-]/g, '_');
+          await setDoc(doc(db, 'customer_analytics', custId), {
+            email: currentUser.email,
+            name: currentUser.displayName || 'Online Customer',
+            lastOrderDate: nowIso,
+            totalOrders: (window as any)._custOrderCount ? (window as any)._custOrderCount + 1 : 1,
+            totalSpent: (window as any)._custTotalSpent ? (window as any)._custTotalSpent + totalAmount : totalAmount,
+          }, { merge: true });
+        }
+
+        // 3. Update realtime system analytics counter in /realtime_analytics/summary
+        const analyticsRef = doc(db, 'realtime_analytics', 'summary');
+        await setDoc(analyticsRef, {
+          lastSaleAmount: totalAmount,
+          lastSaleTime: nowIso,
+          totalSalesCount: (window as any)._systemSalesCount ? (window as any)._systemSalesCount + 1 : 1,
+          updatedAt: nowIso,
+        }, { merge: true });
+      } catch (firestoreSyncErr) {
+        console.warn('Real-time Firestore analytics sync warning:', firestoreSyncErr);
+      }
 
       notify({
         type: "SUCCESS",
@@ -1013,14 +1050,6 @@ export const PortalView: React.FC = () => {
                 <span>Cart ({totalQuantity})</span>
               </button>
 
-              <a
-                href="/erp"
-                className="hidden xl:flex items-center space-x-1.5 px-3 py-2 bg-white hover:bg-slate-50 border border-slate-200/90 rounded-xl text-xs font-bold text-slate-700 hover:text-[#030A91] transition-all shadow-2xs"
-                title="ERP Staff Access"
-              >
-                <Lock className="w-3.5 h-3.5 text-slate-500" />
-                <span>Staff Portal</span>
-              </a>
             </div>
 
             {/* User status info */}
@@ -1556,18 +1585,18 @@ export const PortalView: React.FC = () => {
                 </p>
               </div>
 
-              {/* Staff / Admin ERP Access Link */}
+              {/* Management Portal Access Link */}
               <div className="pt-2 border-t border-slate-200">
                 <a
                   href="/erp"
                   className="w-full flex items-center justify-center space-x-2 py-3 px-4 rounded-xl bg-gradient-to-r from-[#02066F] to-[#030A91] text-[#FACB00] text-xs font-black shadow-md hover:opacity-95 active:scale-98 transition-all"
                 >
                   <Lock className="w-4 h-4" />
-                  <span>Staff & Admin ERP Portal</span>
+                  <span>Management Portal</span>
                   <ArrowRight className="w-3.5 h-3.5 ml-1" />
                 </a>
                 <p className="text-[10px] text-slate-400 text-center mt-1.5">
-                  Restricted to authorized cashiers, accountants, and managers
+                  Restricted to authorized organization personnel
                 </p>
               </div>
 

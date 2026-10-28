@@ -10,7 +10,7 @@ interface AuthContextType {
   isLoading: boolean;
   login: (credentials: { email: string; password: string }) => Promise<void>;
   loginAsAdmin: () => Promise<void>;
-  loginWithGoogle: (googleData?: { email?: string; name?: string }) => Promise<void>;
+  loginWithGoogle: (googleData?: { email?: string; name?: string; role?: string }) => Promise<void>;
   loginWithPin: (credentials: { userId: string; pin: string }) => Promise<void>;
   logout: () => Promise<void>;
   switchBranch: (branchId: string) => Promise<void>;
@@ -78,32 +78,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const loginAsAdmin = async () => {
-    setIsLoading(true);
-    try {
-      const { token, user: loggedInUser } = await api.googleLogin({
-        email: 'optimumengineeringke@gmail.com',
-        name: 'Optimum Engineering',
-      });
-      setAuthToken(token);
-      setUser(loggedInUser);
-      setActiveBranchId(loggedInUser.branchId || 'all');
-      fetchBranches(); // Trigger in background
-    } finally {
-      setIsLoading(false);
-    }
+    throw new Error('Direct admin login bypass has been removed for enterprise security. Please sign in with email and password.');
   };
 
-  const loginWithGoogle = async (googleData?: { email?: string; name?: string }) => {
+  const loginWithGoogle = async (googleData?: { email?: string; name?: string; role?: string }) => {
     setIsLoading(true);
     try {
-      const { token, user: loggedInUser } = await api.googleLogin(googleData || {
-        email: 'optimumengineeringke@gmail.com',
-        name: 'Optimum Engineering',
-      });
+      const { token, user: loggedInUser } = await api.googleLogin(googleData || {});
       setAuthToken(token);
       setUser(loggedInUser);
       setActiveBranchId(loggedInUser.branchId || 'all');
-      fetchBranches(); // Trigger in background
+      await fetchBranches();
     } finally {
       setIsLoading(false);
     }

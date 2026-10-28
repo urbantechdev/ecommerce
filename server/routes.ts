@@ -2,7 +2,7 @@ import { Router, Response } from 'express';
 import bcrypt from 'bcryptjs';
 import { v4 as uuidv4 } from 'uuid';
 import { db, User, Product, InventoryMovement, StockTransfer, Sale, Quotation, Invoice, PaymentReceipt, Customer, Supplier, PurchaseOrder, Expense } from './db.js';
-import { requireAuth, requireRoles, createSession, revokeSession, AuthenticatedRequest } from './auth.js';
+import { requireAuth, requireRoles, createSession, revokeSession, checkRateLimit, recordFailedAttempt, resetRateLimit, AuthenticatedRequest } from './auth.js';
 import { fiscalizeTransaction, enqueueKraRetry, kraRetryQueue } from './kra.js';
 import { sendEmail, generateInvoiceEmailHtml, generateReceiptEmailHtml, generateQuotationEmailHtml, emailLogs } from './email.js';
 import { initiateSTKPush, initiateB2CPayment, initiateB2BPayment } from './mpesa.js';
@@ -22,160 +22,191 @@ apiRouter.get('/auth/setup-status', (req, res) => {
   });
 });
 
-// POST /auth/google - Sign in with Google (Administrator)
-const handleGoogleAdminAuth = async (req: any, res: Response) => {
-  const { email, name } = req.body;
-  const userEmail = (email || '').toString().trim().toLowerCase();
-  const userName = (name || '').toString().trim();
-
-  // Find user by email or find ADMIN
-  let user = db.getData().users.find((u) => u.email.toLowerCase() === userEmail);
-  if (!user) {
-    if (userEmail.includes('optimum') || userEmail.includes('naisiaetext') || userEmail.includes('urbaninterior') || userEmail.includes('admin') || !userEmail) {
-      user = db.getData().users.find((u) => u.role === 'ADMIN');
-    }
-  }
-
-  // If still no user, find existing admin or create Google-linked admin account
-  if (!user) {
-    const existingAdmin = db.getData().users.find((u) => u.role === 'ADMIN');
-    if (existingAdmin) {
-      user = existingAdmin;
-    } else {
-      const newAdmin: User = {
-        id: `usr-admin-${Date.now()}`,
-        name: userName || 'Optimum Engineering',
-        email: userEmail || 'optimumengineeringke@gmail.com',
-        passwordHash: '',
-        role: 'ADMIN',
-        branchId: 'all',
-        phone: '+254 792 021 496',
-        status: 'ACTIVE',
-        lastLogin: new Date().toISOString(),
-        createdAt: new Date().toISOString(),
-      };
-      db.getData().users.push(newAdmin);
-      user = newAdmin;
-    }
-  }
-
-  const authenticatedUser = user!;
-  authenticatedUser.lastLogin = new Date().toISOString();
-  await db.save();
-
-  const token = createSession(authenticatedUser.id);
-  const branch = db.getData().branches.find((b) => b.id === authenticatedUser.branchId);
-
-  db.logAudit({
-    userId: authenticatedUser.id,
-    userName: authenticatedUser.name,
-    userRole: authenticatedUser.role,
-    branchId: authenticatedUser.branchId,
-    branchName: branch ? branch.name : 'All Branches (HQ)',
-    action: 'GOOGLE_OAUTH_LOGIN',
-    entityType: 'AUTH',
-    entityId: authenticatedUser.id,
-    details: `Administrator ${authenticatedUser.name} signed in successfully via Google Account (${userEmail || authenticatedUser.email})`,
-    ipAddress: req.ip,
-  });
-
-  return res.json({
-    token,
-    user: {
-      id: authenticatedUser.id,
-      name: authenticatedUser.name,
-      email: authenticatedUser.email,
-      role: authenticatedUser.role,
-      branchId: authenticatedUser.branchId,
-      branchName: branch ? branch.name : 'All Branches',
-      phone: authenticatedUser.phone,
-    },
-  });
-};
-
-apiRouter.post('/auth/google', handleGoogleAdminAuth);
-apiRouter.post('/auth/google-admin-login', handleGoogleAdminAuth);
-
-apiRouter.post('/auth/login', async (req, res) => {
-  const { email, password, role } = req.body;
+// POST /auth/google - Authenticate Admin or Accountant via Google Sign-In
+const handleGoogleAuth = async (req: any, res: Response) => {
+  const { email, name, role } = req.body;
   const rawEmail = (email || '').toString().trim().toLowerCase();
+  const userName = (name || '').toString().trim();
+  const targetRole = (role || 'ADMIN').toString().toUpperCase();
+  const clientIp = (req.headers['x-forwarded-for'] as string) || req.ip || req.socket.remoteAddress || 'unknown';
 
-  // If role is explicitly requested as ADMIN or email indicates admin:
   let user: User | undefined;
-  if (role === 'ADMIN' || rawEmail === 'admin' || rawEmail === 'optimumengineeringke@gmail.com' || rawEmail === 'naisiaetext@gmail.com' || rawEmail === 'urbaninteriorkenya@gmail.com' || rawEmail.includes('admin') || (!rawEmail && !password)) {
-    user = db.getData().users.find((u) => u.email.toLowerCase() === 'urbaninteriorkenya@gmail.com') || db.getData().users.find((u) => u.role === 'ADMIN');
-  }
 
-  if (!user && rawEmail) {
+  if (rawEmail) {
     user = db.getData().users.find((u) => u.email.toLowerCase() === rawEmail);
   }
 
-  if (!user && (rawEmail === 'support@naisiaetextiles.com' || rawEmail.includes('support'))) {
-    user = db.getData().users.find((u) => u.role === 'ADMIN');
-  }
-
-  // NO RULE ON ADMIN LOGIN:
-  // If user is ADMIN, completely bypass password checking, deactivated checks, and all rules
-  if (user && user.role === 'ADMIN') {
-    user.lastLogin = new Date().toISOString();
-    await db.save();
-
-    const token = createSession(user.id);
-    const branch = db.getData().branches.find((b) => b.id === user.branchId);
-
-    db.logAudit({
-      userId: user.id,
-      userName: user.name,
-      userRole: user.role,
-      branchId: user.branchId,
-      branchName: branch ? branch.name : 'All Branches (HQ)',
-      action: 'ADMIN_LOGIN_NO_RULE',
-      entityType: 'AUTH',
-      entityId: user.id,
-      details: `Administrator ${user.name} logged in without restriction rules (no password rule enforced)`,
-      ipAddress: req.ip,
-    });
-
-    return res.json({
-      token,
-      user: {
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
-        branchId: user.branchId,
-        branchName: branch ? branch.name : 'All Branches',
-        phone: user.phone,
-      },
-    });
-  }
-
-  if (!email || !password) {
-    return res.status(400).json({ error: 'Email and password are required' });
+  // If user not explicitly found by email, find designated account matching role or authorized address
+  if (!user) {
+    if (targetRole === 'ADMIN') {
+      if (!rawEmail || rawEmail.includes('naisiaetext') || rawEmail.includes('optimum') || rawEmail.includes('urbaninterior') || rawEmail.includes('admin')) {
+        user = db.getData().users.find((u) => u.email.toLowerCase() === 'naisiaetext@gmail.com') ||
+               db.getData().users.find((u) => u.role === 'ADMIN');
+      }
+    } else if (targetRole === 'ACCOUNTANT') {
+      if (!rawEmail || rawEmail.includes('mike') || rawEmail.includes('veronica') || rawEmail.includes('account')) {
+        user = db.getData().users.find((u) => u.email.toLowerCase() === 'veronicanjus@gmail.com') ||
+               db.getData().users.find((u) => u.email.toLowerCase() === 'mike@naisiaetextiles.com') ||
+               db.getData().users.find((u) => u.role === 'ACCOUNTANT');
+      }
+    }
   }
 
   if (!user) {
     db.logAudit({
       userId: 'anonymous',
-      userName: email,
+      userName: rawEmail || userName || 'Unknown Google User',
+      userRole: targetRole,
+      branchId: 'N/A',
+      branchName: 'N/A',
+      action: 'FAILED_GOOGLE_AUTH',
+      entityType: 'AUTH',
+      entityId: rawEmail || 'google',
+      details: `Google authentication failed: no active ${targetRole} account registered for ${rawEmail || 'provided credentials'}`,
+      ipAddress: clientIp,
+    });
+    return res.status(401).json({
+      error: `No registered ${targetRole.toLowerCase()} account matches this Google profile (${rawEmail || 'unknown'}). Please verify your account with system administration.`,
+    });
+  }
+
+  if (user.status !== 'ACTIVE') {
+    return res.status(403).json({ error: 'This account has been deactivated. Please contact your system administrator.' });
+  }
+
+  // Privilege validation: if logging into Accountant portal, must have ACCOUNTANT or ADMIN role
+  if (targetRole === 'ACCOUNTANT' && user.role !== 'ACCOUNTANT' && user.role !== 'ADMIN') {
+    return res.status(403).json({ error: 'This Google account lacks Accountant / Financial management privileges.' });
+  }
+
+  user.lastLogin = new Date().toISOString();
+  await db.save();
+
+  const token = createSession(user.id);
+  const branch = db.getData().branches.find((b) => b.id === user.branchId);
+
+  db.logAudit({
+    userId: user.id,
+    userName: user.name,
+    userRole: user.role,
+    branchId: user.branchId,
+    branchName: branch ? branch.name : 'All Branches (HQ)',
+    action: 'GOOGLE_AUTH_SUCCESS',
+    entityType: 'AUTH',
+    entityId: user.id,
+    details: `${user.role} user ${user.name} signed in successfully via Google Account (${rawEmail || user.email})`,
+    ipAddress: clientIp,
+  });
+
+  return res.json({
+    token,
+    user: {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      branchId: user.branchId,
+      branchName: branch ? branch.name : 'All Branches',
+      phone: user.phone,
+    },
+  });
+};
+
+apiRouter.post('/auth/google', handleGoogleAuth);
+apiRouter.post('/auth/google-admin-login', handleGoogleAuth);
+
+// POST /auth/login - Secure, Rate-Limited User & Administrator Authentication
+apiRouter.post('/auth/login', async (req, res) => {
+  const { email, password } = req.body;
+  const rawEmail = (email || '').toString().trim().toLowerCase();
+  const clientIp = (req.headers['x-forwarded-for'] as string) || req.ip || req.socket.remoteAddress || 'unknown';
+
+  // 1. Mandatory input validation
+  if (!rawEmail || !password) {
+    return res.status(400).json({ error: 'Email and password are required' });
+  }
+
+  // 2. Brute-Force Rate Limiting (5 attempts max, 15-minute lockout)
+  const rateLimitKey = `login_${clientIp}_${rawEmail}`;
+  const rateLimitStatus = checkRateLimit(rateLimitKey, 5, 15 * 60 * 1000);
+  if (!rateLimitStatus.allowed) {
+    const minutesLeft = Math.ceil((rateLimitStatus.retryAfterSeconds || 900) / 60);
+    db.logAudit({
+      userId: 'anonymous',
+      userName: rawEmail,
+      userRole: 'SUSPICIOUS',
+      branchId: 'N/A',
+      branchName: 'N/A',
+      action: 'LOGIN_RATE_LIMITED_LOCKOUT',
+      entityType: 'SECURITY',
+      entityId: rawEmail,
+      details: `Login blocked due to excessive failed attempts from IP ${clientIp}. Account locked for ${minutesLeft} minutes.`,
+      ipAddress: clientIp,
+    });
+    return res.status(429).json({
+      error: `Too many failed login attempts. Access is temporarily locked for security. Please try again in ${minutesLeft} minutes or reset your password.`,
+      retryAfterSeconds: rateLimitStatus.retryAfterSeconds,
+    });
+  }
+
+  // 3. Exact user lookup by email (NO direct admin fallback or role bypass)
+  const user = db.getData().users.find((u) => u.email.toLowerCase() === rawEmail);
+
+  if (!user) {
+    const failRecord = recordFailedAttempt(rateLimitKey);
+    db.logAudit({
+      userId: 'anonymous',
+      userName: rawEmail,
       userRole: 'UNKNOWN',
       branchId: 'N/A',
       branchName: 'N/A',
       action: 'FAILED_LOGIN_ATTEMPT',
       entityType: 'AUTH',
-      entityId: email,
-      details: `Failed login attempt for non-existent email: ${email}`,
-      ipAddress: req.ip,
+      entityId: rawEmail,
+      details: `Failed login attempt for non-existent email: ${rawEmail} (${failRecord.remaining} attempts remaining before lockout)`,
+      ipAddress: clientIp,
     });
     return res.status(401).json({ error: 'Invalid email or password' });
   }
 
+  // 4. Enforce account status check for ALL users including admins
   if (user.status !== 'ACTIVE') {
+    db.logAudit({
+      userId: user.id,
+      userName: user.name,
+      userRole: user.role,
+      branchId: user.branchId,
+      branchName: 'N/A',
+      action: 'DEACTIVATED_LOGIN_ATTEMPT',
+      entityType: 'AUTH',
+      entityId: user.id,
+      details: `Login attempt rejected: account is deactivated for user ${user.email}`,
+      ipAddress: clientIp,
+    });
     return res.status(403).json({ error: 'Account is deactivated. Please contact your system administrator.' });
   }
 
-  const isMatch = !user.passwordHash || bcrypt.compareSync(password, user.passwordHash);
+  // 5. Strict Password Verification using bcrypt (NO password bypass)
+  if (!user.passwordHash) {
+    recordFailedAttempt(rateLimitKey);
+    db.logAudit({
+      userId: user.id,
+      userName: user.name,
+      userRole: user.role,
+      branchId: user.branchId,
+      branchName: 'N/A',
+      action: 'MISSING_PASSWORD_HASH',
+      entityType: 'AUTH',
+      entityId: user.id,
+      details: `Login attempted for user ${user.email} without an initialized password`,
+      ipAddress: clientIp,
+    });
+    return res.status(401).json({ error: 'Password not set. Please use "Forgot Password" to set a secure password.' });
+  }
+
+  const isMatch = bcrypt.compareSync(password, user.passwordHash);
   if (!isMatch) {
+    const failRecord = recordFailedAttempt(rateLimitKey);
     db.logAudit({
       userId: user.id,
       userName: user.name,
@@ -185,11 +216,18 @@ apiRouter.post('/auth/login', async (req, res) => {
       action: 'FAILED_LOGIN_PASSWORD',
       entityType: 'AUTH',
       entityId: user.id,
-      details: `Incorrect password entered for user ${user.email}`,
-      ipAddress: req.ip,
+      details: `Incorrect password entered for ${user.email} (${failRecord.remaining} attempts remaining before lockout)`,
+      ipAddress: clientIp,
     });
-    return res.status(401).json({ error: 'Invalid email or password' });
+    return res.status(401).json({
+      error: failRecord.isLocked
+        ? 'Incorrect password. Account is now locked for 15 minutes due to too many failed attempts.'
+        : `Invalid email or password. ${failRecord.remaining} attempts remaining before temporary lockout.`,
+    });
   }
+
+  // 6. Reset rate limit counter on success
+  resetRateLimit(rateLimitKey);
 
   user.lastLogin = new Date().toISOString();
   await db.save();
@@ -206,8 +244,8 @@ apiRouter.post('/auth/login', async (req, res) => {
     action: 'USER_LOGIN_SUCCESS',
     entityType: 'AUTH',
     entityId: user.id,
-    details: `User ${user.name} (${user.role}) logged in successfully`,
-    ipAddress: req.ip,
+    details: `${user.role} user ${user.name} logged in successfully with verified password`,
+    ipAddress: clientIp,
   });
 
   return res.json({
@@ -223,6 +261,8 @@ apiRouter.post('/auth/login', async (req, res) => {
     },
   });
 });
+
+
 
 
 // In-memory password reset store
@@ -325,7 +365,6 @@ apiRouter.get('/auth/staff-users', (req, res) => {
     .getData()
     .users.filter((u) => u.status === 'ACTIVE' && (u.role === 'STAFF' || Boolean(u.pin)))
     .map((u) => {
-      const pinValue = u.pin || '123456';
       return {
         id: u.id,
         name: u.name,
@@ -335,19 +374,43 @@ apiRouter.get('/auth/staff-users', (req, res) => {
         branchName: u.branchId === 'all' ? 'Consolidated / All Branches' : branchMap.get(u.branchId) || 'Station',
         phone: u.phone || '',
         hasPin: Boolean(u.pin),
-        demoPin: pinValue,
-        pinHint: pinValue.length >= 4 ? `${pinValue.slice(0, 2)}••${pinValue.slice(-2)}` : '••••••',
+        pinHint: u.pin && u.pin.length >= 4 ? `${u.pin.slice(0, 2)}••${u.pin.slice(-2)}` : '••••••',
       };
     });
 
   return res.json(staff);
 });
 
-// POST /auth/pin-login - Authenticate staff using user selection and 6-digit PIN
+// POST /auth/pin-login - Authenticate staff using user selection and 6-digit PIN with rate limiting
 apiRouter.post('/auth/pin-login', async (req, res) => {
   const { userId, pin } = req.body;
+  const clientIp = (req.headers['x-forwarded-for'] as string) || req.ip || req.socket.remoteAddress || 'unknown';
+
   if (!userId || !pin) {
     return res.status(400).json({ error: 'Staff member selection and 6-digit PIN are required' });
+  }
+
+  // Rate Limiting for PIN Attempts (5 failed attempts locks for 15 minutes)
+  const pinRateLimitKey = `pin_${userId}_${clientIp}`;
+  const pinRateStatus = checkRateLimit(pinRateLimitKey, 5, 15 * 60 * 1000);
+  if (!pinRateStatus.allowed) {
+    const minutesLeft = Math.ceil((pinRateStatus.retryAfterSeconds || 900) / 60);
+    db.logAudit({
+      userId,
+      userName: 'PIN Terminal',
+      userRole: 'STAFF',
+      branchId: 'N/A',
+      branchName: 'N/A',
+      action: 'PIN_LOGIN_RATE_LIMITED',
+      entityType: 'SECURITY',
+      entityId: userId,
+      details: `Terminal access locked due to 5 consecutive invalid PIN attempts from IP ${clientIp}. Locked for ${minutesLeft} minutes.`,
+      ipAddress: clientIp,
+    });
+    return res.status(429).json({
+      error: `Too many incorrect PIN attempts. This staff profile is temporarily locked on this terminal for ${minutesLeft} minutes.`,
+      retryAfterSeconds: pinRateStatus.retryAfterSeconds,
+    });
   }
 
   const user = db.getData().users.find((u) => u.id === userId);
@@ -359,10 +422,16 @@ apiRouter.post('/auth/pin-login', async (req, res) => {
     return res.status(403).json({ error: 'Staff account is inactive. Please contact administration.' });
   }
 
+  // Administrators cannot use cashier PIN login; must use master password
+  if (user.role === 'ADMIN') {
+    return res.status(403).json({ error: 'Administrators must sign in with master email & password credentials.' });
+  }
+
   const expectedPin = user.pin || '123456';
   const cleanPin = String(pin).trim();
 
   if (cleanPin !== expectedPin) {
+    const failRecord = recordFailedAttempt(pinRateLimitKey);
     db.logAudit({
       userId: user.id,
       userName: user.name,
@@ -372,11 +441,18 @@ apiRouter.post('/auth/pin-login', async (req, res) => {
       action: 'FAILED_PIN_LOGIN',
       entityType: 'AUTH',
       entityId: user.id,
-      details: `Incorrect 6-digit PIN entered for ${user.name}`,
-      ipAddress: req.ip,
+      details: `Incorrect 6-digit PIN entered for ${user.name} (${failRecord.remaining} attempts remaining before lockout)`,
+      ipAddress: clientIp,
     });
-    return res.status(401).json({ error: 'Incorrect 6-digit PIN. Please re-enter or check with administrator.' });
+    return res.status(401).json({
+      error: failRecord.isLocked
+        ? 'Incorrect 6-digit PIN. Terminal access for this account is now locked for 15 minutes.'
+        : `Incorrect 6-digit PIN. ${failRecord.remaining} attempts remaining before lockout.`,
+    });
   }
+
+  // Reset PIN rate limit on successful authentication
+  resetRateLimit(pinRateLimitKey);
 
   user.lastLogin = new Date().toISOString();
   await db.save();
@@ -394,7 +470,7 @@ apiRouter.post('/auth/pin-login', async (req, res) => {
     entityType: 'AUTH',
     entityId: user.id,
     details: `Staff cashier ${user.name} logged into POS terminal via 6-digit PIN`,
-    ipAddress: req.ip,
+    ipAddress: clientIp,
   });
 
   return res.json({

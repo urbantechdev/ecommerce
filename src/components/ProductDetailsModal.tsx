@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { X, Tag, Layers, Maximize2, Building, Barcode, CheckCircle2, AlertTriangle, ShieldCheck } from 'lucide-react';
 import { Product, ProductVariant } from '../types';
 import { StatusBadge } from './StatusBadge';
@@ -22,6 +22,23 @@ export const ProductDetailsModal: React.FC<ProductDetailsModalProps> = ({
   const [selectedVariant, setSelectedVariant] = useState<ProductVariant | null>(null);
   const [isZoomed, setIsZoomed] = useState(false);
   const [activeImage, setActiveImage] = useState<string | null>(null);
+  const [isInactive, setIsInactive] = useState(false);
+  const inactivityTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const resetTimer = () => {
+    setIsInactive(false);
+    if (inactivityTimerRef.current) clearTimeout(inactivityTimerRef.current);
+    inactivityTimerRef.current = setTimeout(() => {
+      setIsInactive(true);
+    }, 10000);
+  };
+
+  useEffect(() => {
+    resetTimer();
+    return () => {
+      if (inactivityTimerRef.current) clearTimeout(inactivityTimerRef.current);
+    };
+  }, [isOpen]);
 
   if (!isOpen || !product) return null;
 
@@ -49,10 +66,16 @@ export const ProductDetailsModal: React.FC<ProductDetailsModalProps> = ({
   });
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-900/70 backdrop-blur-xs flex items-center justify-center p-3 sm:p-5 overflow-y-auto animate-in fade-in duration-200">
+    <div 
+      onMouseMove={resetTimer}
+      onClick={resetTimer}
+      className="fixed inset-0 z-50 bg-slate-900/70 backdrop-blur-xs flex justify-start p-0 overflow-y-auto animate-in fade-in duration-300"
+    >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="bg-white rounded-3xl shadow-2xl max-w-3xl w-full overflow-hidden border border-slate-200 max-h-[92vh] flex flex-col animate-in zoom-in-95 duration-200"
+        className={`bg-white w-full max-w-2xl h-full shadow-2xl overflow-y-auto border-r border-slate-200 flex flex-col animate-in slide-in-from-left duration-300 ease-out transition-opacity duration-700 ${
+          isInactive ? 'opacity-25 hover:opacity-100' : 'opacity-100'
+        }`}
       >
         {/* Header Bar */}
         <div className="p-4 sm:p-5 bg-gradient-to-r from-[#02066F] via-[#030A91] to-[#0a12b3] text-white flex items-center justify-between shrink-0 shadow-sm">

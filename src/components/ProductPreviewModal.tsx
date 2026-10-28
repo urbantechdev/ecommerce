@@ -62,17 +62,27 @@ export const ProductPreviewModal: React.FC<ProductPreviewModalProps> = ({ produc
   const [selectedSize, setSelectedSize] = useState<string | null>(null);
   const [isZoomed, setIsZoomed] = useState<boolean>(false);
   
-  // Auto-close inactivity timer
+  const [isInactive, setIsInactive] = useState(false);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const inactivityTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   const resetTimer = () => {
+    setIsInactive(false);
     if (timerRef.current) clearTimeout(timerRef.current);
-    timerRef.current = setTimeout(onClose, 30000); // 30 seconds
+    if (inactivityTimerRef.current) clearTimeout(inactivityTimerRef.current);
+
+    inactivityTimerRef.current = setTimeout(() => {
+      setIsInactive(true);
+    }, 10000); // Fade off after 10s of inactivity
+
+    timerRef.current = setTimeout(onClose, 40000);
   };
   
   useEffect(() => {
     resetTimer();
     return () => {
       if (timerRef.current) clearTimeout(timerRef.current);
+      if (inactivityTimerRef.current) clearTimeout(inactivityTimerRef.current);
     };
   }, []);
 
@@ -140,11 +150,13 @@ export const ProductPreviewModal: React.FC<ProductPreviewModalProps> = ({ produc
 
   return (
     <div 
-      className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex justify-start animate-in fade-in duration-200"
+      className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex justify-start animate-in fade-in duration-300"
       onMouseMove={resetTimer}
       onClick={resetTimer}
     >
-      <div className="bg-white w-full max-w-md h-full flex flex-col border-r border-slate-200 shadow-2xl animate-in slide-in-from-left duration-500 ease-out">
+      <div className={`bg-white w-full max-w-md h-full flex flex-col border-r border-slate-200 shadow-2xl animate-in slide-in-from-left duration-300 ease-out transition-opacity duration-700 ${
+        isInactive ? 'opacity-25 hover:opacity-100' : 'opacity-100'
+      }`}>
         {/* Modal Header */}
         <div className="p-4 bg-gradient-to-r from-[#02066F] via-[#030A91] to-[#0412B3] text-white flex items-center justify-between shrink-0 shadow-sm">
           <div className="min-w-0 pr-2">

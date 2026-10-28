@@ -48,7 +48,7 @@ export const api = {
       method: 'POST',
       body: JSON.stringify(credentials),
     }),
-  googleLogin: (payload?: { email?: string; name?: string }) =>
+  googleLogin: (payload?: { email?: string; name?: string; role?: string }) =>
     request<{ token: string; user: any }>('/auth/google', {
       method: 'POST',
       body: JSON.stringify(payload || {}),

@@ -72,13 +72,30 @@ export const BarcodeScannerModal: React.FC<BarcodeScannerModalProps> = ({
         </div>
 
         <div className="p-6 space-y-4">
-          {/* Laser Scanner Visual simulation */}
-          <div className="relative h-24 bg-slate-900 rounded-xl overflow-hidden flex items-center justify-center border border-slate-700">
-            <div className="absolute inset-x-8 top-1/2 -translate-y-1/2 h-0.5 bg-red-500 shadow-[0_0_12px_#ef4444] animate-pulse"></div>
+          {/* Bent and Silent Laser Scanner Visual simulation */}
+          <div className="relative h-28 bg-slate-950 rounded-xl overflow-hidden flex items-center justify-center border border-slate-800 shadow-inner">
+            <div className="absolute inset-x-6 top-1/2 -translate-y-1/2 flex items-center justify-center pointer-events-none">
+              <svg className="w-full h-10 overflow-visible opacity-50 animate-pulse duration-1000" viewBox="0 0 300 40" preserveAspectRatio="none">
+                <path
+                  d="M 0,20 Q 150,32 300,20"
+                  fill="none"
+                  stroke="#ef4444"
+                  strokeWidth="1.5"
+                  className="drop-shadow-[0_0_6px_rgba(239,68,68,0.4)]"
+                />
+                <path
+                  d="M 0,20 Q 150,32 300,20"
+                  fill="none"
+                  stroke="#fca5a5"
+                  strokeWidth="0.75"
+                  opacity="0.6"
+                />
+              </svg>
+            </div>
             <div className="text-center z-10">
-              <Barcode className="w-12 h-12 text-slate-400 mx-auto opacity-40" />
-              <p className="text-[11px] text-slate-400 mt-1 font-mono tracking-wide">
-                LASER SCANNER ACTIVE • ALIGN BARCODE
+              <Barcode className="w-10 h-10 text-slate-500 mx-auto opacity-25" />
+              <p className="text-[10px] text-slate-400 mt-1 font-mono tracking-widest opacity-60">
+                SILENT SCANNER ACTIVE • ALIGN BARCODE
               </p>
             </div>
           </div>
