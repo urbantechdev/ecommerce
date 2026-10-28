@@ -4,8 +4,9 @@ import { v4 as uuidv4 } from 'uuid';
 import { db, User, Product, InventoryMovement, StockTransfer, Sale, Quotation, Invoice, PaymentReceipt, Customer, Supplier, PurchaseOrder, Expense } from './db.js';
 import { requireAuth, requireRoles, createSession, revokeSession, AuthenticatedRequest } from './auth.js';
 import { fiscalizeTransaction, enqueueKraRetry, kraRetryQueue } from './kra.js';
-import { sendEmail, generateInvoiceEmailHtml, generateReceiptEmailHtml, generateQuotationEmailHtml, emailLogs } from './email.js';
+import { sendEmail, generateInvoiceEmailHtml, generateReceiptEmailHtml, generateQuotationEmailHtml, generateWelcomeEmailHtml, emailLogs } from './email.js';
 import { initiateSTKPush, initiateB2CPayment, initiateB2BPayment } from './mpesa.js';
+import { getVapidPublicKey, sendWebPushNotification, broadcastPushNotification } from './push.js';
 
 export const apiRouter = Router();
 
@@ -787,6 +788,32 @@ apiRouter.get('/portal/schools', (_req, res) => {
   } catch (err: any) {
     console.error('[Portal Schools Error]', err);
     return res.status(500).json({ error: 'Failed to retrieve portal schools list', details: err.message });
+  }
+});
+
+// POST /portal/customer-welcome - Send branded welcome email upon signup
+apiRouter.post('/portal/customer-welcome', async (req, res) => {
+  try {
+    const { name, email } = req.body;
+    if (!email || !String(email).includes('@')) {
+      return res.status(400).json({ error: 'Valid customer email is required' });
+    }
+    const cleanEmail = String(email).trim().toLowerCase();
+    const cleanName = String(name || 'Customer').trim();
+    const settings = db.getData().settings;
+
+    console.log(`[Customer Signup] Sending welcome email to ${cleanEmail}`);
+
+    const result = await sendEmail({
+      to: cleanEmail,
+      subject: `Welcome to Naisia Textiles - Your Uniform Account is Active!`,
+      html: generateWelcomeEmailHtml(cleanName, settings),
+    });
+
+    return res.json({ success: true, result });
+  } catch (err: any) {
+    console.error('[Customer Welcome Email Error]', err);
+    return res.status(500).json({ error: 'Failed to send welcome email', details: err.message });
   }
 });
 
@@ -3478,7 +3505,16 @@ apiRouter.get('/audit-logs', requireAuth, requireRoles('ADMIN'), (req, res) => {
 // ==========================================
 
 apiRouter.get('/settings', requireAuth, (req, res) => {
-  return res.json(db.getData().settings);
+  const settings = db.getData().settings;
+  const isSmtpConfigured = Boolean(process.env.SMTP_PASS || settings.smtpPassword);
+  return res.json({
+    ...settings,
+    isSmtpConfigured,
+    smtpHost: process.env.SMTP_HOST || settings.smtpHost || 'smtp.zoho.com',
+    smtpPort: Number(process.env.SMTP_PORT || settings.smtpPort || 465),
+    smtpUser: process.env.SMTP_USER || settings.smtpUser || 'support@naisiaetextiles.com',
+    smtpPassword: isSmtpConfigured ? '••••••••••••••••' : '',
+  });
 });
 
 apiRouter.put('/settings', requireAuth, requireRoles('ADMIN'), async (req: AuthenticatedRequest, res: Response) => {
@@ -3890,4 +3926,43 @@ apiRouter.get('/backup/export', requireAuth, requireRoles('ADMIN'), (req, res) =
   res.setHeader('Content-Type', 'application/json');
   res.setHeader('Content-Disposition', `attachment; filename=naisiae-erp-backup-${new Date().toISOString().split('T')[0]}.json`);
   return res.send(JSON.stringify(data, null, 2));
+});
+
+// ==========================================
+// 20. VAPID PUSH NOTIFICATIONS
+// ==========================================
+
+apiRouter.get('/push/vapid-key', (req, res) => {
+  return res.json({ publicKey: getVapidPublicKey() });
+});
+
+apiRouter.post('/push/subscribe', async (req, res) => {
+  const subscription = req.body;
+  if (!subscription || !subscription.endpoint) {
+    return res.status(400).json({ error: 'Invalid push subscription payload' });
+  }
+
+  const dbData = db.getData() as any;
+  if (!Array.isArray(dbData.pushSubscriptions)) {
+    dbData.pushSubscriptions = [];
+  }
+
+  const exists = dbData.pushSubscriptions.some((s: any) => s.endpoint === subscription.endpoint);
+  if (!exists) {
+    dbData.pushSubscriptions.push(subscription);
+    await db.save();
+  }
+
+  return res.json({ success: true, message: 'Push subscription registered successfully' });
+});
+
+apiRouter.post('/push/broadcast', requireAuth, requireRoles('ADMIN', 'ACCOUNTANT'), async (req: AuthenticatedRequest, res: Response) => {
+  const { title, body, url } = req.body;
+  const result = await broadcastPushNotification({
+    title: title || 'Naisia Textiles Enterprise Alert',
+    body: body || 'New update from Naisiae ERP system.',
+    url: url || '/portal',
+  });
+
+  return res.json({ success: true, ...result });
 });
