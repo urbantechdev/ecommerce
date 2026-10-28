@@ -3,14 +3,21 @@
 
 User-agent: *
 
-# Allow Customer Portal and public assets
+# Allow Customer Portal and public catalog pages
 Allow: /$
 Allow: /portal
 Allow: /portal/
+Allow: /school-uniforms
+Allow: /kmtc-uniforms
+Allow: /customized-uniforms
+Allow: /about
+Allow: /policy
+Allow: /contact
 Allow: /assets/
 Allow: /logo.png
 Allow: /favicon.ico
 Allow: /favicon.png
+Allow: /manifest.json
 Allow: /sitemap.xml
 
 # Disallow Internal ERP, Admin Dashboard, Accountant, Cashier, POS, and Management Routes

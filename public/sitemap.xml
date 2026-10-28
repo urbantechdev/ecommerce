@@ -6,6 +6,26 @@
     <priority>1.00</priority>
   </url>
   <url>
+    <loc>https://naisiaetextiles.com/portal</loc>
+    <changefreq>daily</changefreq>
+    <priority>0.95</priority>
+  </url>
+  <url>
+    <loc>https://naisiaetextiles.com/school-uniforms</loc>
+    <changefreq>daily</changefreq>
+    <priority>0.95</priority>
+  </url>
+  <url>
+    <loc>https://naisiaetextiles.com/kmtc-uniforms</loc>
+    <changefreq>daily</changefreq>
+    <priority>0.95</priority>
+  </url>
+  <url>
+    <loc>https://naisiaetextiles.com/customized-uniforms</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.90</priority>
+  </url>
+  <url>
     <loc>https://naisiaetextiles.com/about/</loc>
     <changefreq>monthly</changefreq>
     <priority>0.60</priority>
