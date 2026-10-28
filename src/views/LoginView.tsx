@@ -780,51 +780,51 @@ export const LoginView: React.FC = () => {
               {/* STAFF / POS CASHIER BOX */}
               <div
                 onClick={() => handleSelectRoleBox('STAFF')}
-                className="bg-white rounded-2xl sm:rounded-3xl p-3 sm:p-6 border-2 border-slate-200/90 shadow-xs sm:shadow-md hover:shadow-xl hover:border-emerald-600 hover:-translate-y-0.5 sm:hover:-translate-y-1 transition-all duration-200 cursor-pointer flex flex-col justify-between group relative overflow-hidden active:scale-[0.99]"
+                className="bg-white rounded-2xl sm:rounded-3xl p-3 sm:p-6 border-2 border-slate-200/90 shadow-xs sm:shadow-md hover:shadow-xl hover:border-[#030A91] hover:-translate-y-0.5 sm:hover:-translate-y-1 transition-all duration-200 cursor-pointer flex flex-col justify-between group relative overflow-hidden active:scale-[0.99]"
               >
-                <div className="absolute top-0 right-0 w-20 sm:w-20 h-20 sm:h-20 bg-emerald-50 rounded-bl-full -z-0 transition-transform group-hover:scale-125"></div>
+                <div className="absolute top-0 right-0 w-20 sm:w-20 h-20 sm:h-20 bg-blue-50/70 rounded-bl-full -z-0 transition-transform group-hover:scale-125"></div>
                 <div className="relative z-10">
                   {/* Mobile Row Header / Desktop Column Header */}
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-3 sm:space-x-0">
-                      <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-emerald-100 text-emerald-700 flex items-center justify-center shadow-inner group-hover:bg-emerald-700 group-hover:text-[#FACB00] transition-colors shrink-0">
+                      <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-blue-100 text-[#030A91] flex items-center justify-center shadow-inner group-hover:bg-[#030A91] group-hover:text-[#FACB00] transition-colors shrink-0">
                         <ShoppingCart className="w-5 h-5 sm:w-6 sm:h-6" />
                       </div>
 
                       {/* Mobile title layout */}
                       <div className="sm:hidden">
                         <div className="flex items-center space-x-1.5">
-                          <span className="text-[9px] uppercase font-black tracking-wider px-1.5 py-0.2 rounded-full bg-emerald-100 text-emerald-800">
+                          <span className="text-[9px] uppercase font-black tracking-wider px-1.5 py-0.2 rounded-full bg-blue-100 text-[#030A91]">
                             Retail POS
                           </span>
-                          <span className="text-[9px] font-black uppercase text-emerald-700 bg-emerald-50 px-1 py-0.2 rounded border border-emerald-200">
+                          <span className="text-[9px] font-black uppercase text-[#030A91] bg-blue-50 px-1 py-0.2 rounded border border-blue-200">
                             PIN
                           </span>
                         </div>
-                        <h3 className="text-sm font-black text-slate-900 group-hover:text-emerald-700 transition-colors leading-tight mt-0.5">
+                        <h3 className="text-sm font-black text-slate-900 group-hover:text-[#030A91] transition-colors leading-tight mt-0.5">
                           Staff / POS Cashier
                         </h3>
                       </div>
                     </div>
 
                     {/* Mobile action pill */}
-                    <div className="sm:hidden flex items-center space-x-1 text-xs font-black text-emerald-700 bg-emerald-50 px-2.5 py-1.5 rounded-xl border border-emerald-200/60 shadow-2xs group-hover:bg-emerald-700 group-hover:text-white transition-colors">
+                    <div className="sm:hidden flex items-center space-x-1 text-xs font-black text-[#030A91] bg-blue-50 px-2.5 py-1.5 rounded-xl border border-blue-200/60 shadow-2xs group-hover:bg-[#030A91] group-hover:text-white transition-colors">
                       <span>Enter PIN</span>
-                      <ArrowRight className="w-3.5 h-3.5 text-emerald-700 group-hover:text-white transition-colors" />
+                      <ArrowRight className="w-3.5 h-3.5 text-[#030A91] group-hover:text-white transition-colors" />
                     </div>
                   </div>
 
                   {/* Desktop content */}
                   <div className="hidden sm:block mt-4">
                     <div className="flex items-center space-x-1.5">
-                      <span className="text-[10px] uppercase font-black tracking-wider px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800">
+                      <span className="text-[10px] uppercase font-black tracking-wider px-2 py-0.5 rounded-full bg-blue-100 text-[#030A91]">
                         Retail POS
                       </span>
-                      <span className="text-[10px] font-black uppercase text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">
+                      <span className="text-[10px] font-black uppercase text-[#030A91] bg-blue-50 px-1.5 py-0.5 rounded border border-blue-200 font-bold">
                         6-Digit PIN
                       </span>
                     </div>
-                    <h3 className="text-lg font-black text-slate-900 mt-1.5 group-hover:text-emerald-700 transition-colors">
+                    <h3 className="text-lg font-black text-slate-900 mt-1.5 group-hover:text-[#030A91] transition-colors">
                       Staff / POS Cashier
                     </h3>
                     <p className="text-xs text-slate-500 mt-1 font-medium">
@@ -834,9 +834,9 @@ export const LoginView: React.FC = () => {
                 </div>
 
                 {/* Desktop footer */}
-                <div className="hidden sm:flex mt-5 pt-3 border-t border-slate-100 items-center justify-between text-xs font-bold text-emerald-700 group-hover:text-emerald-900">
+                <div className="hidden sm:flex mt-5 pt-3 border-t border-slate-100 items-center justify-between text-xs font-bold text-[#030A91] group-hover:text-[#02066F]">
                   <span className="group-hover:underline">Staff PIN Login</span>
-                  <div className="w-7 h-7 rounded-lg bg-emerald-50 group-hover:bg-emerald-700 group-hover:text-white flex items-center justify-center transition-colors">
+                  <div className="w-7 h-7 rounded-lg bg-blue-50 group-hover:bg-[#030A91] group-hover:text-white flex items-center justify-center transition-colors">
                     <ArrowRight className="w-3.5 h-3.5" />
                   </div>
                 </div>
@@ -863,11 +863,11 @@ export const LoginView: React.FC = () => {
             /* 2A. SELECT USER NAME CREATED IN THE SYSTEM         */
             <div className="max-w-2xl w-full bg-white rounded-3xl shadow-2xl border border-slate-200 overflow-hidden backdrop-blur-md animate-in fade-in zoom-in-95 duration-200">
               {/* Header */}
-              <div className="p-4 sm:p-5 bg-gradient-to-r from-emerald-800 to-teal-900 text-white flex items-center justify-between">
+              <div className="p-4 sm:p-5 bg-gradient-to-r from-[#02066F] via-[#030A91] to-[#0412B3] text-white flex items-center justify-between shadow-sm">
                 <button
                   type="button"
                   onClick={handleBackToBoxes}
-                  className="inline-flex items-center text-xs font-bold text-emerald-100 hover:text-white px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 transition-colors"
+                  className="inline-flex items-center text-xs font-bold text-blue-100 hover:text-white px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 transition-colors cursor-pointer"
                 >
                   <ArrowLeft className="w-3.5 h-3.5 mr-1.5" />
                   <span>Back to Portals</span>
@@ -882,7 +882,7 @@ export const LoginView: React.FC = () => {
 
               <div className="p-6 sm:p-8">
                 <div className="text-center mb-6">
-                  <div className="w-12 h-12 rounded-2xl bg-emerald-100 text-emerald-700 mx-auto flex items-center justify-center font-bold mb-2 shadow-inner">
+                  <div className="w-12 h-12 rounded-2xl bg-blue-50 text-[#030A91] border border-blue-200/80 mx-auto flex items-center justify-center font-bold mb-2 shadow-inner">
                     <UserIcon className="w-6 h-6" />
                   </div>
                   <h2 className="text-xl font-black text-slate-900 tracking-tight">
@@ -901,7 +901,7 @@ export const LoginView: React.FC = () => {
                     value={staffSearchQuery}
                     onChange={(e) => setStaffSearchQuery(e.target.value)}
                     placeholder="Search your name or branch station..."
-                    className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-600 transition-all"
+                    className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#030A91] transition-all"
                   />
                 </div>
 
@@ -932,7 +932,7 @@ export const LoginView: React.FC = () => {
                             setEnteredPin('');
                             setErrorMessage('');
                           }}
-                          className="p-3.5 rounded-2xl border-2 border-slate-200 hover:border-emerald-600 hover:bg-emerald-50/40 hover:shadow-md transition-all cursor-pointer flex items-center space-x-3 group relative overflow-hidden text-left"
+                          className="p-3.5 rounded-2xl border-2 border-slate-200 hover:border-[#030A91] hover:bg-blue-50/50 hover:shadow-md transition-all cursor-pointer flex items-center space-x-3 group relative overflow-hidden text-left"
                         >
                           <div className="w-12 h-12 rounded-xl bg-[#030A91] text-[#FACB00] flex items-center justify-center font-black text-sm shrink-0 shadow-sm group-hover:scale-105 transition-transform">
                             {initials}
@@ -940,7 +940,7 @@ export const LoginView: React.FC = () => {
 
                           <div className="min-w-0 flex-1">
                             <div className="flex items-center space-x-1.5">
-                              <span className="font-black text-xs text-slate-900 group-hover:text-emerald-800 truncate block">
+                              <span className="font-black text-xs text-slate-900 group-hover:text-[#030A91] truncate block">
                                 {staff.name}
                               </span>
                             </div>
@@ -948,12 +948,12 @@ export const LoginView: React.FC = () => {
                               <Store className="w-3 h-3 text-slate-400 shrink-0" />
                               <span className="truncate">{staff.branchName}</span>
                             </div>
-                            <span className="inline-block mt-1 text-[9px] font-bold uppercase tracking-wider text-emerald-700 bg-emerald-100/70 px-1.5 py-0.2 rounded">
+                            <span className="inline-block mt-1 text-[9px] font-bold uppercase tracking-wider text-[#030A91] bg-blue-100/80 px-1.5 py-0.2 rounded font-bold">
                               Tap to enter PIN
                             </span>
                           </div>
 
-                          <div className="w-7 h-7 rounded-lg bg-slate-100 group-hover:bg-emerald-600 group-hover:text-white flex items-center justify-center text-slate-400 transition-colors shrink-0">
+                          <div className="w-7 h-7 rounded-lg bg-slate-100 group-hover:bg-[#030A91] group-hover:text-white flex items-center justify-center text-slate-400 transition-colors shrink-0">
                             <ArrowRight className="w-3.5 h-3.5" />
                           </div>
                         </div>
@@ -1704,18 +1704,18 @@ export const LoginView: React.FC = () => {
                   type="button"
                   disabled={isSubmitting}
                   onClick={() => handleGoogleLogin('', 'Naisia Textiles Admin')}
-                  className="w-full p-3 rounded-2xl border-2 border-slate-200 hover:border-emerald-600 hover:bg-emerald-50/40 transition-all text-left flex items-center justify-between group active:scale-[0.99] disabled:opacity-50"
+                  className="w-full p-3 rounded-2xl border-2 border-slate-200 hover:border-[#030A91] hover:bg-blue-50/40 transition-all text-left flex items-center justify-between group active:scale-[0.99] disabled:opacity-50"
                 >
                   <div className="flex items-center space-x-3 min-w-0">
-                    <div className="w-10 h-10 rounded-full bg-emerald-600 text-white font-black text-base flex items-center justify-center shadow-xs shrink-0 ring-2 ring-white">
+                    <div className="w-10 h-10 rounded-full bg-[#030A91] text-[#FACB00] font-black text-base flex items-center justify-center shadow-xs shrink-0 ring-2 ring-blue-100">
                       N
                     </div>
                     <div className="min-w-0">
                       <div className="flex items-center space-x-1.5">
-                        <h4 className="font-bold text-xs text-slate-900 group-hover:text-emerald-700 truncate">
+                        <h4 className="font-bold text-xs text-slate-900 group-hover:text-[#030A91] truncate">
                           Naisia Textiles Workspace
                         </h4>
-                        <span className="text-[9px] font-black uppercase px-1.5 py-0.2 rounded bg-emerald-100 text-emerald-800">
+                        <span className="text-[9px] font-black uppercase px-1.5 py-0.2 rounded bg-blue-100 text-[#030A91]">
                           Owner
                         </span>
                       </div>
@@ -1724,7 +1724,7 @@ export const LoginView: React.FC = () => {
                       </p>
                     </div>
                   </div>
-                  <ArrowRight className="w-4 h-4 text-slate-400 group-hover:text-emerald-600 group-hover:translate-x-0.5 transition-all shrink-0 ml-2" />
+                  <ArrowRight className="w-4 h-4 text-slate-400 group-hover:text-[#030A91] group-hover:translate-x-0.5 transition-all shrink-0 ml-2" />
                 </button>
 
                 {/* Custom Google Account Section */}
