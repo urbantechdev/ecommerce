@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Plus, Palette, ChevronDown, Check } from 'lucide-react';
+import { X, Plus, Palette, ChevronDown, Check, Maximize2 } from 'lucide-react';
 import { Product, ProductVariant } from '../types';
 import { normalizeImageUrl } from '../views/ProductsView';
 
@@ -60,10 +60,10 @@ interface ProductPreviewModalProps {
 export const ProductPreviewModal: React.FC<ProductPreviewModalProps> = ({ product, onClose, onAddToCart }) => {
   const [selectedColor, setSelectedColor] = useState<string>('Navy Blue');
   const [selectedSize, setSelectedSize] = useState<string | null>(null);
+  const [isZoomed, setIsZoomed] = useState<boolean>(false);
 
   useEffect(() => {
     if (product && product.variants.length > 0) {
-      // Check if product variants specify a real non-generic color
       const productVariantColors = Array.from(
         new Set(product.variants.map(v => v.color).filter(Boolean))
       ) as string[];
@@ -83,15 +83,12 @@ export const ProductPreviewModal: React.FC<ProductPreviewModalProps> = ({ produc
 
   if (!product) return null;
 
-  // Build the list of available colors for the select dropdown:
-  // Merges any specific variant colors with the comprehensive list of common known colors
   const productColors = Array.from(
     new Set(product.variants.map(v => v.color).filter(Boolean))
   ) as string[];
 
   const availableColors: Array<{ name: string; hex: string; border?: string; isProductVariant?: boolean }> = [];
 
-  // Add product's existing variant colors first
   productColors.forEach(col => {
     if (col && !availableColors.some(c => c.name.toLowerCase() === col.toLowerCase())) {
       availableColors.push({
@@ -103,7 +100,6 @@ export const ProductPreviewModal: React.FC<ProductPreviewModalProps> = ({ produc
     }
   });
 
-  // Then add the standard common known colors
   COMMON_KNOWN_COLORS.forEach(col => {
     if (!availableColors.some(c => c.name.toLowerCase() === col.name.toLowerCase())) {
       availableColors.push({
@@ -114,19 +110,19 @@ export const ProductPreviewModal: React.FC<ProductPreviewModalProps> = ({ produc
     }
   });
 
-  // Variants that match the selected color (or fallback to all variants if product has generic colors)
   const exactColorVariants = product.variants.filter(
     v => (v.color || '').toLowerCase() === (selectedColor || '').toLowerCase()
   );
   const applicableVariants = exactColorVariants.length > 0 ? exactColorVariants : product.variants;
 
-  // Current selected variant with the chosen color attached
   const baseVariant = applicableVariants.find(v => v.size === selectedSize) ||
                       product.variants.find(v => v.size === selectedSize);
 
   const currentVariant: ProductVariant | null = baseVariant
     ? { ...baseVariant, color: selectedColor }
     : null;
+
+  const currentImageUrl = product.imageUrl || '';
 
   return (
     <div className="fixed inset-0 z-50 bg-white sm:bg-slate-900/60 sm:backdrop-blur-xs flex sm:items-center sm:justify-center sm:p-4">
@@ -151,19 +147,34 @@ export const ProductPreviewModal: React.FC<ProductPreviewModalProps> = ({ produc
         </div>
 
         <div className="flex-1 overflow-y-auto p-5 space-y-5">
-          {/* Product Preview Image Banner */}
-          <div className="aspect-video w-full rounded-2xl overflow-hidden bg-slate-100 border border-slate-200/80 relative group shadow-2xs">
-            <div className="scanner-beam" />
-            <img 
-              src={normalizeImageUrl(product.imageUrl || "")} 
-              alt={product.name}
-              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-              onError={(e) => {
-                (e.target as HTMLImageElement).src = "/logo.png";
-              }}
-            />
+          {/* Product Preview Image Banner with Zoom Trigger */}
+          <div className="aspect-video w-full rounded-2xl overflow-hidden bg-slate-100 border border-slate-200/80 relative group shadow-2xs flex items-center justify-center">
+            {currentImageUrl ? (
+              <>
+                <img 
+                  src={normalizeImageUrl(currentImageUrl)} 
+                  alt={product.name}
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).src = "/logo.png";
+                  }}
+                />
+                <button
+                  onClick={() => setIsZoomed(true)}
+                  className="absolute bottom-3 right-3 p-2 rounded-xl bg-slate-900/70 hover:bg-slate-900 text-white shadow-md backdrop-blur-xs transition-all cursor-pointer opacity-90 hover:opacity-100"
+                  title="Enlarge Image"
+                >
+                  <Maximize2 className="w-4 h-4 text-[#FACB00]" />
+                </button>
+              </>
+            ) : (
+              <div className="text-center p-4">
+                <span className="text-xs text-slate-400 font-bold">No Image Attached</span>
+              </div>
+            )}
+
             {/* Sector / Category badge */}
-            <div className="absolute top-2.5 left-2.5 z-10">
+            <div className="absolute top-2.5 left-2.5 z-10 pointer-events-none">
               <span className="px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-wider bg-white/95 text-[#030A91] shadow-2xs border border-slate-200/60 backdrop-blur-xs">
                 {product.category || 'Uniform'}
               </span>
@@ -339,7 +350,31 @@ export const ProductPreviewModal: React.FC<ProductPreviewModalProps> = ({ produc
           </button>
         </div>
       </div>
+
+      {/* Fullscreen Zoom Lightbox */}
+      {isZoomed && currentImageUrl && (
+        <div
+          onClick={() => setIsZoomed(false)}
+          className="fixed inset-0 z-60 bg-black/90 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in"
+        >
+          <div className="relative max-w-4xl max-h-[90vh] flex flex-col items-center">
+            <button
+              onClick={() => setIsZoomed(false)}
+              className="absolute -top-10 right-0 text-white/80 hover:text-white p-2 rounded-xl bg-white/10 cursor-pointer"
+            >
+              <X className="w-6 h-6" />
+            </button>
+            <img
+              src={normalizeImageUrl(currentImageUrl)}
+              alt={product.name}
+              className="max-h-[82vh] w-auto max-w-full object-contain rounded-2xl shadow-2xl"
+            />
+            <span className="text-white text-xs font-bold mt-3 bg-black/40 px-3 py-1 rounded-full">
+              {product.name} • {product.school}
+            </span>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
-
