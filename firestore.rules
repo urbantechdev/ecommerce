@@ -245,5 +245,24 @@ service cloud.firestore {
       allow update: if false;
       allow delete: if isAdmin() || (isSignedIn() && request.auth.token.email == email);
     }
+
+    match /orders/{orderId} {
+      allow get: if true;
+      allow list: if isAdmin();
+      allow create: if incoming().keys().hasAll(['customerPhone', 'items', 'totalAmount']) &&
+                       incoming().totalAmount is number &&
+                       incoming().totalAmount >= 0;
+      allow update, delete: if isAdmin();
+    }
+
+    match /sales/{saleId} {
+      allow read, write: if isSignedIn() || isAdmin();
+    }
+
+    match /inquiries/{inquiryId} {
+      allow create: if incoming().keys().hasAll(['name', 'phone']) &&
+                       incoming().name is string && incoming().phone is string;
+      allow read, write: if isAdmin();
+    }
   }
 }

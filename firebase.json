@@ -15,7 +15,7 @@
   },
   "firestore": [
     {
-      "database": "ai-studio-uhurumarketunifo-a6b8e363-33a9-4ad9-9adf-f375f36e2445",
+      "database": "ai-studio-naisiaeschooluni-ff1bcda5-c527-425d-91e7-84292c2b2c02",
       "rules": "firestore.rules"
     }
   ]
