@@ -354,26 +354,7 @@ export const LoginView: React.FC = () => {
     setErrorMessage('');
   };
 
-  // Demo PIN helpers for quick testing & hint
-  const getDemoPinForUser = useCallback(
-    (userOrId?: StaffUserItem | string | null) => {
-      if (!userOrId) return '333333';
-      if (typeof userOrId === 'object') {
-        if (userOrId.demoPin) return userOrId.demoPin;
-        userOrId = userOrId.id;
-      }
-      const found = staffList.find((s) => s.id === userOrId);
-      if (found?.demoPin) return found.demoPin;
-      if (userOrId === 'usr-pos-nbi') return '123456';
-      if (userOrId === 'usr-pos-wst') return '654321';
-      if (userOrId === 'usr-pos-msa') return '112233';
-      if (userOrId === 'usr-pos-ksm') return '334455';
-      if (userOrId.includes('1791527847945')) return '333333';
-      if (userOrId.includes('1791527957212')) return '333333';
-      return '333333';
-    },
-    [staffList]
-  );
+
 
   // Standard Email + Password submission (Strictly Enforced for All Roles)
   const handleSubmit = async (e: React.FormEvent) => {
@@ -1322,31 +1303,11 @@ export const LoginView: React.FC = () => {
                   )}
                 </button>
 
-                {/* Demo Helper & PIN Hint Footer Bar */}
-                <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
-                  <div className="flex items-center space-x-1.5 min-w-0">
-                    <Key className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-                    <span className="truncate">
-                      Hint:{' '}
-                      <strong className="text-slate-800 font-mono">
-                        {selectedStaffUser.pinHint || `${getDemoPinForUser(selectedStaffUser).slice(0, 2)}••${getDemoPinForUser(selectedStaffUser).slice(-2)}`}
-                      </strong>
-                    </span>
-                  </div>
-
-                  <div className="flex items-center space-x-2 shrink-0">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const demoPin = getDemoPinForUser(selectedStaffUser);
-                        setEnteredPin(demoPin);
-                        playSound('press');
-                        handlePinSubmit(demoPin);
-                      }}
-                      className="text-[11px] font-black text-[#030A91] hover:underline px-2.5 py-1 rounded-lg bg-blue-50 border border-blue-200/80 hover:bg-blue-100 active:scale-95 transition-all"
-                    >
-                      Auto-Fill ({getDemoPinForUser(selectedStaffUser)})
-                    </button>
+                {/* Secure Production Status Footer */}
+                <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-center text-xs text-slate-400">
+                  <div className="flex items-center space-x-1.5 font-mono text-[11px] text-slate-500">
+                    <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+                    <span>Secure 6-Digit PIN • Enterprise Encrypted</span>
                   </div>
                 </div>
               </div>
