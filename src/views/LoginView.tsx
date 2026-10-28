@@ -522,7 +522,7 @@ export const LoginView: React.FC = () => {
       {/* ==================================================== */}
       {/* END-TO-END WIDE HEADER WITH SINGLE WAVE BOTTOM CURVE */}
       {/* ==================================================== */}
-      <div className="w-full relative bg-gradient-to-r from-[#02066F] via-[#030A91] to-[#0412B3] text-white shadow-md">
+      <div className="w-full sticky top-0 z-50 bg-gradient-to-r from-[#02066F] via-[#030A91] to-[#0412B3] text-white shadow-md">
         <div className="max-w-7xl mx-auto px-4 pt-5 pb-3 sm:pt-14 sm:pb-12 text-center relative z-10">
           <div className="inline-flex items-center justify-center space-x-2.5 sm:space-x-3.5">
             <img
