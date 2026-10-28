@@ -416,6 +416,7 @@ export interface DatabaseSchema {
   purchases: PurchaseOrder[];
   expenses: Expense[];
   auditLogs: AuditLog[];
+  pushSubscriptions: any[];
   settings: SystemSettings;
 }
 
@@ -470,6 +471,11 @@ class DatabaseEngine {
           }
         } else {
           parsed.products = this.seedProductsFromInventoryCsv();
+          updated = true;
+        }
+
+        if (!Array.isArray(parsed.pushSubscriptions)) {
+          parsed.pushSubscriptions = [];
           updated = true;
         }
 
@@ -676,6 +682,7 @@ class DatabaseEngine {
       purchases,
       expenses,
       auditLogs,
+      pushSubscriptions: [],
       settings,
     };
   }
