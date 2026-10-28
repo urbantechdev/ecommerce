@@ -16,6 +16,7 @@ import {
   ShoppingCart
 } from 'lucide-react';
 import { StatusBadge } from '../components/StatusBadge';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 
 interface DashboardViewProps {
   onNavigate: (view: string) => void;
@@ -24,13 +25,33 @@ interface DashboardViewProps {
 export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
   const { activeBranchId, activeBranchName, canAccessFinancials, user } = useAuth();
   const [metrics, setMetrics] = useState<DashboardMetrics | null>(null);
+  const [salesTrendData, setSalesTrendData] = useState<Array<{ date: string; totalSales: number }>>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   const fetchDashboardData = async () => {
     setIsLoading(true);
     try {
-      const data = await api.getDashboardMetrics(activeBranchId);
+      const [data, sales] = await Promise.all([
+        api.getDashboardMetrics(activeBranchId),
+        api.getSales(activeBranchId === 'all' ? undefined : { branchId: activeBranchId }).catch(() => []),
+      ]);
       setMetrics(data);
+
+      const map = new Map<string, number>();
+      sales.forEach((s: any) => {
+        const day = s.createdAt ? s.createdAt.substring(0, 10) : 'Today';
+        map.set(day, (map.get(day) || 0) + (Number(s.totalAmount) || 0));
+      });
+
+      const arr = Array.from(map.entries())
+        .sort((a, b) => a[0].localeCompare(b[0]))
+        .slice(-7)
+        .map(([date, totalSales]) => ({
+          date: new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+          totalSales,
+        }));
+
+      setSalesTrendData(arr.length > 0 ? arr : [{ date: 'Today', totalSales: data?.todaySales || 0 }]);
     } catch (err) {
       console.error('Failed to load dashboard metrics:', err);
     } finally {
@@ -165,6 +186,40 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
               Review reorder alerts &rarr;
             </button>
           </div>
+        </div>
+      </div>
+
+      {/* Real-Time Daily Sales Trend Bar Chart */}
+      <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs">
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h3 className="font-black text-base text-slate-900 flex items-center">
+              <TrendingUp className="w-5 h-5 mr-2 text-[#030A91]" />
+              Daily Sales Trend Analysis (Real-Time Firestore)
+            </h3>
+            <p className="text-xs text-slate-500 mt-0.5">
+              Live transactional revenue trends across recent operating days
+            </p>
+          </div>
+          <span className="px-3 py-1 bg-blue-50 text-[#030A91] text-xs font-black uppercase tracking-wider rounded-full border border-blue-200">
+            Recharts Active
+          </span>
+        </div>
+
+        <div className="h-72 w-full">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={salesTrendData} margin={{ top: 10, right: 30, left: 10, bottom: 5 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+              <XAxis dataKey="date" stroke="#64748b" fontSize={12} tickLine={false} />
+              <YAxis stroke="#64748b" fontSize={12} tickLine={false} tickFormatter={(val) => `KES ${val >= 1000 ? (val/1000).toFixed(0) + 'k' : val}`} />
+              <Tooltip 
+                formatter={(value: any) => [`KES ${Number(value).toLocaleString()}`, 'Total Sales']}
+                contentStyle={{ backgroundColor: '#030A91', borderRadius: '12px', color: '#fff', border: 'none', fontWeight: 'bold' }}
+                itemStyle={{ color: '#FACB00' }}
+              />
+              <Bar dataKey="totalSales" fill="#030A91" radius={[8, 8, 0, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
         </div>
       </div>
 
