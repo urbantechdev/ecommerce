@@ -26,52 +26,10 @@ import { PolicyView } from './views/pages/PolicyView';
 import { ContactUsView } from './views/pages/ContactUsView';
 import { UniformsView } from './views/pages/UniformsView';
 
-import { ErrorBoundary } from './components/ErrorBoundary';
-
 const AppContent: React.FC = () => {
   const { user, isLoading } = useAuth();
   const [currentView, setCurrentView] = useState<string>('pos');
-  const [path, setPath] = useState<string>(window.location.pathname);
-
-  // Sync route on popstate / custom navigation
-  useEffect(() => {
-    const handleLocationChange = () => {
-      setPath(window.location.pathname);
-    };
-
-    // Global link interceptor for SPA navigation
-    const handleLinkClick = (e: MouseEvent) => {
-      const target = (e.target as HTMLElement).closest('a');
-      if (
-        target &&
-        target.href &&
-        target.origin === window.location.origin &&
-        !target.hasAttribute('download') &&
-        target.target !== '_blank' &&
-        !e.ctrlKey &&
-        !e.metaKey &&
-        !e.shiftKey
-      ) {
-        const href = target.getAttribute('href');
-        if (href && href.startsWith('/') && !href.startsWith('/api')) {
-          e.preventDefault();
-          if (window.location.pathname !== href) {
-            window.history.pushState(null, '', href);
-            setPath(window.location.pathname);
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-          }
-        }
-      }
-    };
-
-    window.addEventListener('popstate', handleLocationChange);
-    document.addEventListener('click', handleLinkClick);
-
-    return () => {
-      window.removeEventListener('popstate', handleLocationChange);
-      document.removeEventListener('click', handleLinkClick);
-    };
-  }, []);
+  const path = window.location.pathname;
 
   // Enforce search engine indexing rules:
   // Customer portal is indexed; admin, cashier, accountant, and ERP are blocked from crawlers
@@ -107,6 +65,7 @@ const AppContent: React.FC = () => {
   if (normalizedPath === '/school-uniforms') return <UniformsView type="School Uniforms" />;
   if (normalizedPath === '/kmtc-uniforms') return <UniformsView type="KMTC Uniforms" />;
   if (normalizedPath === '/customized-uniforms') return <UniformsView type="Customized Uniforms" />;
+
 
   // ERP Login and Admin
   if (normalizedPath === '/erp' || normalizedPath === '/login' || normalizedPath === '/admin') {
@@ -175,15 +134,12 @@ const AppContent: React.FC = () => {
   // Default to portal for unknown paths
   return <PortalView />;
 };
-
 export default function App() {
   return (
-    <ErrorBoundary>
-      <AuthProvider>
-        <NotificationProvider>
-          <AppContent />
-        </NotificationProvider>
-      </AuthProvider>
-    </ErrorBoundary>
+    <AuthProvider>
+      <NotificationProvider>
+        <AppContent />
+      </NotificationProvider>
+    </AuthProvider>
   );
 }

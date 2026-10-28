@@ -22,6 +22,53 @@ export const ExpensesView: React.FC = () => {
   const [paymentReference, setPaymentReference] = useState('');
   const [description, setDescription] = useState('');
 
+  // M-Pesa B2C / B2B Disburse states
+  const [b2cPhone, setB2cPhone] = useState('');
+  const [b2bShortcode, setB2bShortcode] = useState('');
+  const [isDisbursing, setIsDisbursing] = useState(false);
+
+  const handleDisburseMpesa = async () => {
+    if (paymentMethod === 'MPESA_B2C') {
+      if (!b2cPhone.trim()) {
+        notify({ type: 'WARNING', title: 'Phone Required', message: 'Enter recipient phone for B2C payout' });
+        return;
+      }
+      setIsDisbursing(true);
+      try {
+        const res = await api.initiateMpesaB2C({ phone: b2cPhone.trim(), amount });
+        notify({
+          type: 'SUCCESS',
+          title: 'M-Pesa B2C Initiated',
+          message: res.message || `KES ${amount} payout sent to ${b2cPhone}`
+        });
+        setPaymentReference(res.transactionId || `B2C-${Date.now()}`);
+      } catch (err: any) {
+        notify({ type: 'ERROR', title: 'B2C Payout Failed', message: err.message });
+      } finally {
+        setIsDisbursing(false);
+      }
+    } else if (paymentMethod === 'MPESA_B2B') {
+      if (!b2bShortcode.trim()) {
+        notify({ type: 'WARNING', title: 'Shortcode Required', message: 'Enter Paybill/Till shortcode for B2B payment' });
+        return;
+      }
+      setIsDisbursing(true);
+      try {
+        const res = await api.initiateMpesaB2B({ shortcode: b2bShortcode.trim(), amount });
+        notify({
+          type: 'SUCCESS',
+          title: 'M-Pesa B2B Initiated',
+          message: res.message || `KES ${amount} payment sent to ${b2bShortcode}`
+        });
+        setPaymentReference(res.transactionId || `B2B-${Date.now()}`);
+      } catch (err: any) {
+        notify({ type: 'ERROR', title: 'B2B Payment Failed', message: err.message });
+      } finally {
+        setIsDisbursing(false);
+      }
+    }
+  };
+
   const fetchExpenses = async () => {
     try {
       const data = await api.getExpenses({
@@ -274,19 +321,75 @@ export const ExpensesView: React.FC = () => {
 
                 <div>
                   <label className="text-xs font-bold text-slate-700 uppercase block mb-1">
-                    Payment Method:
+                    Payment Channel:
                   </label>
                   <select
                     value={paymentMethod}
                     onChange={(e) => setPaymentMethod(e.target.value as any)}
-                    className="w-full px-2 py-2 text-xs bg-slate-50 border border-slate-300 rounded-xl"
+                    className="w-full px-2 py-2 text-xs bg-slate-50 border border-slate-300 rounded-xl font-medium"
                   >
-                    <option value="MPESA">M-PESA</option>
+                    <option value="MPESA">Standard M-PESA</option>
+                    <option value="MPESA_B2C">M-Pesa B2C (Staff / Tailor Payout)</option>
+                    <option value="MPESA_B2B">M-Pesa B2B (Paybill / Supplier Payout)</option>
                     <option value="BANK_TRANSFER">Bank EFT / Cheque</option>
                     <option value="CASH">Petty Cash</option>
                   </select>
                 </div>
               </div>
+
+              {/* M-Pesa B2C Payout Details */}
+              {paymentMethod === 'MPESA_B2C' && (
+                <div className="p-3 bg-emerald-50/80 border border-emerald-200 rounded-xl space-y-2">
+                  <div className="flex items-center justify-between text-[11px] font-bold text-emerald-900">
+                    <span>M-Pesa B2C Staff / Tailor Disbursement</span>
+                    <span className="text-[10px] text-emerald-700">Daraja API</span>
+                  </div>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={b2cPhone}
+                      onChange={(e) => setB2cPhone(e.target.value)}
+                      placeholder="e.g. 0712345678"
+                      className="flex-1 px-3 py-1.5 text-xs bg-white border border-emerald-300 rounded-lg font-mono"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleDisburseMpesa}
+                      disabled={isDisbursing}
+                      className="px-3 py-1.5 bg-emerald-700 hover:bg-emerald-800 text-white rounded-lg text-xs font-bold shadow-xs transition-colors shrink-0 cursor-pointer"
+                    >
+                      {isDisbursing ? 'Sending...' : 'Disburse B2C'}
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* M-Pesa B2B Payout Details */}
+              {paymentMethod === 'MPESA_B2B' && (
+                <div className="p-3 bg-blue-50/80 border border-blue-200 rounded-xl space-y-2">
+                  <div className="flex items-center justify-between text-[11px] font-bold text-blue-900">
+                    <span>M-Pesa B2B Paybill / Till Disbursement</span>
+                    <span className="text-[10px] text-blue-700">Daraja API</span>
+                  </div>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={b2bShortcode}
+                      onChange={(e) => setB2bShortcode(e.target.value)}
+                      placeholder="e.g. 522522 or 600100"
+                      className="flex-1 px-3 py-1.5 text-xs bg-white border border-blue-300 rounded-lg font-mono"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleDisburseMpesa}
+                      disabled={isDisbursing}
+                      className="px-3 py-1.5 bg-[#030A91] hover:bg-blue-900 text-white rounded-lg text-xs font-bold shadow-xs transition-colors shrink-0 cursor-pointer"
+                    >
+                      {isDisbursing ? 'Sending...' : 'Disburse B2B'}
+                    </button>
+                  </div>
+                </div>
+              )}
 
               <div>
                 <label className="text-xs font-bold text-slate-700 uppercase block mb-1">

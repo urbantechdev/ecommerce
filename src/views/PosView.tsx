@@ -22,14 +22,11 @@ import {
   Printer,
   FileText,
   Shirt,
-  ArrowLeft,
-  Palette,
-  ChevronDown,
-  Check
+  ArrowLeft
 } from 'lucide-react';
 import { ReceiptModal } from '../components/ReceiptModal';
+import { MpesaStkWaitingModal } from '../components/MpesaStkWaitingModal';
 import { BarcodeScannerModal } from '../components/BarcodeScannerModal';
-import { COMMON_KNOWN_COLORS, getColorHex, getColorBorder } from '../components/ProductPreviewModal';
 import { normalizeImageUrl } from './ProductsView';
 
 interface CartItem {
@@ -50,6 +47,8 @@ interface CartItem {
 export const PosView: React.FC = () => {
   const { user, activeBranchId, branches } = useAuth();
   const { notify } = useNotification();
+  const activeBranch = branches.find((b) => b.id === activeBranchId);
+  const activeBranchName = activeBranch?.name || 'Naisiae Flagship';
 
   const [products, setProducts] = useState<Product[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
@@ -70,21 +69,16 @@ export const PosView: React.FC = () => {
 
   // Variant selector modal
   const [activeProductForVariant, setActiveProductForVariant] = useState<Product | null>(null);
-  const [selectedPosColor, setSelectedPosColor] = useState<string>('Navy Blue');
-
-  useEffect(() => {
-    if (activeProductForVariant && activeProductForVariant.variants.length > 0) {
-      const realCol = activeProductForVariant.variants.find(
-        v => v.color && v.color.toLowerCase() !== 'standard' && v.color.toLowerCase() !== 'default'
-      )?.color;
-      setSelectedPosColor(realCol || 'Navy Blue');
-    }
-  }, [activeProductForVariant]);
 
   // Completed Sale Receipt Modal
   const [completedSale, setCompletedSale] = useState<any>(null);
   const [completedQrCode, setCompletedQrCode] = useState<string>('');
   const [isReceiptModalOpen, setIsReceiptModalOpen] = useState(false);
+
+  // M-Pesa STK Push Modal
+  const [isPosMpesaModalOpen, setIsPosMpesaModalOpen] = useState(false);
+  const [posMpesaPhone, setPosMpesaPhone] = useState('');
+  const [posStkCheckoutId, setPosStkCheckoutId] = useState('');
 
   // Recent Sales & Reprint Modal
   const [isRecentModalOpen, setIsRecentModalOpen] = useState(false);
@@ -154,9 +148,8 @@ export const PosView: React.FC = () => {
       return;
     }
 
-    const itemColor = variant.color || 'Standard';
     setCart((prev) => {
-      const existing = prev.find((item) => item.variantId === variant.id && (item.color || 'Standard') === itemColor);
+      const existing = prev.find((item) => item.variantId === variant.id);
       if (existing) {
         if (existing.quantity + 1 > stockAvailable) {
           notify({
@@ -167,9 +160,7 @@ export const PosView: React.FC = () => {
           return prev;
         }
         return prev.map((item) =>
-          item.variantId === variant.id && (item.color || 'Standard') === itemColor
-            ? { ...item, quantity: item.quantity + 1 }
-            : item
+          item.variantId === variant.id ? { ...item, quantity: item.quantity + 1 } : item
         );
       } else {
         return [
@@ -181,7 +172,7 @@ export const PosView: React.FC = () => {
             sku: variant.sku,
             school: product.school,
             size: variant.size,
-            color: itemColor,
+            color: variant.color,
             unitPrice: variant.sellingPrice,
             costPrice: variant.costPrice,
             quantity: 1,
@@ -223,11 +214,11 @@ export const PosView: React.FC = () => {
     }
   };
 
-  const updateCartQuantity = (variantId: string, delta: number, color?: string) => {
+  const updateCartQuantity = (variantId: string, delta: number) => {
     setCart((prev) =>
       prev
         .map((item) => {
-          if (item.variantId === variantId && (!color || item.color === color)) {
+          if (item.variantId === variantId) {
             const newQty = item.quantity + delta;
             if (newQty > item.availableStock) {
               notify({
@@ -245,8 +236,8 @@ export const PosView: React.FC = () => {
     );
   };
 
-  const removeFromCart = (variantId: string, color?: string) => {
-    setCart((prev) => prev.filter((item) => !(item.variantId === variantId && (!color || item.color === color))));
+  const removeFromCart = (variantId: string) => {
+    setCart((prev) => prev.filter((item) => item.variantId !== variantId));
   };
 
   const cartSubtotal = cart.reduce((sum, item) => sum + item.unitPrice * item.quantity - item.discountAmount, 0);
@@ -679,25 +670,13 @@ export const PosView: React.FC = () => {
           {/* Cart Items List */}
           <div className="flex-1 overflow-y-auto p-2.5 space-y-2 max-h-56 sm:max-h-64 divide-y divide-slate-100">
             {cart.map((item) => (
-              <div key={`${item.variantId}-${item.color}`} className="pt-2 first:pt-0 flex items-start justify-between gap-2">
+              <div key={item.variantId} className="pt-2 first:pt-0 flex items-start justify-between gap-2">
                 <div className="min-w-0 flex-1">
                   <p className="text-[11px] font-bold text-slate-900 leading-tight truncate">
                     {item.productName}
                   </p>
-                  <div className="flex flex-wrap items-center gap-1.5 text-[9.5px] text-slate-500 mt-0.5">
+                  <div className="flex items-center space-x-2 text-[9.5px] text-slate-500 mt-0.5">
                     <span className="font-mono bg-slate-100 px-1 rounded">Size: {item.size}</span>
-                    {item.color && (
-                      <span className="font-semibold bg-blue-50 text-[#030A91] px-1.5 py-0.2 rounded flex items-center gap-1 border border-blue-100">
-                        <span
-                          className="w-1.5 h-1.5 rounded-full inline-block border shrink-0"
-                          style={{
-                            backgroundColor: getColorHex(item.color),
-                            borderColor: getColorBorder(item.color),
-                          }}
-                        />
-                        <span className="truncate max-w-[80px]">{item.color}</span>
-                      </span>
-                    )}
                     <span>KES {item.unitPrice.toLocaleString()}</span>
                   </div>
                 </div>
@@ -705,20 +684,20 @@ export const PosView: React.FC = () => {
                 {/* Quantity controls */}
                 <div className="flex items-center space-x-1 shrink-0">
                   <button
-                    onClick={() => updateCartQuantity(item.variantId, -1, item.color)}
+                    onClick={() => updateCartQuantity(item.variantId, -1)}
                     className="w-5 h-5 rounded-md bg-slate-100 hover:bg-slate-200 text-slate-700 flex items-center justify-center font-bold text-xs"
                   >
                     <Minus className="w-2.5 h-2.5" />
                   </button>
                   <span className="text-xs font-bold w-4 text-center">{item.quantity}</span>
                   <button
-                    onClick={() => updateCartQuantity(item.variantId, 1, item.color)}
+                    onClick={() => updateCartQuantity(item.variantId, 1)}
                     className="w-5 h-5 rounded-md bg-slate-100 hover:bg-slate-200 text-slate-700 flex items-center justify-center font-bold text-xs"
                   >
                     <Plus className="w-2.5 h-2.5" />
                   </button>
                   <button
-                    onClick={() => removeFromCart(item.variantId, item.color)}
+                    onClick={() => removeFromCart(item.variantId)}
                     className="w-5 h-5 rounded-md text-rose-500 hover:bg-rose-50 flex items-center justify-center ml-0.5"
                   >
                     <Trash2 className="w-2.5 h-2.5" />
@@ -815,17 +794,65 @@ export const PosView: React.FC = () => {
 
             {/* Conditional tender inputs */}
             {paymentMethod === 'MPESA' && (
-              <div>
-                <label className="text-[10px] font-bold text-slate-600 uppercase block mb-1">
-                  M-PESA Confirmation Ref / STK Code:
-                </label>
-                <input
-                  type="text"
-                  value={paymentReference}
-                  onChange={(e) => setPaymentReference(e.target.value.toUpperCase())}
-                  placeholder="e.g. QKJ892318M"
-                  className="w-full px-3 py-1.5 text-xs font-mono uppercase bg-white border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                />
+              <div className="space-y-2">
+                <div>
+                  <label className="text-[10px] font-bold text-slate-600 uppercase block mb-1">
+                    M-PESA Confirmation Ref / STK Code:
+                  </label>
+                  <input
+                    type="text"
+                    value={paymentReference}
+                    onChange={(e) => setPaymentReference(e.target.value.toUpperCase())}
+                    placeholder="e.g. QKJ892318M"
+                    className="w-full px-3 py-1.5 text-xs font-mono uppercase bg-white border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  />
+                </div>
+
+                {/* Instant STK Push Trigger Widget */}
+                <div className="p-2.5 bg-emerald-50/70 border border-emerald-200/80 rounded-xl space-y-1.5">
+                  <div className="flex items-center justify-between text-[10.5px] font-bold text-emerald-900">
+                    <span>📲 Prompt Customer Phone (STK Push)</span>
+                    <span className="text-[9.5px] text-emerald-700">SIM Toolkit</span>
+                  </div>
+                  <div className="flex gap-1.5">
+                    <input
+                      type="tel"
+                      value={posMpesaPhone}
+                      onChange={(e) => setPosMpesaPhone(e.target.value)}
+                      placeholder="e.g. 0712345678"
+                      className="flex-1 px-2.5 py-1 text-xs bg-white border border-emerald-300 rounded-lg font-mono focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                    />
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        if (!posMpesaPhone.trim()) {
+                          notify({ type: 'WARNING', title: 'Phone Required', message: 'Enter customer phone number for STK push' });
+                          return;
+                        }
+                        if (totalPayable <= 0) {
+                          notify({ type: 'WARNING', title: 'Empty Cart', message: 'Add items before initiating STK push' });
+                          return;
+                        }
+                        try {
+                          const res = await api.initiateMpesaStkPush({
+                            phone: posMpesaPhone.trim(),
+                            amount: totalPayable,
+                            accountReference: `POS-${activeBranchName?.replace(/\s+/g, '') || 'NAISIAE'}`
+                          });
+                          if (res?.CheckoutRequestID) {
+                            setPosStkCheckoutId(res.CheckoutRequestID);
+                          }
+                          setIsPosMpesaModalOpen(true);
+                        } catch (err: any) {
+                          setIsPosMpesaModalOpen(true);
+                        }
+                      }}
+                      className="px-3 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-[11px] font-bold shadow-xs transition-colors shrink-0 cursor-pointer"
+                    >
+                      Send STK Push
+                    </button>
+                  </div>
+                </div>
               </div>
             )}
 
@@ -886,8 +913,8 @@ export const PosView: React.FC = () => {
       {/* PRODUCT PREVIEW & SIZE VARIANT SELECTION MODAL       */}
       {/* ==================================================== */}
       {activeProductForVariant && (
-        <div className="fixed inset-0 z-50 bg-white sm:bg-slate-900/60 sm:backdrop-blur-xs flex sm:items-center sm:justify-center sm:p-4">
-          <div className="bg-white w-full h-full sm:h-auto sm:max-h-[90vh] sm:rounded-3xl sm:max-w-lg shadow-none sm:shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-150 border-0 sm:border border-slate-200">
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-0 sm:p-4">
+          <div className="bg-white w-full h-full sm:h-auto sm:max-h-[90vh] sm:rounded-3xl sm:max-w-lg shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-150 border border-slate-200">
             {/* Header / Product Preview Banner */}
             <div className="relative p-4 sm:p-6 bg-gradient-to-br from-[#030A91] via-[#0412B3] to-[#0A2076] text-white flex flex-col shrink-0">
               <div className="flex items-center justify-between mb-3">
@@ -945,140 +972,62 @@ export const PosView: React.FC = () => {
             </div>
 
             {/* Scrollable Size Variants List */}
-            <div className="p-4 sm:p-6 flex-1 overflow-y-auto space-y-4 bg-slate-50/60">
-              {/* 1. Color Select Dropdown */}
-              <div className="space-y-2 bg-white p-3.5 rounded-2xl border border-slate-200/90 shadow-2xs">
-                <div className="flex items-center justify-between">
-                  <label htmlFor="pos-color-select" className="text-[11px] font-black uppercase tracking-wider text-slate-700 flex items-center space-x-1.5">
-                    <Palette className="w-3.5 h-3.5 text-[#030A91]" />
-                    <span>Garment Color:</span>
-                  </label>
-                  <span className="text-[10.5px] font-bold text-[#030A91] bg-slate-50 px-2 py-0.5 rounded-full border border-slate-200 shadow-2xs flex items-center space-x-1.5">
-                    <span
-                      className="w-2.5 h-2.5 rounded-full inline-block border shadow-2xs shrink-0"
-                      style={{
-                        backgroundColor: getColorHex(selectedPosColor),
-                        borderColor: getColorBorder(selectedPosColor)
-                      }}
-                    />
-                    <span className="truncate max-w-[120px]">{selectedPosColor}</span>
-                  </span>
-                </div>
-
-                <div className="relative">
-                  <div className="absolute left-3.5 top-1/2 -translate-y-1/2 flex items-center pointer-events-none z-10">
-                    <span
-                      className="w-4 h-4 rounded-full border shadow-2xs shrink-0 transition-colors"
-                      style={{
-                        backgroundColor: getColorHex(selectedPosColor),
-                        borderColor: getColorBorder(selectedPosColor)
-                      }}
-                    />
-                  </div>
-
-                  <select
-                    id="pos-color-select"
-                    value={selectedPosColor}
-                    onChange={(e) => setSelectedPosColor(e.target.value)}
-                    className="w-full pl-10 pr-10 py-2.5 bg-white border-2 border-slate-200 hover:border-[#030A91] focus:border-[#030A91] rounded-xl text-xs font-bold text-slate-900 shadow-xs appearance-none transition-all cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#030A91]/20"
-                  >
-                    {COMMON_KNOWN_COLORS.map((col) => (
-                      <option key={col.name} value={col.name}>
-                        {col.name}
-                      </option>
-                    ))}
-                  </select>
-
-                  <div className="absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
-                    <ChevronDown className="w-4 h-4" />
-                  </div>
-                </div>
-
-                {/* Quick Tap Color Swatches */}
-                <div className="flex items-center space-x-1.5 overflow-x-auto pb-1 pt-1 scrollbar-none">
-                  {COMMON_KNOWN_COLORS.slice(0, 10).map((col) => {
-                    const isSelected = selectedPosColor === col.name;
-                    return (
-                      <button
-                        key={col.name}
-                        type="button"
-                        onClick={() => setSelectedPosColor(col.name)}
-                        className={`group flex items-center space-x-1.5 px-2.5 py-1 rounded-lg text-[10px] font-bold border transition-all cursor-pointer shrink-0 ${
-                          isSelected
-                            ? 'bg-[#030A91] text-white border-[#030A91] shadow-xs scale-102'
-                            : 'bg-slate-50 text-slate-700 border-slate-200 hover:border-slate-300 active:scale-95'
-                        }`}
-                      >
-                        <span
-                          className="w-2.5 h-2.5 rounded-full shrink-0 border"
-                          style={{ backgroundColor: col.hex, borderColor: col.border || col.hex }}
-                        />
-                        <span className="truncate max-w-[85px]">{col.name.split('/')[0].trim()}</span>
-                        {isSelected && <Check className="w-2.5 h-2.5 text-[#FACB00] shrink-0" />}
-                      </button>
-                    );
-                  })}
-                </div>
+            <div className="p-4 sm:p-6 flex-1 overflow-y-auto space-y-3 bg-slate-50/60">
+              <div className="flex items-center justify-between">
+                <p className="text-xs font-black text-slate-800 uppercase tracking-wider">
+                  Select Garment Size & Variant:
+                </p>
+                <span className="text-[11px] text-slate-500 font-mono">
+                  {activeProductForVariant.variants.length} Sizes Available
+                </span>
               </div>
 
-              {/* 2. Garment Size Selection */}
               <div className="space-y-2.5">
-                <div className="flex items-center justify-between">
-                  <p className="text-xs font-black text-slate-800 uppercase tracking-wider">
-                    Select Garment Size & Variant:
-                  </p>
-                  <span className="text-[11px] text-slate-500 font-mono">
-                    {activeProductForVariant.variants.length} Sizes Available
-                  </span>
-                </div>
-
-                <div className="space-y-2.5">
-                  {activeProductForVariant.variants.map((v) => {
-                    const stock = v.branchStock[effectiveBranchId] ?? 0;
-                    const isAvailable = stock > 0;
-                    return (
-                      <button
-                        key={v.id}
-                        disabled={!isAvailable}
-                        onClick={() => handleAddToCart(activeProductForVariant, { ...v, color: selectedPosColor })}
-                        className={`w-full p-3.5 rounded-2xl border text-left flex items-center justify-between transition-all shadow-2xs ${
-                          isAvailable
-                            ? 'bg-white border-slate-200/90 hover:border-[#030A91] hover:bg-blue-50/30 hover:shadow-md active:scale-[0.99]'
-                            : 'bg-slate-100 border-slate-200 opacity-60 cursor-not-allowed'
-                        }`}
-                      >
-                        <div className="min-w-0 pr-2">
-                          <div className="flex items-center space-x-2">
-                            <span className="px-2.5 py-0.5 rounded-lg bg-[#030A91] text-[#FACB00] font-black text-xs font-mono">
-                              Size {v.size}
-                            </span>
-                            <span className="text-[11px] text-slate-500 font-mono truncate">
-                              SKU: {v.sku}
-                            </span>
-                          </div>
-                          <span
-                            className={`text-[11px] font-bold mt-1 block ${
-                              isAvailable ? 'text-emerald-700' : 'text-rose-600'
-                            }`}
-                          >
-                            {isAvailable ? `✓ ${stock} units in stock at ${currentBranch?.name}` : '✕ Out of stock at this branch'}
+                {activeProductForVariant.variants.map((v) => {
+                  const stock = v.branchStock[effectiveBranchId] ?? 0;
+                  const isAvailable = stock > 0;
+                  return (
+                    <button
+                      key={v.id}
+                      disabled={!isAvailable}
+                      onClick={() => handleAddToCart(activeProductForVariant, v)}
+                      className={`w-full p-3.5 rounded-2xl border text-left flex items-center justify-between transition-all shadow-2xs ${
+                        isAvailable
+                          ? 'bg-white border-slate-200/90 hover:border-[#030A91] hover:bg-blue-50/30 hover:shadow-md active:scale-[0.99]'
+                          : 'bg-slate-100 border-slate-200 opacity-60 cursor-not-allowed'
+                      }`}
+                    >
+                      <div className="min-w-0 pr-2">
+                        <div className="flex items-center space-x-2">
+                          <span className="px-2.5 py-0.5 rounded-lg bg-[#030A91] text-[#FACB00] font-black text-xs font-mono">
+                            Size {v.size}
+                          </span>
+                          <span className="text-[11px] text-slate-500 font-mono truncate">
+                            SKU: {v.sku}
                           </span>
                         </div>
+                        <span
+                          className={`text-[11px] font-bold mt-1 block ${
+                            isAvailable ? 'text-emerald-700' : 'text-rose-600'
+                          }`}
+                        >
+                          {isAvailable ? `✓ ${stock} units in stock at ${currentBranch?.name}` : '✕ Out of stock at this branch'}
+                        </span>
+                      </div>
 
-                        <div className="text-right shrink-0">
-                          <span className="text-sm font-black text-[#030A91] block">
-                            KES {v.sellingPrice.toLocaleString()}
+                      <div className="text-right shrink-0">
+                        <span className="text-sm font-black text-[#030A91] block">
+                          KES {v.sellingPrice.toLocaleString()}
+                        </span>
+                        {isAvailable && (
+                          <span className="mt-1 inline-flex items-center text-[10px] bg-[#FACB00] text-[#030A91] font-black px-2 py-0.5 rounded-lg shadow-2xs">
+                            Add to Cart +
                           </span>
-                          {isAvailable && (
-                            <span className="mt-1 inline-flex items-center text-[10px] bg-[#FACB00] text-[#030A91] font-black px-2 py-0.5 rounded-lg shadow-2xs">
-                              Add {selectedPosColor} +
-                            </span>
-                          )}
-                        </div>
-                      </button>
-                    );
-                  })}
-                </div>
+                        )}
+                      </div>
+                    </button>
+                  );
+                })}
               </div>
             </div>
 
@@ -1106,8 +1055,8 @@ export const PosView: React.FC = () => {
 
       {/* Recent Receipts / Reprint Modal */}
       {isRecentModalOpen && (
-        <div className="fixed inset-0 z-50 overflow-y-auto bg-white sm:bg-slate-900/60 sm:backdrop-blur-xs flex sm:items-center sm:justify-center sm:p-4">
-          <div className="bg-white rounded-none sm:rounded-3xl shadow-none sm:shadow-2xl max-w-lg w-full h-full sm:h-auto overflow-hidden border-0 sm:border border-slate-200 flex flex-col">
+        <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl shadow-2xl max-w-lg w-full overflow-hidden border border-slate-200">
             <div className="p-4 bg-[#030A91] text-white flex items-center justify-between">
               <div className="flex items-center space-x-2">
                 <Printer className="w-5 h-5 text-[#FACB00]" />
@@ -1172,6 +1121,27 @@ export const PosView: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* M-Pesa STK Push Animated Ring Loading Waiting for PIN Modal */}
+      <MpesaStkWaitingModal
+        isOpen={isPosMpesaModalOpen}
+        phone={posMpesaPhone}
+        amount={totalPayable}
+        accountReference={`POS - ${activeBranchName || 'Naisiae'}`}
+        checkoutRequestId={posStkCheckoutId}
+        onSuccess={(refCode) => {
+          if (refCode) {
+            setPaymentReference(refCode);
+          }
+          setIsPosMpesaModalOpen(false);
+          notify({
+            type: 'SUCCESS',
+            title: 'M-Pesa PIN Entered',
+            message: `Payment reference ${refCode || posStkCheckoutId} confirmed. Ready to finalize checkout.`,
+          });
+        }}
+        onCancel={() => setIsPosMpesaModalOpen(false)}
+      />
 
       {/* Printable Thermal Receipt modal */}
       <ReceiptModal

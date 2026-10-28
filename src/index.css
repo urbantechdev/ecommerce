@@ -74,15 +74,15 @@ body, button, input, select, textarea {
 @keyframes toastIn {
   0% {
     opacity: 0;
-    transform: translate3d(120%, 0, 0) scale(0.9);
+    transform: scale(0.9) translateY(12px);
   }
-  65% {
+  60% {
     opacity: 1;
-    transform: translate3d(-10px, 0, 0) scale(1.02);
+    transform: scale(1.02) translateY(-2px);
   }
   100% {
     opacity: 1;
-    transform: translate3d(0, 0, 0) scale(1);
+    transform: scale(1) translateY(0);
   }
 }
 
@@ -147,13 +147,34 @@ body, button, input, select, textarea {
   animation: iconSuccessBounce 1.2s ease-in-out infinite;
 }
 
-@keyframes shake {
-  0%, 100% { transform: translateX(0); }
-  20%, 60% { transform: translateX(-6px); }
-  40%, 80% { transform: translateX(6px); }
+@keyframes scannerSweep {
+  0% {
+    transform: translateX(-100%);
+    opacity: 0;
+  }
+  20% {
+    opacity: 0.5;
+  }
+  50% {
+    opacity: 0.8;
+  }
+  80% {
+    opacity: 0.5;
+  }
+  100% {
+    transform: translateX(200%);
+    opacity: 0;
+  }
 }
 
-.animate-shake {
-  animation: shake 0.4s ease-in-out;
+.scanner-beam {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 35%;
+  background: linear-gradient(90deg, transparent, rgba(250, 203, 0, 0.35), rgba(255, 255, 255, 0.6), rgba(250, 203, 0, 0.35), transparent);
+  transform: skewX(-45deg);
+  pointer-events: none;
+  animation: scannerSweep 5s cubic-bezier(0.4, 0, 0.2, 1) infinite;
 }
 
