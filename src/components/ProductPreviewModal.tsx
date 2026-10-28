@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { X, Plus, Palette, ChevronDown, Check, Maximize2 } from 'lucide-react';
 import { Product, ProductVariant } from '../types';
 import { normalizeImageUrl } from '../views/ProductsView';
@@ -61,6 +61,20 @@ export const ProductPreviewModal: React.FC<ProductPreviewModalProps> = ({ produc
   const [selectedColor, setSelectedColor] = useState<string>('Navy Blue');
   const [selectedSize, setSelectedSize] = useState<string | null>(null);
   const [isZoomed, setIsZoomed] = useState<boolean>(false);
+  
+  // Auto-close inactivity timer
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const resetTimer = () => {
+    if (timerRef.current) clearTimeout(timerRef.current);
+    timerRef.current = setTimeout(onClose, 30000); // 30 seconds
+  };
+  
+  useEffect(() => {
+    resetTimer();
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+    };
+  }, []);
 
   useEffect(() => {
     if (product && product.variants.length > 0) {
@@ -125,8 +139,12 @@ export const ProductPreviewModal: React.FC<ProductPreviewModalProps> = ({ produc
   const currentImageUrl = product.imageUrl || '';
 
   return (
-    <div className="fixed inset-0 z-50 bg-white sm:bg-slate-900/60 sm:backdrop-blur-xs flex sm:items-center sm:justify-center sm:p-4">
-      <div className="bg-white rounded-none sm:rounded-3xl shadow-none sm:shadow-2xl w-full h-full sm:h-auto sm:max-h-[90vh] max-w-md flex flex-col overflow-hidden border-0 sm:border border-slate-200 animate-in zoom-in-95 duration-150">
+    <div 
+      className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex justify-start animate-in fade-in duration-200"
+      onMouseMove={resetTimer}
+      onClick={resetTimer}
+    >
+      <div className="bg-white w-full max-w-md h-full flex flex-col border-r border-slate-200 shadow-2xl animate-in slide-in-from-left duration-500 ease-out">
         {/* Modal Header */}
         <div className="p-4 bg-gradient-to-r from-[#02066F] via-[#030A91] to-[#0412B3] text-white flex items-center justify-between shrink-0 shadow-sm">
           <div className="min-w-0 pr-2">
