@@ -8,9 +8,9 @@ export const ContactUsView: React.FC = () => (
       <div className="prose prose-slate max-w-none text-slate-700">
         <p>We are here to help! Please reach out to us for inquiries regarding orders, uniform customization, or institutional partnerships.</p>
         <div className="mt-6 space-y-3">
-          <p><strong>Email:</strong> info@naisiaetextiles.com</p>
-          <p><strong>Phone:</strong> +254 700 000 000</p>
-          <p><strong>Location:</strong> Uhuru Market, Jogoo Road, Nairobi, Kenya</p>
+          <p><strong>Email:</strong> support@naisiaetextiles.com</p>
+          <p><strong>Phone:</strong> 0792021496 / 0112264870</p>
+          <p><strong>Location:</strong> Naisiae Textiles Complex, Uhuru Market, Jogoo Road, Nairobi, Kenya</p>
         </div>
       </div>
     </div>
