@@ -696,7 +696,7 @@ export const PortalView: React.FC = () => {
 
           ) : (
             <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-3.5">
-              {filteredProducts.map((p) => {
+              {filteredProducts.map((p, index) => {
                 const variants = p.variants || [];
                 const minPrice = variants.length ? Math.min(...variants.map((v: any) => v.sellingPrice)) : 0;
                 const maxPrice = variants.length ? Math.max(...variants.map((v: any) => v.sellingPrice)) : 0;
@@ -714,6 +714,8 @@ export const PortalView: React.FC = () => {
                       <img
                         src={normalizeImageUrl(p.imageUrl || "")}
                         alt={p.name}
+                        loading={index < 4 ? "eager" : "lazy"}
+                        fetchPriority={index < 4 ? "high" : "auto"}
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                         onError={(e) => {
                           (e.target as HTMLImageElement).src = "/logo.png";

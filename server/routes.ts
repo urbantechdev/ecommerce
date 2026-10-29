@@ -3559,7 +3559,10 @@ apiRouter.get('/settings', requireAuth, (req, res) => {
 
 apiRouter.put('/settings', requireAuth, requireRoles('ADMIN'), async (req: AuthenticatedRequest, res: Response) => {
   const current = db.getData().settings;
+  console.log('[Settings Update] Received settings:', req.body);
   const updated = { ...current, ...req.body };
+  // Auto-detect SMTP configuration status
+  updated.isSmtpConfigured = !!(updated.smtpHost && updated.smtpUser && updated.smtpPassword);
   db.getData().settings = updated;
   await db.save();
 

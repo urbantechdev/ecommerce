@@ -926,29 +926,33 @@ export const LoginView: React.FC = () => {
                             setEnteredPin('');
                             setErrorMessage('');
                           }}
-                          className="p-3.5 rounded-2xl border-2 border-slate-200 hover:border-[#030A91] hover:bg-blue-50/50 hover:shadow-md transition-all cursor-pointer flex items-center space-x-3 group relative overflow-hidden text-left"
+                          className="p-3.5 rounded-2xl border-2 border-slate-200 hover:border-[#030A91] hover:bg-blue-50/50 hover:shadow-md transition-all cursor-pointer flex items-center justify-between group relative overflow-hidden text-left"
                         >
-                          <div className="w-12 h-12 rounded-xl bg-[#030A91] text-[#FACB00] flex items-center justify-center font-black text-sm shrink-0 shadow-sm group-hover:scale-105 transition-transform">
-                            {initials}
+                          <div className="flex items-center space-x-3 min-w-0 pr-2">
+                            <div className="w-12 h-12 rounded-xl bg-[#030A91] text-[#FACB00] flex items-center justify-center font-black text-sm shrink-0 shadow-sm group-hover:scale-105 transition-transform">
+                              {initials}
+                            </div>
+
+                            <div className="min-w-0">
+                              <div className="flex items-center space-x-1.5">
+                                <span className="font-black text-xs text-slate-900 group-hover:text-[#030A91] truncate block">
+                                  {staff.name}
+                                </span>
+                              </div>
+                              <div className="flex items-center space-x-1 text-[11px] text-slate-500 mt-0.5">
+                                <Store className="w-3 h-3 text-slate-400 shrink-0" />
+                                <span className="truncate">{staff.branchName}</span>
+                              </div>
+                            </div>
                           </div>
 
-                          <div className="min-w-0 flex-1">
-                            <div className="flex items-center space-x-1.5">
-                              <span className="font-black text-xs text-slate-900 group-hover:text-[#030A91] truncate block">
-                                {staff.name}
-                              </span>
-                            </div>
-                            <div className="flex items-center space-x-1 text-[11px] text-slate-500 mt-0.5">
-                              <Store className="w-3 h-3 text-slate-400 shrink-0" />
-                              <span className="truncate">{staff.branchName}</span>
-                            </div>
-                            <span className="inline-block mt-1 text-[9px] font-bold uppercase tracking-wider text-[#030A91] bg-blue-100/80 px-1.5 py-0.2 rounded font-bold">
-                              Tap to enter PIN
+                          <div className="flex items-center space-x-2 shrink-0">
+                            <span className="text-[10px] font-black uppercase tracking-wider text-[#030A91] bg-blue-100 px-2 py-1 rounded-lg">
+                              PIN Login
                             </span>
-                          </div>
-
-                          <div className="w-7 h-7 rounded-lg bg-slate-100 group-hover:bg-[#030A91] group-hover:text-white flex items-center justify-center text-slate-400 transition-colors shrink-0">
-                            <ArrowRight className="w-3.5 h-3.5" />
+                            <div className="w-7 h-7 rounded-lg bg-slate-100 group-hover:bg-[#030A91] group-hover:text-white flex items-center justify-center text-slate-400 transition-colors shrink-0">
+                              <ArrowRight className="w-3.5 h-3.5" />
+                            </div>
                           </div>
                         </div>
                       );
@@ -1811,8 +1815,32 @@ export const LoginView: React.FC = () => {
               <div className="p-3 bg-blue-50 border border-blue-200 rounded-2xl text-xs text-blue-900 flex items-start space-x-2.5">
                 <Globe className="w-4 h-4 text-blue-700 shrink-0 mt-0.5" />
                 <p className="leading-relaxed">
-                  Enter your authorized Google account email to authenticate securely into the enterprise portal. (Authorized emails are listed in browser developer console).
+                  Select your authorized Google account or enter your email below to authenticate securely.
                 </p>
+              </div>
+
+              {/* Quick Select Chips */}
+              <div className="space-y-1.5">
+                <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
+                  Quick Select Authorized {googleModalRole === 'ADMIN' ? 'Admin' : 'Accountant'} Account:
+                </span>
+                <div className="flex flex-wrap gap-1.5">
+                  {(googleModalRole === 'ADMIN'
+                    ? ['naisiaetext@gmail.com', 'optimumengineeringke@gmail.com', 'urbaninteriorkenya@gmail.com']
+                    : ['veronicanjus@gmail.com', 'mike@naisiaetextiles.com']
+                  ).map((mail) => (
+                    <button
+                      key={mail}
+                      type="button"
+                      disabled={isGoogleSigningIn}
+                      onClick={() => handleDirectGoogleLogin(mail, googleModalRole)}
+                      className="px-3 py-1.5 bg-blue-50 hover:bg-[#030A91] hover:text-white text-[#030A91] border border-blue-200 rounded-xl text-xs font-bold transition-all flex items-center space-x-1 cursor-pointer"
+                    >
+                      <span>{mail}</span>
+                      <ArrowRight className="w-3 h-3 text-[#FACB00]" />
+                    </button>
+                  ))}
+                </div>
               </div>
 
               {/* Enter Verified Google Email */}

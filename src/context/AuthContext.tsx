@@ -116,6 +116,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setAuthToken(null);
       setUser(null);
       setActiveBranchId('all');
+      localStorage.removeItem('nais_active_view');
     }
   };
 

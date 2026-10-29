@@ -26,11 +26,20 @@ import { AboutView } from './views/pages/AboutView';
 import { PolicyView } from './views/pages/PolicyView';
 import { ContactUsView } from './views/pages/ContactUsView';
 import { UniformsView } from './views/pages/UniformsView';
+import { ProductDetailView } from './views/pages/ProductDetailView';
 
 const AppContent: React.FC = () => {
   const { user, isLoading } = useAuth();
-  const [currentView, setCurrentView] = useState<string>('pos');
+  const [currentView, setCurrentView] = useState<string>(() => {
+    return localStorage.getItem('nais_active_view') || 'pos';
+  });
   const path = window.location.pathname;
+
+  useEffect(() => {
+    if (currentView) {
+      localStorage.setItem('nais_active_view', currentView);
+    }
+  }, [currentView]);
 
   // Enforce search engine indexing rules:
   // Customer portal is indexed; admin, cashier, accountant, and ERP are blocked from crawlers
@@ -43,7 +52,8 @@ const AppContent: React.FC = () => {
     }
 
     const publicPaths = ['/', '/portal', '/about', '/policy', '/contact', '/school-uniforms', '/kmtc-uniforms', '/customized-uniforms'];
-    const isInternalArea = !publicPaths.includes(path) && path !== '/erp' && path !== '/login';
+    const isProductPage = /^\/product\/[^/]+\/?$/.test(path);
+    const isInternalArea = !publicPaths.includes(path) && !isProductPage && path !== '/erp' && path !== '/login';
     
     if (isInternalArea) {
       robotsMeta.content = 'noindex, nofollow, noarchive, nosnippet';
@@ -56,6 +66,9 @@ const AppContent: React.FC = () => {
 
   // Portal is default
   const normalizedPath = path.toLowerCase().replace(/\/$/, '') || '/';
+
+  const productPathMatch = normalizedPath.match(/^\/product\/([^/]+)$/);
+  if (productPathMatch) return <ProductDetailView productId={decodeURIComponent(productPathMatch[1])} />;
 
   if (normalizedPath === '/' || normalizedPath === '/portal') {
     return <PortalView />;
