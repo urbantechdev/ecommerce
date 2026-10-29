@@ -236,52 +236,7 @@ export const SettingsView: React.FC = () => {
           </div>
         </div>
 
-        {/* Kenya Tax & KRA eTIMS Parameters */}
-        <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs space-y-4">
-          <div className="flex items-center space-x-2 pb-3 border-b border-slate-100">
-            <ShieldCheck className="w-4 h-4 text-emerald-600" />
-            <h3 className="font-bold text-sm text-slate-900">Kenya Tax & eTIMS Parameters</h3>
-          </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div>
-              <label className="text-xs font-bold text-slate-700 uppercase block mb-1">
-                Trader KRA PIN:
-              </label>
-              <input
-                type="text"
-                value={settings.kraPin}
-                onChange={(e) => setSettings({ ...settings, kraPin: e.target.value.toUpperCase() })}
-                className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-300 rounded-xl uppercase font-mono font-bold"
-                required
-              />
-            </div>
-
-            <div>
-              <label className="text-xs font-bold text-slate-700 uppercase block mb-1">
-                Trader System Code:
-              </label>
-              <input
-                type="text"
-                value={settings.kraTraderCode}
-                onChange={(e) => setSettings({ ...settings, kraTraderCode: e.target.value })}
-                className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-300 rounded-xl font-mono"
-              />
-            </div>
-
-            <div>
-              <label className="text-xs font-bold text-slate-700 uppercase block mb-1">
-                OSCU Serial Number:
-              </label>
-              <input
-                type="text"
-                value={settings.kraOscuSerial}
-                onChange={(e) => setSettings({ ...settings, kraOscuSerial: e.target.value })}
-                className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-300 rounded-xl font-mono"
-              />
-            </div>
-          </div>
-        </div>
 
         {/* Document Numbering Prefixes */}
         <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs space-y-4">
