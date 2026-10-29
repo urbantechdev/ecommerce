@@ -231,3 +231,29 @@ export function generateReceiptEmailHtml(receipt: any, settings: any): string {
     </div>
   `;
 }
+
+export function generateWelcomeEmailHtml(customerName: string, settings: any): string {
+  return `
+    <div style="font-family: 'Helvetica Neue', Arial, sans-serif; max-width: 500px; margin: 0 auto; padding: 20px; border: 1px solid #E2E8F0; border-radius: 8px; color: #1E293B;">
+      <div style="background-color: #030A91; padding: 18px; border-radius: 6px; text-align: center; color: white;">
+        <h2 style="margin: 0; font-size: 22px;">NAISIA TEXTILES</h2>
+        <p style="margin: 4px 0 0 0; font-size: 12px; color: #FACB00; font-weight: bold; letter-spacing: 1px;">WELCOME TO OUR FAMILY</p>
+      </div>
+      <div style="padding: 20px 0; text-align: left;">
+        <h3 style="font-size: 18px; margin: 0 0 10px 0; color: #030A91;">Hello ${customerName},</h3>
+        <p style="font-size: 14px; line-height: 1.6; color: #334155; margin: 0 0 14px 0;">
+          Welcome to Naisia Textiles! Your online uniform shopping account is now active. You can browse, order tailored uniforms, receive instant KRA eTIMS e-receipts, and track your orders in real time.
+        </p>
+        <div style="background-color: #F8FAFC; padding: 15px; border-radius: 6px; margin: 15px 0; font-size: 13px;">
+          <p style="margin: 4px 0;"><strong>Branch:</strong> Uhuru Market, Nairobi (HQ)</p>
+          <p style="margin: 4px 0;"><strong>Customer Support:</strong> 0792021496 / 0112264870</p>
+          <p style="margin: 4px 0;"><strong>Portal URL:</strong> <a href="https://naisiaetextiles.com/portal" style="color: #030A91; font-weight: bold;">naisiaetextiles.com/portal</a></p>
+        </div>
+        <p style="font-size: 12px; color: #64748B; margin-top: 15px;">
+          Thank you for choosing Naisia Textiles — Kenya's premier school uniform and apparel manufacturer.
+        </p>
+      </div>
+    </div>
+  `;
+}
+

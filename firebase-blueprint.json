@@ -40,6 +40,22 @@
       },
       "required": ["email", "role"]
     },
+    "admin": {
+      "title": "Admin Whitelist",
+      "description": "Dynamic whitelist entry for authorized system administrators by UID or email.",
+      "type": "object",
+      "properties": {
+        "email": { "type": "string" },
+        "uid": { "type": "string" },
+        "name": { "type": "string" },
+        "role": { "type": "string", "enum": ["ADMIN", "SUPER_ADMIN"] },
+        "status": { "type": "string", "enum": ["ACTIVE", "INACTIVE"] },
+        "addedBy": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["email", "role"]
+    },
     "quote": {
       "title": "Quote Request",
       "description": "User request for a custom quote.",
@@ -326,6 +342,10 @@
     "/users/{userId}": {
       "schema": "user",
       "description": "User account data and roles."
+    },
+    "/admins/{adminId}": {
+      "schema": "admin",
+      "description": "Dynamic whitelist entries for administrator access control and permissions."
     },
     "/quotes/{quoteId}": {
       "schema": "quote",

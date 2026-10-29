@@ -416,6 +416,7 @@ export interface DatabaseSchema {
   purchases: PurchaseOrder[];
   expenses: Expense[];
   auditLogs: AuditLog[];
+  pushSubscriptions: any[];
   settings: SystemSettings;
 }
 
@@ -473,19 +474,8 @@ class DatabaseEngine {
           updated = true;
         }
 
-        if (!parsed.users || !parsed.users.some(u => u.email.toLowerCase() === 'naisiaetext@gmail.com')) {
-          if (!parsed.users) parsed.users = [];
-          parsed.users.push({
-            id: 'usr-admin-naisiaetext',
-            name: 'Naisia Administrator',
-            email: 'naisiaetext@gmail.com',
-            passwordHash: bcrypt.hashSync('Naisia@2026!', 10),
-            role: 'ADMIN',
-            branchId: 'all',
-            phone: '+254792021496',
-            status: 'ACTIVE',
-            createdAt: new Date().toISOString(),
-          });
+        if (!Array.isArray(parsed.pushSubscriptions)) {
+          parsed.pushSubscriptions = [];
           updated = true;
         }
 
@@ -567,20 +557,8 @@ class DatabaseEngine {
       },
     ];
 
-    // 2. Users (Ensure naisiaetext@gmail.com is seeded as ADMIN)
-    const users: User[] = [
-      {
-        id: 'usr-admin-naisiaetext',
-        name: 'Naisia Administrator',
-        email: 'naisiaetext@gmail.com',
-        passwordHash: bcrypt.hashSync('Naisia@2026!', 10),
-        role: 'ADMIN',
-        branchId: 'all',
-        phone: '+254792021496',
-        status: 'ACTIVE',
-        createdAt: now,
-      },
-    ];
+    // 2. Users (No mock or demo users seeded)
+    const users: User[] = [];
 
     // 3. Suppliers (Awaiting real creation)
     const suppliers: Supplier[] = [];
@@ -704,6 +682,7 @@ class DatabaseEngine {
       purchases,
       expenses,
       auditLogs,
+      pushSubscriptions: [],
       settings,
     };
   }

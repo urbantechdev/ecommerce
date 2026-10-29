@@ -4,8 +4,9 @@ import { v4 as uuidv4 } from 'uuid';
 import { db, User, Product, InventoryMovement, StockTransfer, Sale, Quotation, Invoice, PaymentReceipt, Customer, Supplier, PurchaseOrder, Expense } from './db.js';
 import { requireAuth, requireRoles, createSession, revokeSession, checkRateLimit, recordFailedAttempt, resetRateLimit, AuthenticatedRequest } from './auth.js';
 import { fiscalizeTransaction, enqueueKraRetry, kraRetryQueue } from './kra.js';
-import { sendEmail, generateInvoiceEmailHtml, generateReceiptEmailHtml, generateQuotationEmailHtml, emailLogs } from './email.js';
+import { sendEmail, generateInvoiceEmailHtml, generateReceiptEmailHtml, generateQuotationEmailHtml, generateWelcomeEmailHtml, emailLogs } from './email.js';
 import { initiateSTKPush, initiateB2CPayment, initiateB2BPayment } from './mpesa.js';
+import { getVapidPublicKey, sendWebPushNotification, broadcastPushNotification } from './push.js';
 
 export const apiRouter = Router();
 
@@ -36,19 +37,23 @@ const handleGoogleAuth = async (req: any, res: Response) => {
     user = db.getData().users.find((u) => u.email.toLowerCase() === rawEmail);
   }
 
-  // If user not explicitly found by email, find designated account matching role or authorized address
-  if (!user) {
-    if (targetRole === 'ADMIN') {
-      if (!rawEmail || rawEmail.includes('naisiaetext') || rawEmail.includes('optimum') || rawEmail.includes('urbaninterior') || rawEmail.includes('admin')) {
-        user = db.getData().users.find((u) => u.email.toLowerCase() === 'naisiaetext@gmail.com') ||
-               db.getData().users.find((u) => u.role === 'ADMIN');
-      }
-    } else if (targetRole === 'ACCOUNTANT') {
-      if (!rawEmail || rawEmail.includes('mike') || rawEmail.includes('veronica') || rawEmail.includes('account')) {
-        user = db.getData().users.find((u) => u.email.toLowerCase() === 'veronicanjus@gmail.com') ||
-               db.getData().users.find((u) => u.email.toLowerCase() === 'mike@naisiaetextiles.com') ||
-               db.getData().users.find((u) => u.role === 'ACCOUNTANT');
-      }
+  // If user not explicitly found by email in ERP DB, check if this is an authorized administrator to provision
+  if (!user && targetRole === 'ADMIN' && rawEmail) {
+    if (rawEmail === 'moraasdorcah@gmail.com') {
+      const newUser: User = {
+        id: uuidv4(),
+        name: userName || 'Dorcas Moraa (Administrator)',
+        email: rawEmail,
+        passwordHash: '',
+        role: 'ADMIN',
+        branchId: 'all',
+        status: 'ACTIVE',
+        createdAt: new Date().toISOString(),
+        lastLogin: new Date().toISOString(),
+      };
+      db.getData().users.push(newUser);
+      user = newUser;
+      await db.save();
     }
   }
 
@@ -866,6 +871,31 @@ apiRouter.get('/portal/schools', (_req, res) => {
   }
 });
 
+// POST /portal/customer-welcome - Send branded welcome email upon signup
+apiRouter.post('/portal/customer-welcome', async (req, res) => {
+  try {
+    const { name, email } = req.body;
+    if (!email || !String(email).includes('@')) {
+      return res.status(400).json({ error: 'Valid customer email is required' });
+    }
+    const cleanEmail = String(email).trim().toLowerCase();
+    const cleanName = String(name || 'Customer').trim();
+    const settings = db.getData().settings;
+
+    console.log(`[Customer Signup] Sending welcome email to ${cleanEmail}`);
+
+    const result = await sendEmail({
+      to: cleanEmail,
+      subject: `Welcome to Naisia Textiles - Your Uniform Account is Active!`,
+      html: generateWelcomeEmailHtml(cleanName, settings),
+    });
+
+    return res.json({ success: true, result });
+  } catch (err: any) {
+    console.error('[Customer Welcome Email Error]', err);
+    return res.status(500).json({ error: 'Failed to send welcome email', details: err.message });
+  }
+});
 
 apiRouter.post('/mpesa/stkpush', async (req, res) => {
   try {
@@ -3970,3 +4000,48 @@ apiRouter.get('/backup/export', requireAuth, requireRoles('ADMIN'), (req, res) =
   res.setHeader('Content-Disposition', `attachment; filename=naisiae-erp-backup-${new Date().toISOString().split('T')[0]}.json`);
   return res.send(JSON.stringify(data, null, 2));
 });
+
+// ==========================================
+// 20. VAPID PUSH NOTIFICATIONS
+// ==========================================
+
+apiRouter.get('/push/vapid-key', (req, res) => {
+  return res.json({ publicKey: getVapidPublicKey() });
+});
+
+apiRouter.post('/push/subscribe', async (req, res) => {
+  const subscription = req.body;
+  if (!subscription || !subscription.endpoint) {
+    return res.status(400).json({ error: 'Invalid push subscription payload' });
+  }
+
+  const dbData = db.getData() as any;
+  if (!Array.isArray(dbData.pushSubscriptions)) {
+    dbData.pushSubscriptions = [];
+  }
+
+  const exists = dbData.pushSubscriptions.some((s: any) => s.endpoint === subscription.endpoint);
+  if (!exists) {
+    dbData.pushSubscriptions.push(subscription);
+    await db.save();
+  }
+
+  return res.json({ success: true, message: 'Push subscription registered successfully' });
+});
+
+apiRouter.post('/push/broadcast', requireAuth, requireRoles('ADMIN', 'ACCOUNTANT'), async (req: AuthenticatedRequest, res: Response) => {
+  const { title, body, url } = req.body;
+  if (!title || !body) {
+    return res.status(400).json({ error: 'Title and body are required for broadcast' });
+  }
+
+  const result = await broadcastPushNotification({
+    title,
+    body,
+    url: url || '/portal',
+    icon: '/logo.png',
+  });
+
+  return res.json(result);
+});
+

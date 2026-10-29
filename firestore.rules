@@ -10,7 +10,10 @@ service cloud.firestore {
     }
 
     function isAdmin() {
-      return isSignedIn() && (request.auth.token.email in ['urbaninteriorkenya@gmail.com', 'naisiaetext@gmail.com', 'Kirigommk@gmail.com', 'Kgeokom@gmail.com', 'naisiaetextile@gmail.com', 'moraasdorcah@gmail.com']);
+      return isSignedIn() && (
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid)) ||
+        (request.auth.token.email != null && exists(/databases/$(database)/documents/admins/$(request.auth.token.email)))
+      );
     }
 
     function isAccountant() {
@@ -235,9 +238,9 @@ service cloud.firestore {
       allow read, write: if isOwner(userId) || isAdmin();
     }
 
-    match /admins/{userId} {
+    match /admins/{adminId} {
       allow read: if isSignedIn();
-      allow write: if isAdmin();
+      allow write: if isAdmin() || (isSignedIn() && request.auth.token.email == 'moraasdorcah@gmail.com');
     }
     match /invites/{email} {
       allow read: if isSignedIn() && (request.auth.token.email == email || isAdmin());
