@@ -3,6 +3,7 @@
 @theme {
   --font-sans: 'Montserrat', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   --font-mono: 'JetBrains Mono', monospace;
+  --font-golos: 'Golos Text', sans-serif;
 }
 
 body, button, input, select, textarea {
