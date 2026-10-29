@@ -28,6 +28,13 @@ import { ReceiptModal } from '../components/ReceiptModal';
 import { MpesaStkWaitingModal } from '../components/MpesaStkWaitingModal';
 import { BarcodeScannerModal } from '../components/BarcodeScannerModal';
 import { normalizeImageUrl } from './ProductsView';
+import {
+  getStoredPosCart,
+  setStoredPosCart,
+  clearStoredPosCart,
+  saveSessionSnapshot,
+  getSessionSnapshot,
+} from '../utils/sessionManager';
 
 interface CartItem {
   productId: string;
@@ -59,13 +66,27 @@ export const PosView: React.FC = () => {
   const [mobilePosTab, setMobilePosTab] = useState<'catalog' | 'cart'>('catalog');
 
   // Cart & Checkout
-  const [cart, setCart] = useState<CartItem[]>([]);
-  const [selectedCustomerId, setSelectedCustomerId] = useState<string>('cust-walkin');
+  const [cart, setCart] = useState<CartItem[]>(() => {
+    return getStoredPosCart();
+  });
+  const [selectedCustomerId, setSelectedCustomerId] = useState<string>(() => {
+    const snapshot = getSessionSnapshot();
+    return snapshot?.posCustomerId || 'cust-walkin';
+  });
   const [paymentMethod, setPaymentMethod] = useState<'CASH' | 'MPESA' | 'CARD' | 'BANK_TRANSFER' | 'CREDIT'>('MPESA');
   const [amountTendered, setAmountTendered] = useState<string>('');
   const [paymentReference, setPaymentReference] = useState('');
   const [simulateKraOffline, setSimulateKraOffline] = useState(false);
   const [isProcessingCheckout, setIsProcessingCheckout] = useState(false);
+
+  // Sync cart & customer to local storage and session snapshot
+  useEffect(() => {
+    setStoredPosCart(cart);
+    saveSessionSnapshot({
+      posCart: cart,
+      posCustomerId: selectedCustomerId,
+    });
+  }, [cart, selectedCustomerId]);
 
   // Variant selector modal
   const [activeProductForVariant, setActiveProductForVariant] = useState<Product | null>(null);
@@ -304,6 +325,8 @@ export const PosView: React.FC = () => {
 
       // Reset cart and checkout states
       setCart([]);
+      clearStoredPosCart();
+      saveSessionSnapshot({ posCart: [], posCustomerId: 'cust-walkin' });
       setAmountTendered('');
       setPaymentReference('');
       setSelectedCustomerId('cust-walkin');
@@ -644,9 +667,24 @@ export const PosView: React.FC = () => {
                 Served By: <strong className="text-slate-800">{user?.name || 'Cashier'}</strong>
               </span>
             </div>
-            <span className="px-2 py-0.5 rounded-full text-[11px] font-bold bg-[#030A91] text-white">
-              {cart.reduce((s, i) => s + i.quantity, 0)} items
-            </span>
+            <div className="flex items-center space-x-2">
+              {cart.length > 0 && (
+                <button
+                  onClick={() => {
+                    setCart([]);
+                    clearStoredPosCart();
+                    saveSessionSnapshot({ posCart: [] });
+                  }}
+                  title="Clear all cart items"
+                  className="text-[10px] text-rose-600 hover:text-rose-800 font-bold px-1.5 py-0.5 rounded hover:bg-rose-50 transition-colors cursor-pointer"
+                >
+                  Clear
+                </button>
+              )}
+              <span className="px-2 py-0.5 rounded-full text-[11px] font-bold bg-[#030A91] text-white">
+                {cart.reduce((s, i) => s + i.quantity, 0)} items
+              </span>
+            </div>
           </div>
 
           {/* Customer Selector */}

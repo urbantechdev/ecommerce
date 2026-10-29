@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext';
-import { NotificationProvider } from './context/NotificationContext';
+import { NotificationProvider, useNotification } from './context/NotificationContext';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { Layout } from './components/Layout';
 import { LoginView } from './views/LoginView';
@@ -27,19 +27,62 @@ import { PolicyView } from './views/pages/PolicyView';
 import { ContactUsView } from './views/pages/ContactUsView';
 import { UniformsView } from './views/pages/UniformsView';
 import { ProductDetailView } from './views/pages/ProductDetailView';
+import { getSessionSnapshot, saveSessionSnapshot } from './utils/sessionManager';
 
 const AppContent: React.FC = () => {
-  const { user, isLoading } = useAuth();
+  const { user, isLoading, restoredSessionSnapshot, consumeRestoredNotice } = useAuth();
+  const { notify } = useNotification();
   const [currentView, setCurrentView] = useState<string>(() => {
+    const snapshot = getSessionSnapshot();
+    if (snapshot?.view) return snapshot.view;
     return localStorage.getItem('nais_active_view') || 'pos';
   });
   const path = window.location.pathname;
 
+  // Auto-request full screen on the first user interaction (click, touch, or key)
+  useEffect(() => {
+    const handleFirstGesture = () => {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch(() => {});
+      }
+      window.removeEventListener('click', handleFirstGesture);
+      window.removeEventListener('keydown', handleFirstGesture);
+      window.removeEventListener('touchstart', handleFirstGesture);
+    };
+
+    window.addEventListener('click', handleFirstGesture, { once: true });
+    window.addEventListener('keydown', handleFirstGesture, { once: true });
+    window.addEventListener('touchstart', handleFirstGesture, { once: true });
+
+    return () => {
+      window.removeEventListener('click', handleFirstGesture);
+      window.removeEventListener('keydown', handleFirstGesture);
+      window.removeEventListener('touchstart', handleFirstGesture);
+    };
+  }, []);
+
+  // Sync active view to localStorage & session snapshot
   useEffect(() => {
     if (currentView) {
       localStorage.setItem('nais_active_view', currentView);
+      saveSessionSnapshot({ view: currentView });
     }
   }, [currentView]);
+
+  // Handle session restoration upon re-login after 2-minute inactivity timeout
+  useEffect(() => {
+    if (restoredSessionSnapshot && user) {
+      if (restoredSessionSnapshot.view && restoredSessionSnapshot.view !== currentView) {
+        setCurrentView(restoredSessionSnapshot.view);
+      }
+      notify({
+        type: 'SUCCESS',
+        title: 'Workspace Restored',
+        message: `Welcome back, ${user.name}! Resumed directly to ${restoredSessionSnapshot.view.toUpperCase()} where you left off.`,
+      });
+      consumeRestoredNotice();
+    }
+  }, [restoredSessionSnapshot, user, notify, consumeRestoredNotice, currentView]);
 
   // Enforce search engine indexing rules:
   // Customer portal is indexed; admin, cashier, accountant, and ERP are blocked from crawlers
@@ -79,7 +122,6 @@ const AppContent: React.FC = () => {
   if (normalizedPath === '/school-uniforms') return <UniformsView type="School Uniforms" />;
   if (normalizedPath === '/kmtc-uniforms') return <UniformsView type="KMTC Uniforms" />;
   if (normalizedPath === '/customized-uniforms') return <UniformsView type="Customized Uniforms" />;
-
 
   // ERP Login and Admin
   if (normalizedPath === '/erp' || normalizedPath === '/login' || normalizedPath === '/admin') {
@@ -150,14 +192,15 @@ const AppContent: React.FC = () => {
   // Default to portal for unknown paths
   return <PortalView />;
 };
+
 export default function App() {
   return (
     <ErrorBoundary>
-      <AuthProvider>
-        <NotificationProvider>
+      <NotificationProvider>
+        <AuthProvider>
           <AppContent />
-        </NotificationProvider>
-      </AuthProvider>
+        </AuthProvider>
+      </NotificationProvider>
     </ErrorBoundary>
   );
 }

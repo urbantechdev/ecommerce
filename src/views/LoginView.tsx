@@ -1,7 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
-import { auth } from '../firebase';
 import {
   Lock,
   Mail,
@@ -30,11 +28,35 @@ import {
   Users,
   RefreshCw,
   HelpCircle,
-  BadgeCheck,
-  Globe
+  BadgeCheck
 } from 'lucide-react';
 import { useNotification } from '../context/NotificationContext';
 import { api } from '../api';
+import { signInWithPopup, GoogleAuthProvider } from 'firebase/auth';
+import { auth } from '../firebase';
+import { checkIsAdminWhitelisted, bootstrapPrimaryAdmin, PRIMARY_ADMIN_EMAIL } from '../utils/adminWhitelist';
+import { getAutoTimeoutNotice, clearAutoTimeoutNotice } from '../utils/sessionManager';
+
+const GoogleIcon: React.FC<{ className?: string }> = ({ className = 'w-4 h-4' }) => (
+  <svg className={className} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path
+      fill="#4285F4"
+      d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17z"
+    />
+    <path
+      fill="#34A853"
+      d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.25v3.15C3.26 21.36 7.33 24 12 24z"
+    />
+    <path
+      fill="#FBBC05"
+      d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.25C.45 8.19 0 10.04 0 12s.45 3.81 1.25 5.42l4.03-3.15z"
+    />
+    <path
+      fill="#EA4335"
+      d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.33 0 3.26 2.64 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98z"
+    />
+  </svg>
+);
 
 type RoleCategory = 'ADMIN' | 'ACCOUNTANT' | 'STAFF' | 'CUSTOM';
 
@@ -52,7 +74,7 @@ interface StaffUserItem {
 }
 
 export const LoginView: React.FC = () => {
-  const { login, loginWithPin, loginWithGoogle } = useAuth();
+  const { login, loginWithGoogle, loginWithPin } = useAuth();
   const { notify } = useNotification();
 
   const [selectedRole, setSelectedRole] = useState<RoleCategory | null>(null);
@@ -60,64 +82,11 @@ export const LoginView: React.FC = () => {
   const [password, setPassword] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
+  const [autoTimeoutNotice, setAutoTimeoutNotice] = useState<{ timedOutAt: number; view: string; userName: string } | null>(() => getAutoTimeoutNotice());
 
-  // Google Authentication States
-  const [isGoogleSigningIn, setIsGoogleSigningIn] = useState(false);
-  const [showGoogleChooserModal, setShowGoogleChooserModal] = useState(false);
-  const [googleModalRole, setGoogleModalRole] = useState<'ADMIN' | 'ACCOUNTANT'>('ADMIN');
-  const [customGoogleEmail, setCustomGoogleEmail] = useState('');
-
-  const handleGoogleSignIn = async (role: 'ADMIN' | 'ACCOUNTANT') => {
-    setIsGoogleSigningIn(true);
-    setErrorMessage('');
-    try {
-      const provider = new GoogleAuthProvider();
-      provider.setCustomParameters({ prompt: 'select_account' });
-      const result = await signInWithPopup(auth, provider);
-      const googleUser = result.user;
-      await loginWithGoogle({
-        email: googleUser.email || undefined,
-        name: googleUser.displayName || undefined,
-        role,
-      });
-      notify({
-        type: 'SUCCESS',
-        title: 'Google Sign-In Successful',
-        message: `Welcome back! Authenticated with Google as ${googleUser.email}`,
-      });
-    } catch (popupError: any) {
-      console.warn('Firebase popup sign-in encountered environment constraint:', popupError?.code, popupError?.message);
-      console.info(`[Console Auth Helper] Authorized Admin & Accountant emails for console sign-in:
-- Admins: naisiaetext@gmail.com, optimumengineeringke@gmail.com, urbaninteriorkenya@gmail.com
-- Accountants: veronicanjus@gmail.com, mike@naisiaetextiles.com`);
-      setGoogleModalRole(role);
-      setShowGoogleChooserModal(true);
-    } finally {
-      setIsGoogleSigningIn(false);
-    }
-  };
-
-  const handleDirectGoogleLogin = async (targetEmail: string, role: 'ADMIN' | 'ACCOUNTANT') => {
-    setIsGoogleSigningIn(true);
-    setErrorMessage('');
-    try {
-      await loginWithGoogle({ email: targetEmail, role });
-      setShowGoogleChooserModal(false);
-      notify({
-        type: 'SUCCESS',
-        title: 'Google Sign-In Verified',
-        message: `Authenticated with Google as ${targetEmail} (${role === 'ADMIN' ? 'Administrator' : 'Accountant'})`,
-      });
-    } catch (err: any) {
-      notify({
-        type: 'ERROR',
-        title: 'Google Sign-In Failed',
-        message: err.message || 'Authentication error with Google account',
-      });
-      setErrorMessage(err.message || 'Google account verification failed');
-    } finally {
-      setIsGoogleSigningIn(false);
-    }
+  const handleDismissTimeoutNotice = () => {
+    clearAutoTimeoutNotice();
+    setAutoTimeoutNotice(null);
   };
   // Password Reset Modal States
   const [isResetModalOpen, setIsResetModalOpen] = useState(false);
@@ -187,8 +156,60 @@ export const LoginView: React.FC = () => {
   };
 
 
-  // Form Security States
-  const [showPassword, setShowPassword] = useState(false);
+  // Authenticate as Administrator with Google via real Firebase OAuth popup
+  const handleGoogleLogin = async (e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    setIsSubmitting(true);
+    setErrorMessage('');
+    try {
+      const provider = new GoogleAuthProvider();
+      provider.setCustomParameters({ prompt: 'select_account' });
+      const result = await signInWithPopup(auth, provider);
+      const googleUser = result.user;
+      if (!googleUser || !googleUser.email) {
+        throw new Error('Could not retrieve verified email from Google.');
+      }
+
+      const email = googleUser.email.trim().toLowerCase();
+
+      // Bootstrap primary admin in Firestore if this is moraasdorcah@gmail.com
+      if (email === PRIMARY_ADMIN_EMAIL.toLowerCase()) {
+        await bootstrapPrimaryAdmin(googleUser.uid);
+      }
+
+      // Dynamic check against Firebase Firestore /admins collection
+      const isWhitelisted = await checkIsAdminWhitelisted(email, googleUser.uid);
+
+      if (!isWhitelisted) {
+        await auth.signOut();
+        throw new Error(
+          `Access Denied: The Google account (${googleUser.email}) is not registered on the dynamic Firebase Administrator Whitelist. Please contact your system administrator.`
+        );
+      }
+
+      await loginWithGoogle({
+        email: googleUser.email,
+        name: googleUser.displayName || 'Administrator',
+      });
+      notify({
+        type: 'SUCCESS',
+        title: 'Administrator Verified',
+        message: `Welcome, ${googleUser.displayName || 'Administrator'} (${googleUser.email})`,
+      });
+    } catch (err: any) {
+      if (err.code !== 'auth/popup-closed-by-user') {
+        const errorMsg = err.message || 'Could not verify Google credentials';
+        setErrorMessage(errorMsg);
+        notify({
+          type: 'ERROR',
+          title: 'Google Authentication Failed',
+          message: errorMsg,
+        });
+      }
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   // Staff PIN Authentication States
   const [staffList, setStaffList] = useState<StaffUserItem[]>([]);
@@ -354,34 +375,51 @@ export const LoginView: React.FC = () => {
     setErrorMessage('');
   };
 
+  // Demo PIN helpers for quick testing & hint
+  const getDemoPinForUser = useCallback(
+    (userOrId?: StaffUserItem | string | null) => {
+      if (!userOrId) return '333333';
+      if (typeof userOrId === 'object') {
+        if (userOrId.demoPin) return userOrId.demoPin;
+        userOrId = userOrId.id;
+      }
+      const found = staffList.find((s) => s.id === userOrId);
+      if (found?.demoPin) return found.demoPin;
+      if (userOrId === 'usr-pos-nbi') return '123456';
+      if (userOrId === 'usr-pos-wst') return '654321';
+      if (userOrId === 'usr-pos-msa') return '112233';
+      if (userOrId === 'usr-pos-ksm') return '334455';
+      if (userOrId.includes('1791527847945')) return '333333';
+      if (userOrId.includes('1791527957212')) return '333333';
+      return '333333';
+    },
+    [staffList]
+  );
 
-
-  // Standard Email + Password submission (Strictly Enforced for All Roles)
+  // Standard Email + Password submission
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    const trimmedEmail = email.trim();
-    if (!trimmedEmail || !password) {
-      setErrorMessage('Please enter both your email address and password');
+    if (!email || !password) {
+      setErrorMessage('Please enter both email address and password');
       return;
     }
-
     setIsSubmitting(true);
     setErrorMessage('');
 
     try {
-      await login({ email: trimmedEmail, password });
+      await login({ email, password });
       notify({
         type: 'SUCCESS',
         title: 'Authentication Successful',
-        message: `Welcome to Naisiae ERP Workspace`,
+        message: `Welcome to Naisiae ERP`,
       });
     } catch (err: any) {
       setErrorMessage(err.message || 'Authentication failed. Please verify credentials.');
       notify({
         type: 'ERROR',
         title: 'Login Failed',
-        message: err.message || 'Invalid credentials or account inactive',
+        message: err.message || 'Invalid credentials or inactive account',
       });
     } finally {
       setIsSubmitting(false);
@@ -522,7 +560,7 @@ export const LoginView: React.FC = () => {
       {/* ==================================================== */}
       {/* END-TO-END WIDE HEADER WITH SINGLE WAVE BOTTOM CURVE */}
       {/* ==================================================== */}
-      <div className="w-full sticky top-0 z-50 bg-gradient-to-r from-[#02066F] via-[#030A91] to-[#0412B3] text-white shadow-md">
+      <div className="w-full relative bg-gradient-to-r from-[#02066F] via-[#030A91] to-[#0412B3] text-white shadow-md">
         <div className="max-w-7xl mx-auto px-4 pt-5 pb-3 sm:pt-14 sm:pb-12 text-center relative z-10">
           <div className="inline-flex items-center justify-center space-x-2.5 sm:space-x-3.5">
             <img
@@ -572,6 +610,32 @@ export const LoginView: React.FC = () => {
       {/* MAIN BODY: PORTAL SELECTION / STAFF PIN / LOGIN FORM */}
       {/* ==================================================== */}
       <div className="flex-1 flex flex-col items-center justify-center px-3 sm:px-4 -mt-2 sm:-mt-8 md:-mt-10 pb-6 sm:pb-12 z-20 w-full max-w-6xl mx-auto">
+        {/* 2-Minute Inactivity Auto-Timeout Notice Card */}
+        {autoTimeoutNotice && (
+          <aside aria-label="Inactivity Session Restoration Notice" className="w-full max-w-xl mx-auto mb-4 bg-amber-50 border-2 border-amber-300 rounded-2xl p-3.5 shadow-sm flex items-start space-x-3 text-slate-800 animate-in fade-in slide-in-from-top-2">
+            <div className="w-8 h-8 rounded-xl bg-amber-400 text-slate-950 flex items-center justify-center shrink-0 mt-0.5 font-black">
+              <Clock className="w-4 h-4 text-slate-950" />
+            </div>
+            <div className="flex-1 text-xs">
+              <div className="flex items-center justify-between">
+                <h4 className="font-extrabold text-amber-950 uppercase tracking-wide text-[11px] flex items-center space-x-1.5">
+                  <span>2-Minute Inactivity Rule Activated</span>
+                </h4>
+                <button
+                  onClick={handleDismissTimeoutNotice}
+                  title="Dismiss notice"
+                  className="text-amber-800 hover:text-amber-950 text-xs font-bold px-1.5 py-0.5 rounded hover:bg-amber-200/60 transition-colors cursor-pointer"
+                >
+                  ✕
+                </button>
+              </div>
+              <p className="text-amber-900 mt-1 leading-relaxed text-[11.5px]">
+                You were safely signed out after 2 minutes of idle time. Your workspace and uniform drafts on <strong>{autoTimeoutNotice.view.toUpperCase()}</strong> have been preserved in state and will be <strong>restored automatically</strong> when you sign back in.
+              </p>
+            </div>
+          </aside>
+        )}
+
         {!selectedRole ? (
           /* ==================================================== */
           /* 1. BIG PORTAL SELECTION BOXES (DEFAULT LANDING)      */
@@ -586,8 +650,8 @@ export const LoginView: React.FC = () => {
               </p>
             </div>
 
-            {/* 3 ENTERPRISE PORTAL BOXES */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-6 pt-1 sm:pt-2 max-w-5xl mx-auto">
+            {/* 3 CLEAN INTERACTIVE ROLE BOXES (COMPACT MOBILE APP FIT) */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5 sm:gap-6 pt-1 sm:pt-2">
               {/* ADMIN BOX */}
               <div
                 onClick={() => handleSelectRoleBox('ADMIN')}
@@ -608,8 +672,9 @@ export const LoginView: React.FC = () => {
                           <span className="text-[9px] uppercase font-black tracking-wider px-1.5 py-0.2 rounded-full bg-blue-100 text-[#030A91]">
                             Governance
                           </span>
-                          <span className="text-[9px] uppercase font-black tracking-wider px-1.5 py-0.2 rounded-full bg-slate-100 text-slate-800 border border-slate-300">
-                            Protected
+                          <span className="text-[9px] uppercase font-black tracking-wider px-1.5 py-0.2 rounded-full bg-slate-100 text-slate-800 border border-slate-300 flex items-center space-x-1">
+                            <GoogleIcon className="w-2.5 h-2.5" />
+                            <span>Google</span>
                           </span>
                         </div>
                         <h3 className="text-sm font-black text-slate-900 group-hover:text-[#030A91] transition-colors leading-tight mt-0.5">
@@ -619,39 +684,21 @@ export const LoginView: React.FC = () => {
                     </div>
 
                     {/* Desktop badge */}
-                    <span className="hidden sm:inline-flex items-center space-x-1.5 text-[10px] uppercase font-black tracking-wider px-2.5 py-1 rounded-full bg-blue-50 text-[#030A91] border border-blue-200 shadow-2xs">
-                      <ShieldCheck className="w-3.5 h-3.5" />
-                      <span>Enterprise Security</span>
+                    <span className="hidden sm:inline-flex items-center space-x-1.5 text-[10px] uppercase font-black tracking-wider px-2.5 py-1 rounded-full bg-white text-slate-800 border border-slate-300 shadow-2xs">
+                      <GoogleIcon className="w-3.5 h-3.5" />
+                      <span>Google Sign-In</span>
                     </span>
 
-                    {/* Mobile 1-Tap Action Pills */}
-                    <div className="sm:hidden flex items-center space-x-1.5">
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleGoogleSignIn('ADMIN');
-                        }}
-                        className="p-1.5 bg-white border border-slate-200 rounded-xl shadow-2xs hover:bg-slate-50 active:scale-95 flex items-center justify-center cursor-pointer"
-                        title="Sign in with Google"
-                      >
-                        <svg className="w-4 h-4" viewBox="0 0 24 24">
-                          <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
-                          <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
-                          <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" />
-                          <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" />
-                        </svg>
-                      </button>
-                      <div
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleSelectRoleBox('ADMIN');
-                        }}
-                        className="flex items-center space-x-1 text-xs font-black text-[#030A91] bg-blue-50 px-2.5 py-1.5 rounded-xl border border-blue-200 shadow-2xs group-hover:bg-[#030A91] group-hover:text-white transition-colors"
-                      >
-                        <span>Sign In</span>
-                        <ArrowRight className="w-3.5 h-3.5" />
-                      </div>
+                    {/* Mobile 1-Tap Quick Action Pill */}
+                    <div
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleGoogleLogin(e);
+                      }}
+                      className="sm:hidden flex items-center space-x-1.5 text-xs font-black text-slate-800 bg-white px-2.5 py-1.5 rounded-xl border border-slate-200 shadow-2xs group-hover:bg-[#030A91] group-hover:text-white transition-colors"
+                    >
+                      <GoogleIcon className="w-3.5 h-3.5" />
+                      <span>Google</span>
                     </div>
                   </div>
 
@@ -664,34 +711,35 @@ export const LoginView: React.FC = () => {
                       Administrator
                     </h3>
                     <p className="text-xs text-slate-500 mt-1 font-medium">
-                      Multi-branch management, system security, KRA eTIMS, & audit logs. Google or password verified.
+                      Multi-branch management, system security & audit logs. Secure sign in via Google OAuth or master credentials.
                     </p>
                   </div>
                 </div>
 
-                {/* Desktop footer button */}
+                {/* Desktop footer buttons */}
                 <div className="hidden sm:flex mt-5 pt-3 border-t border-slate-100 flex-col space-y-2">
+                  <button
+                    type="button"
+                    disabled={isSubmitting}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleGoogleLogin(e);
+                    }}
+                    className="w-full py-2.5 bg-white hover:bg-slate-50 border-2 border-slate-200 hover:border-slate-300 text-slate-800 rounded-xl text-xs font-bold flex items-center justify-center space-x-2 shadow-xs transition-all active:scale-98"
+                  >
+                    <GoogleIcon className="w-4 h-4 shrink-0" />
+                    <span>{isSubmitting ? 'Signing in...' : 'Sign in with Google'}</span>
+                  </button>
                   <button
                     type="button"
                     onClick={(e) => {
                       e.stopPropagation();
-                      handleGoogleSignIn('ADMIN');
+                      handleSelectRoleBox('ADMIN');
                     }}
-                    className="w-full py-2 bg-white hover:bg-slate-50 border border-slate-300 hover:border-slate-400 text-slate-700 rounded-xl text-xs font-bold flex items-center justify-center space-x-2 transition-all shadow-2xs hover:shadow-xs active:scale-98 cursor-pointer"
+                    className="text-[11px] font-semibold text-slate-500 hover:text-[#030A91] hover:underline text-center"
                   >
-                    <svg className="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24">
-                      <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
-                      <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
-                      <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" />
-                      <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" />
-                    </svg>
-                    <span>Sign in with Google</span>
+                    Or sign in with email & password &rarr;
                   </button>
-                  <div className="w-full py-2 bg-slate-100 hover:bg-[#030A91] text-slate-700 hover:text-white rounded-xl text-xs font-bold flex items-center justify-center space-x-2 transition-all active:scale-98">
-                    <Lock className="w-3.5 h-3.5 text-[#FACB00]" />
-                    <span>Password Sign In</span>
-                    <ArrowRight className="w-3.5 h-3.5 ml-0.5" />
-                  </div>
                 </div>
               </div>
 
@@ -720,28 +768,10 @@ export const LoginView: React.FC = () => {
                       </div>
                     </div>
 
-                    {/* Mobile action pills */}
-                    <div className="sm:hidden flex items-center space-x-1.5">
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleGoogleSignIn('ACCOUNTANT');
-                        }}
-                        className="p-1.5 bg-white border border-slate-200 rounded-xl shadow-2xs hover:bg-slate-50 active:scale-95 flex items-center justify-center cursor-pointer"
-                        title="Sign in with Google"
-                      >
-                        <svg className="w-4 h-4" viewBox="0 0 24 24">
-                          <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
-                          <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
-                          <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" />
-                          <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" />
-                        </svg>
-                      </button>
-                      <div className="flex items-center space-x-1 text-xs font-black text-indigo-700 bg-indigo-50 px-2.5 py-1.5 rounded-xl border border-indigo-200/60 shadow-2xs group-hover:bg-indigo-700 group-hover:text-white transition-colors">
-                        <span>Login</span>
-                        <ArrowRight className="w-3.5 h-3.5 text-indigo-700 group-hover:text-white transition-colors" />
-                      </div>
+                    {/* Mobile action pill */}
+                    <div className="sm:hidden flex items-center space-x-1 text-xs font-black text-indigo-700 bg-indigo-50 px-2.5 py-1.5 rounded-xl border border-indigo-200/60 shadow-2xs group-hover:bg-indigo-700 group-hover:text-white transition-colors">
+                      <span>Login</span>
+                      <ArrowRight className="w-3.5 h-3.5 text-indigo-700 group-hover:text-white transition-colors" />
                     </div>
                   </div>
 
@@ -754,99 +784,96 @@ export const LoginView: React.FC = () => {
                       Accountant
                     </h3>
                     <p className="text-xs text-slate-500 mt-1 font-medium">
-                      Official invoicing, ledgers, P&L reports & KRA eTIMS. Google or password verified.
+                      Official invoicing, ledgers, P&L reports & KRA eTIMS.
                     </p>
                   </div>
                 </div>
 
                 {/* Desktop footer */}
-                <div className="hidden sm:flex mt-5 pt-3 border-t border-slate-100 flex-col space-y-2">
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleGoogleSignIn('ACCOUNTANT');
-                    }}
-                    className="w-full py-2 bg-white hover:bg-slate-50 border border-slate-300 hover:border-slate-400 text-slate-700 rounded-xl text-xs font-bold flex items-center justify-center space-x-2 transition-all shadow-2xs hover:shadow-xs active:scale-98 cursor-pointer"
-                  >
-                    <svg className="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24">
-                      <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
-                      <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
-                      <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" />
-                      <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" />
-                    </svg>
-                    <span>Sign in with Google</span>
-                  </button>
-                  <div className="w-full py-2 bg-indigo-50 hover:bg-indigo-700 text-indigo-700 hover:text-white rounded-xl text-xs font-bold flex items-center justify-center space-x-2 transition-all active:scale-98">
-                    <FileSpreadsheet className="w-3.5 h-3.5 text-[#FACB00]" />
-                    <span>Password Sign In</span>
-                    <ArrowRight className="w-3.5 h-3.5 ml-0.5" />
+                <div className="hidden sm:flex mt-5 pt-3 border-t border-slate-100 items-center justify-between text-xs font-bold text-indigo-700 group-hover:text-indigo-900">
+                  <span className="group-hover:underline">Finance Login</span>
+                  <div className="w-7 h-7 rounded-lg bg-indigo-50 group-hover:bg-indigo-700 group-hover:text-white flex items-center justify-center transition-colors">
+                    <ArrowRight className="w-3.5 h-3.5" />
                   </div>
                 </div>
               </div>
 
-              {/* STAFF & CASHIER POS TERMINAL BOX */}
+              {/* STAFF / POS CASHIER BOX */}
               <div
                 onClick={() => handleSelectRoleBox('STAFF')}
-                className="bg-white rounded-2xl sm:rounded-3xl p-3 sm:p-6 border-2 border-slate-200/90 shadow-xs sm:shadow-md hover:shadow-xl hover:border-emerald-600 hover:-translate-y-0.5 sm:hover:-translate-y-1 transition-all duration-200 cursor-pointer flex flex-col justify-between group relative overflow-hidden active:scale-[0.99]"
+                className="bg-white rounded-2xl sm:rounded-3xl p-3 sm:p-6 border-2 border-slate-200/90 shadow-xs sm:shadow-md hover:shadow-xl hover:border-[#030A91] hover:-translate-y-0.5 sm:hover:-translate-y-1 transition-all duration-200 cursor-pointer flex flex-col justify-between group relative overflow-hidden active:scale-[0.99]"
               >
-                <div className="absolute top-0 right-0 w-20 sm:w-20 h-20 sm:h-20 bg-emerald-50 rounded-bl-full -z-0 transition-transform group-hover:scale-125"></div>
+                <div className="absolute top-0 right-0 w-20 sm:w-20 h-20 sm:h-20 bg-blue-50/70 rounded-bl-full -z-0 transition-transform group-hover:scale-125"></div>
                 <div className="relative z-10">
                   {/* Mobile Row Header / Desktop Column Header */}
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-3 sm:space-x-0">
-                      <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-emerald-100 text-emerald-700 flex items-center justify-center shadow-inner group-hover:bg-emerald-700 group-hover:text-white transition-colors shrink-0">
-                        <Store className="w-5 h-5 sm:w-6 sm:h-6" />
+                      <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-blue-100 text-[#030A91] flex items-center justify-center shadow-inner group-hover:bg-[#030A91] group-hover:text-[#FACB00] transition-colors shrink-0">
+                        <ShoppingCart className="w-5 h-5 sm:w-6 sm:h-6" />
                       </div>
 
                       {/* Mobile title layout */}
                       <div className="sm:hidden">
-                        <span className="text-[9px] uppercase font-black tracking-wider px-1.5 py-0.2 rounded-full bg-emerald-100 text-emerald-800">
-                          POS Terminal
-                        </span>
-                        <h3 className="text-sm font-black text-slate-900 group-hover:text-emerald-700 transition-colors leading-tight mt-0.5">
-                          Staff / Cashier
+                        <div className="flex items-center space-x-1.5">
+                          <span className="text-[9px] uppercase font-black tracking-wider px-1.5 py-0.2 rounded-full bg-blue-100 text-[#030A91]">
+                            Retail POS
+                          </span>
+                          <span className="text-[9px] font-black uppercase text-[#030A91] bg-blue-50 px-1 py-0.2 rounded border border-blue-200">
+                            PIN
+                          </span>
+                        </div>
+                        <h3 className="text-sm font-black text-slate-900 group-hover:text-[#030A91] transition-colors leading-tight mt-0.5">
+                          Staff / POS Cashier
                         </h3>
                       </div>
                     </div>
 
                     {/* Mobile action pill */}
-                    <div className="sm:hidden flex items-center space-x-1 text-xs font-black text-emerald-700 bg-emerald-50 px-2.5 py-1.5 rounded-xl border border-emerald-200/60 shadow-2xs group-hover:bg-emerald-700 group-hover:text-white transition-colors">
-                      <span>Login</span>
-                      <ArrowRight className="w-3.5 h-3.5 text-emerald-700 group-hover:text-white transition-colors" />
+                    <div className="sm:hidden flex items-center space-x-1 text-xs font-black text-[#030A91] bg-blue-50 px-2.5 py-1.5 rounded-xl border border-blue-200/60 shadow-2xs group-hover:bg-[#030A91] group-hover:text-white transition-colors">
+                      <span>Enter PIN</span>
+                      <ArrowRight className="w-3.5 h-3.5 text-[#030A91] group-hover:text-white transition-colors" />
                     </div>
                   </div>
 
                   {/* Desktop content */}
                   <div className="hidden sm:block mt-4">
-                    <span className="text-[10px] uppercase font-black tracking-wider px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800">
-                      POS Terminal #01
-                    </span>
-                    <h3 className="text-lg font-black text-slate-900 mt-1.5 group-hover:text-emerald-700 transition-colors">
-                      Staff & Cashier Login
+                    <div className="flex items-center space-x-1.5">
+                      <span className="text-[10px] uppercase font-black tracking-wider px-2 py-0.5 rounded-full bg-blue-100 text-[#030A91]">
+                        Retail POS
+                      </span>
+                      <span className="text-[10px] font-black uppercase text-[#030A91] bg-blue-50 px-1.5 py-0.5 rounded border border-blue-200 font-bold">
+                        6-Digit PIN
+                      </span>
+                    </div>
+                    <h3 className="text-lg font-black text-slate-900 mt-1.5 group-hover:text-[#030A91] transition-colors">
+                      Staff / POS Cashier
                     </h3>
                     <p className="text-xs text-slate-500 mt-1 font-medium">
-                      Branch storekeeper and cashier POS terminal sign in with 6-digit PIN.
+                      Select your cashier name & unlock checkout with 6-digit PIN.
                     </p>
                   </div>
                 </div>
 
                 {/* Desktop footer */}
-                <div className="hidden sm:flex mt-5 pt-3 border-t border-slate-100 items-center justify-between text-xs font-bold text-emerald-700 group-hover:text-emerald-900">
-                  <span className="group-hover:underline">Open POS Terminal</span>
-                  <div className="w-7 h-7 rounded-lg bg-emerald-50 group-hover:bg-emerald-700 group-hover:text-white flex items-center justify-center transition-colors">
+                <div className="hidden sm:flex mt-5 pt-3 border-t border-slate-100 items-center justify-between text-xs font-bold text-[#030A91] group-hover:text-[#02066F]">
+                  <span className="group-hover:underline">Staff PIN Login</span>
+                  <div className="w-7 h-7 rounded-lg bg-blue-50 group-hover:bg-[#030A91] group-hover:text-white flex items-center justify-center transition-colors">
                     <ArrowRight className="w-3.5 h-3.5" />
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* Discreet System Bar */}
-            <div className="max-w-4xl mx-auto pt-4 flex items-center justify-center text-xs text-slate-400">
-              <div className="flex items-center space-x-2 font-mono text-[11px] text-slate-500">
-                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                <span>Uhuru Market System Node • Live Sync</span>
-              </div>
+            {/* Custom sign-in option */}
+            <div className="text-center pt-1 sm:pt-3">
+              <button
+                type="button"
+                onClick={() => handleSelectRoleBox('CUSTOM')}
+                className="text-[11px] sm:text-xs font-bold text-slate-600 hover:text-[#030A91] hover:underline inline-flex items-center space-x-1 p-1.5 sm:p-2 rounded-lg"
+              >
+                <KeyRound className="w-3.5 h-3.5 mr-1" />
+                <span>Or sign in with custom enterprise credentials &rarr;</span>
+              </button>
             </div>
           </div>
         ) : selectedRole === 'STAFF' && !useEmailForStaff ? (
@@ -869,7 +896,7 @@ export const LoginView: React.FC = () => {
 
                 <div className="text-right">
                   <span className="text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full bg-[#FACB00] text-[#030A91] shadow-xs">
-                    Station #01 Terminal
+                    Staff POS Terminal
                   </span>
                 </div>
               </div>
@@ -880,10 +907,10 @@ export const LoginView: React.FC = () => {
                     <UserIcon className="w-6 h-6" />
                   </div>
                   <h2 className="text-xl font-black text-slate-900 tracking-tight">
-                    Select Operator Profile
+                    Select Your Staff Cashier Account
                   </h2>
                   <p className="text-xs text-slate-500 mt-1">
-                    Tap your assigned station profile to authenticate with your 6-digit PIN
+                    Tap your assigned name below to enter your 6-digit station PIN
                   </p>
                 </div>
 
@@ -926,33 +953,29 @@ export const LoginView: React.FC = () => {
                             setEnteredPin('');
                             setErrorMessage('');
                           }}
-                          className="p-3.5 rounded-2xl border-2 border-slate-200 hover:border-[#030A91] hover:bg-blue-50/50 hover:shadow-md transition-all cursor-pointer flex items-center justify-between group relative overflow-hidden text-left"
+                          className="p-3.5 rounded-2xl border-2 border-slate-200 hover:border-[#030A91] hover:bg-blue-50/50 hover:shadow-md transition-all cursor-pointer flex items-center space-x-3 group relative overflow-hidden text-left"
                         >
-                          <div className="flex items-center space-x-3 min-w-0 pr-2">
-                            <div className="w-12 h-12 rounded-xl bg-[#030A91] text-[#FACB00] flex items-center justify-center font-black text-sm shrink-0 shadow-sm group-hover:scale-105 transition-transform">
-                              {initials}
-                            </div>
-
-                            <div className="min-w-0">
-                              <div className="flex items-center space-x-1.5">
-                                <span className="font-black text-xs text-slate-900 group-hover:text-[#030A91] truncate block">
-                                  {staff.name}
-                                </span>
-                              </div>
-                              <div className="flex items-center space-x-1 text-[11px] text-slate-500 mt-0.5">
-                                <Store className="w-3 h-3 text-slate-400 shrink-0" />
-                                <span className="truncate">{staff.branchName}</span>
-                              </div>
-                            </div>
+                          <div className="w-12 h-12 rounded-xl bg-[#030A91] text-[#FACB00] flex items-center justify-center font-black text-sm shrink-0 shadow-sm group-hover:scale-105 transition-transform">
+                            {initials}
                           </div>
 
-                          <div className="flex items-center space-x-2 shrink-0">
-                            <span className="text-[10px] font-black uppercase tracking-wider text-[#030A91] bg-blue-100 px-2 py-1 rounded-lg">
-                              PIN Login
-                            </span>
-                            <div className="w-7 h-7 rounded-lg bg-slate-100 group-hover:bg-[#030A91] group-hover:text-white flex items-center justify-center text-slate-400 transition-colors shrink-0">
-                              <ArrowRight className="w-3.5 h-3.5" />
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center space-x-1.5">
+                              <span className="font-black text-xs text-slate-900 group-hover:text-[#030A91] truncate block">
+                                {staff.name}
+                              </span>
                             </div>
+                            <div className="flex items-center space-x-1 text-[11px] text-slate-500 mt-0.5">
+                              <Store className="w-3 h-3 text-slate-400 shrink-0" />
+                              <span className="truncate">{staff.branchName}</span>
+                            </div>
+                            <span className="inline-block mt-1 text-[9px] font-bold uppercase tracking-wider text-[#030A91] bg-blue-100/80 px-1.5 py-0.2 rounded font-bold">
+                              Tap to enter PIN
+                            </span>
+                          </div>
+
+                          <div className="w-7 h-7 rounded-lg bg-slate-100 group-hover:bg-[#030A91] group-hover:text-white flex items-center justify-center text-slate-400 transition-colors shrink-0">
+                            <ArrowRight className="w-3.5 h-3.5" />
                           </div>
                         </div>
                       );
@@ -1307,11 +1330,31 @@ export const LoginView: React.FC = () => {
                   )}
                 </button>
 
-                {/* Secure Production Status Footer */}
-                <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-center text-xs text-slate-400">
-                  <div className="flex items-center space-x-1.5 font-mono text-[11px] text-slate-500">
-                    <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
-                    <span>Secure 6-Digit PIN • Enterprise Encrypted</span>
+                {/* Demo Helper & PIN Hint Footer Bar */}
+                <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
+                  <div className="flex items-center space-x-1.5 min-w-0">
+                    <Key className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                    <span className="truncate">
+                      Hint:{' '}
+                      <strong className="text-slate-800 font-mono">
+                        {selectedStaffUser.pinHint || `${getDemoPinForUser(selectedStaffUser).slice(0, 2)}••${getDemoPinForUser(selectedStaffUser).slice(-2)}`}
+                      </strong>
+                    </span>
+                  </div>
+
+                  <div className="flex items-center space-x-2 shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const demoPin = getDemoPinForUser(selectedStaffUser);
+                        setEnteredPin(demoPin);
+                        playSound('press');
+                        handlePinSubmit(demoPin);
+                      }}
+                      className="text-[11px] font-black text-[#030A91] hover:underline px-2.5 py-1 rounded-lg bg-blue-50 border border-blue-200/80 hover:bg-blue-100 active:scale-95 transition-all"
+                    >
+                      Auto-Fill ({getDemoPinForUser(selectedStaffUser)})
+                    </button>
                   </div>
                 </div>
               </div>
@@ -1412,9 +1455,9 @@ export const LoginView: React.FC = () => {
                       </div>
 
                       <div className="p-3 bg-blue-50 rounded-xl border border-blue-200">
-                        <strong className="text-[#030A91] block mb-1">Supervisor & Administrator Login:</strong>
+                        <strong className="text-[#030A91] block mb-1">Supervisor Direct Login:</strong>
                         <p className="text-blue-900">
-                          Branch Supervisors, Accountants, and Administrators can authenticate into their management workspace using verified email and password credentials.
+                          Administrators and Accountants can log in directly using email and password with zero restrictions.
                         </p>
                         <button
                           type="button"
@@ -1424,7 +1467,7 @@ export const LoginView: React.FC = () => {
                           }}
                           className="mt-2 text-xs font-bold text-white bg-[#030A91] hover:bg-blue-900 px-3 py-1.5 rounded-lg inline-flex items-center space-x-1"
                         >
-                          <span>Go to Administrator Sign In</span>
+                          <span>Go to Administrator Login</span>
                           <ArrowRight className="w-3.5 h-3.5 text-[#FACB00]" />
                         </button>
                       </div>
@@ -1476,21 +1519,12 @@ export const LoginView: React.FC = () => {
                     : 'bg-slate-100 text-slate-700'
                 }`}
               >
-                {selectedRole === 'ADMIN' ? 'Administrator Access' : `${selectedRole} Access`}
+                {selectedRole === 'CUSTOM' ? 'Direct Login' : `${selectedRole} Access`}
               </span>
             </div>
 
             <div className="p-6 sm:p-8">
               <div className="mb-6 text-center">
-                <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-blue-50 text-[#030A91] mb-3 shadow-inner">
-                  {selectedRole === 'ADMIN' ? (
-                    <ShieldCheck className="w-6 h-6" />
-                  ) : selectedRole === 'ACCOUNTANT' ? (
-                    <FileSpreadsheet className="w-6 h-6" />
-                  ) : (
-                    <Lock className="w-6 h-6" />
-                  )}
-                </div>
                 <h2 className="text-xl font-extrabold text-slate-900 tracking-tight">
                   {selectedRole === 'ADMIN' && 'Administrator Portal Sign In'}
                   {selectedRole === 'ACCOUNTANT' && 'Accountant Portal Sign In'}
@@ -1498,51 +1532,40 @@ export const LoginView: React.FC = () => {
                   {selectedRole === 'CUSTOM' && 'Enterprise Staff Sign In'}
                 </h2>
                 <p className="text-xs text-slate-500 mt-1">
-                  Enter your registered administrator email address and secure master password
+                  Authenticate your credentials to open your operational workspace
                 </p>
               </div>
 
-              {errorMessage && (
-                <div className="mb-5 p-3.5 rounded-xl bg-rose-50 border border-rose-200 flex items-start space-x-2.5 text-rose-800 text-xs animate-in fade-in">
-                  <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-rose-600" />
-                  <span className="font-medium leading-relaxed">{errorMessage}</span>
+              {selectedRole === 'ADMIN' && (
+                <div className="mb-4 space-y-2.5">
+                  <button
+                    type="button"
+                    disabled={isSubmitting}
+                    onClick={(e) => handleGoogleLogin(e)}
+                    className="w-full py-2.5 px-4 bg-white hover:bg-slate-50 border-2 border-slate-200 hover:border-slate-300 text-slate-800 rounded-xl text-xs font-bold flex items-center justify-center space-x-2.5 shadow-xs transition-all active:scale-98"
+                  >
+                    <GoogleIcon className="w-4 h-4 shrink-0" />
+                    <span>{isSubmitting ? 'Authenticating with Google...' : 'Sign in with Google (Authorized Admins)'}</span>
+                  </button>
+                  <div className="flex items-center my-3">
+                    <div className="flex-1 border-t border-slate-200"></div>
+                    <span className="px-3 text-[10px] text-slate-400 font-bold uppercase tracking-wider">or sign in with password</span>
+                    <div className="flex-1 border-t border-slate-200"></div>
+                  </div>
                 </div>
               )}
 
-              {/* Google Sign In Option for Admin and Accountant */}
-              {(selectedRole === 'ADMIN' || selectedRole === 'ACCOUNTANT') && (
-                <div className="mb-4">
-                  <button
-                    type="button"
-                    disabled={isGoogleSigningIn}
-                    onClick={() => handleGoogleSignIn(selectedRole)}
-                    className="w-full py-2.5 px-4 bg-white hover:bg-slate-50 border-2 border-slate-200 hover:border-slate-300 rounded-xl text-xs font-bold text-slate-700 flex items-center justify-center space-x-2.5 transition-all shadow-xs hover:shadow-sm active:scale-99 disabled:opacity-50 cursor-pointer"
-                  >
-                    <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24">
-                      <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
-                      <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
-                      <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" />
-                      <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" />
-                    </svg>
-                    <span>
-                      {isGoogleSigningIn ? 'Connecting to Google...' : `Sign in with Google (${selectedRole === 'ADMIN' ? 'Admin' : 'Accountant'})`}
-                    </span>
-                  </button>
-
-                  <div className="relative flex py-3 items-center">
-                    <div className="grow border-t border-slate-200"></div>
-                    <span className="shrink mx-3 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                      Or use password
-                    </span>
-                    <div className="grow border-t border-slate-200"></div>
-                  </div>
+              {errorMessage && (
+                <div className="mb-5 p-3.5 rounded-xl bg-rose-50 border border-rose-200 flex items-start space-x-2 text-rose-800 text-xs animate-in fade-in">
+                  <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-rose-600" />
+                  <span>{errorMessage}</span>
                 </div>
               )}
 
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
                   <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                    Account Email Address
+                    Staff Username / Name
                   </label>
                   <div className="relative">
                     <Mail className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
@@ -1550,7 +1573,7 @@ export const LoginView: React.FC = () => {
                       type="email"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      placeholder={selectedRole === 'ADMIN' ? 'admin@naisiaetextiles.com' : 'user@naisiaetextiles.com'}
+                      placeholder=""
                       className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#030A91] transition-all"
                       required
                       autoFocus
@@ -1578,50 +1601,51 @@ export const LoginView: React.FC = () => {
                   <div className="relative">
                     <Lock className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
                     <input
-                      type={showPassword ? 'text' : 'password'}
+                      type="password"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       placeholder="••••••••••••"
-                      className="w-full pl-10 pr-11 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#030A91] transition-all"
+                      className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#030A91] transition-all"
                       required
                     />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-1"
-                      title={showPassword ? 'Hide password' : 'Show password'}
-                    >
-                      {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                    </button>
                   </div>
                 </div>
 
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="w-full mt-2 py-3 bg-[#030A91] text-white rounded-xl text-sm font-bold flex items-center justify-center space-x-2 hover:bg-blue-900 transition-all shadow-md shadow-blue-900/20 disabled:opacity-50 active:scale-99"
+                  className="w-full mt-2 py-3 bg-[#030A91] text-white rounded-xl text-sm font-bold flex items-center justify-center space-x-2 hover:bg-blue-900 transition-all shadow-md shadow-blue-900/20 disabled:opacity-50"
                 >
                   <span>
                     {isSubmitting
                       ? 'Authenticating...'
-                      : selectedRole === 'ADMIN'
-                      ? 'Sign In as Administrator'
                       : `Enter ${selectedRole === 'CUSTOM' ? 'ERP' : selectedRole} Workspace`}
                   </span>
                   <ArrowRight className="w-4 h-4 text-[#FACB00]" />
                 </button>
-
-                <div className="pt-2 flex items-center justify-center space-x-1.5 text-[11px] text-slate-500">
-                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                  <span>256-Bit SSL Encrypted • Brute-Force Rate Protected</span>
-                </div>
               </form>
 
+              {/* Quick Preset Buttons for other stations */}
+              {selectedRole === 'STAFF' && (
+                <div className="mt-6 pt-5 border-t border-slate-100 text-center">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setUseEmailForStaff(false);
+                      loadStaffUsers();
+                    }}
+                    className="text-xs font-bold text-emerald-700 hover:underline inline-flex items-center space-x-1"
+                  >
+                    <Key className="w-3.5 h-3.5 mr-1" />
+                    <span>Switch to Fast 6-Digit PIN Cashier Login</span>
+                  </button>
+                </div>
+              )}
             </div>
 
             {/* Card Footer */}
             <div className="bg-slate-50 p-3.5 text-center border-t border-slate-100 text-[11px] text-slate-500">
-              Naisia Textiles Ltd • Official Enterprise Portal • Nairobi, Kenya
+              Naisia Textiles •  • Tel: 0792021496 / 0112264870 • Uhuru Market, Nairobi
             </div>
           </div>
         )}
@@ -1775,119 +1799,6 @@ export const LoginView: React.FC = () => {
                 </div>
               </form>
             )}
-          </div>
-        </div>
-      )}
-
-      {/* Google Account Verification & Chooser Modal */}
-      {showGoogleChooserModal && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl shadow-2xl max-w-md w-full overflow-hidden border border-slate-200 animate-in fade-in zoom-in-95 duration-200">
-            {/* Modal Header */}
-            <div className="p-5 bg-gradient-to-r from-slate-900 via-[#030A91] to-slate-900 text-white flex items-center justify-between">
-              <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 rounded-2xl bg-white p-2 shadow-sm flex items-center justify-center shrink-0">
-                  <svg className="w-6 h-6" viewBox="0 0 24 24">
-                    <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
-                    <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
-                    <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" />
-                    <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" />
-                  </svg>
-                </div>
-                <div>
-                  <h3 className="font-extrabold text-sm text-white">Google Identity Sign-In</h3>
-                  <p className="text-[11px] text-blue-200">
-                    {googleModalRole === 'ADMIN' ? 'Administrator Authentication' : 'Accountant Authentication'}
-                  </p>
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={() => setShowGoogleChooserModal(false)}
-                className="text-white/70 hover:text-white p-1 rounded-lg hover:bg-white/10 transition-colors"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            {/* Modal Body */}
-            <div className="p-6 space-y-4">
-              <div className="p-3 bg-blue-50 border border-blue-200 rounded-2xl text-xs text-blue-900 flex items-start space-x-2.5">
-                <Globe className="w-4 h-4 text-blue-700 shrink-0 mt-0.5" />
-                <p className="leading-relaxed">
-                  Select your authorized Google account or enter your email below to authenticate securely.
-                </p>
-              </div>
-
-              {/* Quick Select Chips */}
-              <div className="space-y-1.5">
-                <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
-                  Quick Select Authorized {googleModalRole === 'ADMIN' ? 'Admin' : 'Accountant'} Account:
-                </span>
-                <div className="flex flex-wrap gap-1.5">
-                  {(googleModalRole === 'ADMIN'
-                    ? ['naisiaetext@gmail.com', 'optimumengineeringke@gmail.com', 'urbaninteriorkenya@gmail.com']
-                    : ['veronicanjus@gmail.com', 'mike@naisiaetextiles.com']
-                  ).map((mail) => (
-                    <button
-                      key={mail}
-                      type="button"
-                      disabled={isGoogleSigningIn}
-                      onClick={() => handleDirectGoogleLogin(mail, googleModalRole)}
-                      className="px-3 py-1.5 bg-blue-50 hover:bg-[#030A91] hover:text-white text-[#030A91] border border-blue-200 rounded-xl text-xs font-bold transition-all flex items-center space-x-1 cursor-pointer"
-                    >
-                      <span>{mail}</span>
-                      <ArrowRight className="w-3 h-3 text-[#FACB00]" />
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Enter Verified Google Email */}
-              <div>
-                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                  Authorized Google Account Email
-                </label>
-                <div className="flex space-x-2">
-                  <div className="relative flex-1">
-                    <Mail className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
-                    <input
-                      type="email"
-                      value={customGoogleEmail}
-                      onChange={(e) => setCustomGoogleEmail(e.target.value)}
-                      placeholder={googleModalRole === 'ADMIN' ? 'admin@naisiaetextiles.com' : 'accountant@naisiaetextiles.com'}
-                      className="w-full pl-10 pr-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#030A91]"
-                      required
-                      autoFocus
-                    />
-                  </div>
-                  <button
-                    type="button"
-                    disabled={!customGoogleEmail || isGoogleSigningIn}
-                    onClick={() => handleDirectGoogleLogin(customGoogleEmail, googleModalRole)}
-                    className="px-4 py-2 bg-[#030A91] hover:bg-blue-900 text-white rounded-xl text-xs font-bold transition-all disabled:opacity-50 flex items-center space-x-1 cursor-pointer shadow-xs"
-                  >
-                    <span>{isGoogleSigningIn ? 'Verifying...' : 'Sign In'}</span>
-                    <ArrowRight className="w-3.5 h-3.5 text-[#FACB00]" />
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            {/* Modal Footer */}
-            <div className="bg-slate-50 p-4 border-t border-slate-100 flex items-center justify-between text-xs">
-              <span className="text-[11px] text-slate-500 flex items-center space-x-1">
-                <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
-                <span>Enterprise OAuth 2.0 Security</span>
-              </span>
-              <button
-                type="button"
-                onClick={() => setShowGoogleChooserModal(false)}
-                className="px-3.5 py-1.5 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-xl text-xs font-bold transition-colors cursor-pointer"
-              >
-                Cancel
-              </button>
-            </div>
           </div>
         </div>
       )}
