@@ -10,6 +10,7 @@ Allow: /portal/
 Allow: /school-uniforms
 Allow: /kmtc-uniforms
 Allow: /customized-uniforms
+Allow: /product/
 Allow: /about
 Allow: /policy
 Allow: /contact
