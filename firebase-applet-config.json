@@ -1,12 +1,12 @@
 {
-  "projectId": "gen-lang-client-0284516968",
-  "appId": "1:301254234657:web:ad30011d949f4724ab0960",
+  "projectId": "naisiae-erp",
+  "appId": "1:211406863856:web:ad30011d949f4724ab0960",
   "apiKey": "AIzaSyBWc9THTYPOoTlXWBsdA0HP1pkV3Gj1Td8",
-  "authDomain": "gen-lang-client-0284516968.firebaseapp.com",
+  "authDomain": "naisiae-erp.firebaseapp.com",
   "firestoreDatabaseId": "ai-studio-naisiaeschooluni-ff1bcda5-c527-425d-91e7-84292c2b2c02",
-  "storageBucket": "gen-lang-client-0284516968.firebasestorage.app",
-  "messagingSenderId": "301254234657",
+  "storageBucket": "naisiae-erp.firebasestorage.app",
+  "messagingSenderId": "211406863856",
   "measurementId": "",
-  "oAuthClientId": "301254234657-k5bitcmsbes947bkc6nm3k3ocotrkd8j.apps.googleusercontent.com",
+  "oAuthClientId": "211406863856-k5bitcmsbes947bkc6nm3k3ocotrkd8j.apps.googleusercontent.com",
   "recaptchaSiteKey": ""
 }
