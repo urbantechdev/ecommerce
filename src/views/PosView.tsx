@@ -630,7 +630,7 @@ export const PosView: React.FC = () => {
                   <span className="text-xs font-bold text-white">Items in checkout cart</span>
                 </div>
                 <div className="flex items-center space-x-1.5 text-[#FACB00] font-black text-xs">
-                  <span className="text-slate-900">Pay KES {totalPayable.toLocaleString()}</span>
+                  <span className="text-slate-900 font-golos">Pay KES {totalPayable.toLocaleString()}</span>
                   <span>&rarr;</span>
                 </div>
               </button>
@@ -715,7 +715,7 @@ export const PosView: React.FC = () => {
                   </p>
                   <div className="flex items-center space-x-2 text-[9.5px] text-slate-500 mt-0.5">
                     <span className="font-mono bg-slate-100 px-1 rounded">Size: {item.size}</span>
-                    <span>KES {item.unitPrice.toLocaleString()}</span>
+                    <span className="font-golos">KES {item.unitPrice.toLocaleString()}</span>
                   </div>
                 </div>
 
@@ -758,15 +758,15 @@ export const PosView: React.FC = () => {
             <div className="space-y-0.5 text-[11px]">
               <div className="flex justify-between text-slate-600">
                 <span>Subtotal (Net Excl. VAT):</span>
-                <span>KES {(cartSubtotal - cartTax).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                <span className="font-golos">KES {(cartSubtotal - cartTax).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
               </div>
               <div className="flex justify-between text-slate-600">
                 <span>KRA 16% Standard VAT:</span>
-                <span>KES {cartTax.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                <span className="font-golos">KES {cartTax.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
               </div>
               <div className="flex justify-between text-xs font-black text-slate-900 pt-1 border-t border-slate-200">
                 <span>TOTAL PAYABLE:</span>
-                <span className="text-slate-900">KES {totalPayable.toLocaleString()}</span>
+                <span className="text-slate-900 font-golos">KES {totalPayable.toLocaleString()}</span>
               </div>
             </div>
 
