@@ -1,51 +1,42 @@
 {
   "entities": {
-    "product": {
-      "title": "Product",
-      "description": "Comprehensive school uniform and corporate workwear catalogue item.",
-      "type": "object",
-      "properties": {
-        "id": { "type": "string", "maxLength": 128 },
-        "name": { "type": "string", "maxLength": 200 },
-        "school": { "type": "string", "maxLength": 200 },
-        "sector": { "type": "string", "maxLength": 100 },
-        "institutionType": { "type": "string", "maxLength": 100 },
-        "professionalDomain": { "type": "string", "maxLength": 100 },
-        "garmentType": { "type": "string", "maxLength": 100 },
-        "category": { "type": "string", "maxLength": 100 },
-        "gender": { "type": "string", "maxLength": 50 },
-        "price": { "type": "number" },
-        "description": { "type": "string", "maxLength": 4000 },
-        "taxCategory": { "type": "string", "maxLength": 50 },
-        "imageUrl": { "type": "string", "maxLength": 2000 },
-        "imageCategory": { "type": "string", "maxLength": 100 },
-        "active": { "type": "boolean" },
-        "variantsCount": { "type": "number" },
-        "variants": { "type": "array" },
-        "createdAt": { "type": "string", "format": "date-time" },
-        "updatedAt": { "type": "string", "format": "date-time" }
-      },
-      "required": ["name", "category", "price"]
-    },
     "user": {
       "title": "User",
-      "description": "A system user or administrator.",
+      "description": "Enterprise staff and management profile with RBAC permissions",
       "type": "object",
       "properties": {
-        "email": { "type": "string" },
-        "role": { "type": "string", "enum": ["admin", "user"] },
-        "displayName": { "type": "string" },
-        "photoURL": { "type": "string" },
-        "lastLogin": { "type": "string", "format": "date-time" }
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "role": {
+          "type": "string",
+          "enum": [
+            "SUPER_ADMIN",
+            "ADMIN",
+            "BRANCH_MANAGER",
+            "ACCOUNTANT",
+            "STORE_KEEPER",
+            "CASHIER",
+            "TAILOR",
+            "STAFF"
+          ]
+        },
+        "branchId": { "type": "string" },
+        "status": { "type": "string", "enum": ["ACTIVE", "INACTIVE"] },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "lastLogin": { "type": "string", "format": "date-time" },
+        "phone": { "type": "string" },
+        "pin": { "type": "string", "pattern": "^\\d{4,6}$" }
       },
-      "required": ["email", "role"]
+      "required": ["id", "name", "email", "role", "branchId", "status", "createdAt"]
     },
     "admin": {
-      "title": "Admin Whitelist",
-      "description": "Dynamic whitelist entry for authorized system administrators by UID or email.",
+      "title": "Admin",
+      "description": "Dynamic administrator whitelist entry for privilege authorization",
       "type": "object",
       "properties": {
-        "email": { "type": "string" },
+        "id": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
         "uid": { "type": "string" },
         "name": { "type": "string" },
         "role": { "type": "string", "enum": ["ADMIN", "SUPER_ADMIN"] },
@@ -54,329 +45,17 @@
         "createdAt": { "type": "string", "format": "date-time" },
         "updatedAt": { "type": "string", "format": "date-time" }
       },
-      "required": ["email", "role"]
-    },
-    "quote": {
-      "title": "Quote Request",
-      "description": "User request for a custom quote.",
-      "type": "object",
-      "properties": {
-        "name": { "type": "string" },
-        "phone": { "type": "string" },
-        "email": { "type": "string" },
-        "institution": { "type": "string" },
-        "service": { "type": "string" },
-        "quantity": { "type": "number" },
-        "details": { "type": "string" },
-        "status": { "type": "string", "enum": ["new", "contacted", "quoted", "closed"] },
-        "createdAt": { "type": "string", "format": "date-time" }
-      },
-      "required": ["name", "phone", "service"]
-    },
-    "analytic_event": {
-      "title": "Analytic Event",
-      "description": "Individual event record for tracking user behavior.",
-      "type": "object",
-      "properties": {
-        "type": { "type": "string", "enum": ["view", "click", "order", "share"] },
-        "productId": { "type": "string" },
-        "productName": { "type": "string" },
-        "category": { "type": "string" },
-        "userId": { "type": "string" },
-        "date": { "type": "string", "format": "date" },
-        "createdAt": { "type": "string", "format": "date-time" }
-      },
-      "required": ["type", "date", "createdAt"]
-    },
-    "analytic_summary": {
-      "title": "Analytic Summary",
-      "description": "Daily summary of total views.",
-      "type": "object",
-      "properties": {
-        "views": { "type": "number" },
-        "date": { "type": "string", "format": "date" },
-        "updatedAt": { "type": "string", "format": "date-time" }
-      },
-      "required": ["views", "date", "updatedAt"]
-    },
-    "promotion": {
-      "title": "Promotion",
-      "description": "Marketing campaign or promotional banner.",
-      "type": "object",
-      "properties": {
-        "title": { "type": "string" },
-        "subtitle": { "type": "string" },
-        "buttonText": { "type": "string" },
-        "buttonLink": { "type": "string" },
-        "imageUrl": { "type": "string" },
-        "active": { "type": "boolean" },
-        "type": { "type": "string", "enum": ["banner", "top-bar", "modal"] },
-        "startDate": { "type": "string", "format": "date-time" },
-        "endDate": { "type": "string", "format": "date-time" },
-        "createdAt": { "type": "string", "format": "date-time" }
-      },
-      "required": ["title", "active", "type"]
-    },
-    "setting": {
-      "title": "Site Settings",
-      "description": "Global configuration for site branding and metadata.",
-      "type": "object",
-      "properties": {
-        "siteLogo": { "type": "string" },
-        "footerLogo": { "type": "string" },
-        "favicon": { "type": "string" },
-        "siteTagline": { "type": "string" },
-        "sharingTitle": { "type": "string" },
-        "sharingDescription": { "type": "string" },
-        "sharingImage": { "type": "string" },
-        "enableComparison": { "type": "boolean" },
-        "enableReviews": { "type": "boolean" },
-        "heroImages": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "properties": {
-              "url": { "type": "string" },
-              "title": { "type": "string" },
-              "subtitle": { "type": "string" },
-              "link": { "type": "string" }
-            }
-          }
-        },
-        "updatedAt": { "type": "string", "format": "date-time" }
-      }
-    },
-    "discountRule": {
-      "title": "Discount Rule",
-      "description": "Automatic discount thresholds for bulk orders.",
-      "type": "object",
-      "properties": {
-        "title": { "type": "string" },
-        "type": { "type": "string", "enum": ["quantity", "total"] },
-        "threshold": { "type": "number" },
-        "discountPercentage": { "type": "number" },
-        "active": { "type": "boolean" },
-        "createdAt": { "type": "string", "format": "date-time" }
-      },
-      "required": ["title", "type", "threshold", "discountPercentage", "active"]
-    },
-    "review": {
-      "title": "Product Review",
-      "description": "User feedback and rating for a product.",
-      "type": "object",
-      "properties": {
-        "productId": { "type": "string" },
-        "userName": { "type": "string" },
-        "rating": { "type": "number" },
-        "comment": { "type": "string" },
-        "status": { "type": "string", "enum": ["pending", "approved", "rejected"] },
-        "createdAt": { "type": "string", "format": "date-time" }
-      },
-      "required": ["productId", "rating", "comment", "status"]
-    },
-    "mega_menu": {
-      "title": "Mega Menu",
-      "description": "Advanced navigation menu structure with featured content and nested categories.",
-      "type": "object",
-      "properties": {
-        "name": { "type": "string" },
-        "featured": {
-          "type": "object",
-          "properties": {
-            "title": { "type": "string" },
-            "image": { "type": "string" },
-            "link": { "type": "string" }
-          }
-        },
-        "categories": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "properties": {
-              "name": { "type": "string" },
-              "items": {
-                "type": "array",
-                "items": { "type": "string" }
-              }
-            }
-          }
-        },
-        "updatedAt": { "type": "string", "format": "date-time" }
-      },
-      "required": ["name", "featured", "categories"]
-    },
-    "category": {
-      "title": "Category",
-      "type": "object",
-      "properties": {
-        "title": { "type": "string" },
-        "subtitle": { "type": "string" },
-        "image": { "type": "string" },
-        "description": { "type": "string" },
-        "link": { "type": "string" },
-        "sortOrder": { "type": "number" }
-      }
-    },
-    "service": {
-      "title": "Service",
-      "type": "object",
-      "properties": {
-        "title": { "type": "string" },
-        "description": { "type": "string" },
-        "image": { "type": "string" },
-        "iconType": { "type": "string" },
-        "features": { "type": "array", "items": { "type": "string" } },
-        "sortOrder": { "type": "number" }
-      }
-    },
-    "portfolio": {
-      "title": "Portfolio",
-      "type": "object",
-      "properties": {
-        "title": { "type": "string" },
-        "tag": { "type": "string" },
-        "image": { "type": "string" },
-        "description": { "type": "string" },
-        "sortOrder": { "type": "number" }
-      }
-    },
-    "catalogue_page": {
-      "title": "Catalogue Page",
-      "description": "An interactive slide/page inside the Sourcing Catalogue.",
-      "type": "object",
-      "properties": {
-        "title": { "type": "string" },
-        "category": { "type": "string" },
-        "description": { "type": "string" },
-        "imageUrl": { "type": "string" },
-        "highlights": { 
-          "type": "array",
-          "items": { "type": "string" }
-        },
-        "sortOrder": { "type": "number" }
-      },
-      "required": ["title", "category", "description", "imageUrl", "highlights", "sortOrder"]
-    },
-    "staging_product": {
-      "title": "Staging Product",
-      "description": "Product synchronized to the UrbanTechDev staging database layer for search feed syndication.",
-      "type": "object",
-      "properties": {
-        "tenantId": { "type": "string" },
-        "tenantSlug": { "type": "string" },
-        "offerId": { "type": "string" },
-        "title": { "type": "string" },
-        "description": { "type": "string" },
-        "link": { "type": "string" },
-        "imageLink": { "type": "string" },
-        "price": { "type": "number" },
-        "currency": { "type": "string" },
-        "priceString": { "type": "string" },
-        "availability": { "type": "string", "enum": ["in stock", "out of stock"] },
-        "syncedAt": { "type": "string", "format": "date-time" }
-      },
-      "required": ["tenantId", "tenantSlug", "offerId", "title", "link", "imageLink", "price", "currency", "availability"]
-    },
-    "inventory_item": {
-      "title": "Inventory Item",
-      "description": "Stock tracking record for uniform items across branch stores.",
-      "type": "object",
-      "properties": {
-        "productId": { "type": "string" },
-        "productName": { "type": "string" },
-        "school": { "type": "string" },
-        "category": { "type": "string" },
-        "variantId": { "type": "string" },
-        "sku": { "type": "string" },
-        "size": { "type": "string" },
-        "branchId": { "type": "string" },
-        "branchName": { "type": "string" },
-        "currentStock": { "type": "number" },
-        "reorderLevel": { "type": "number" },
-        "reorderQuantity": { "type": "number" },
-        "costPrice": { "type": "number" },
-        "sellingPrice": { "type": "number" },
-        "imageUrl": { "type": "string" },
-        "updatedAt": { "type": "string", "format": "date-time" }
-      },
-      "required": ["productId", "productName", "sku", "branchId", "currentStock"]
+      "required": ["email", "role", "status"]
     }
   },
   "firestore": {
-    "/inventory/{docId}": {
-      "schema": "inventory_item",
-      "description": "Stock levels, replenishment thresholds, and multi-branch allocations for uniform garments."
-    },
-    "/staging_products/{docId}": {
-      "schema": "staging_product",
-      "description": "Staging collection for cross-border Google Merchant and Microsoft Ads feed integration."
-    },
-    "/settings/{settingId}": {
-      "schema": "setting",
-      "description": "Store for site-wide configuration."
-    },
-    "/products/{productId}": {
-      "schema": "product",
-      "description": "Collection of all items for sale."
-    },
-    "/mega_menus/{menuId}": {
-      "schema": "mega_menu",
-      "description": "Advanced navigation menu structures."
-    },
-    "/catalogue_pages/{docId}": {
-      "schema": "catalogue_page",
-      "description": "Pages in the interactive sourcing catalogue modal."
-    },
-    "/categories/{docId}": {
-      "schema": "category",
-      "description": "App categories."
-    },
-    "/services/{docId}": {
-      "schema": "service",
-      "description": "App services."
-    },
-    "/portfolio/{docId}": {
-      "schema": "portfolio",
-      "description": "App portfolio projects."
-    },
     "/users/{userId}": {
-      "schema": "user",
-      "description": "User account data and roles."
+      "schema": { "$ref": "user" },
+      "description": "Central user storage for authentication and RBAC"
     },
     "/admins/{adminId}": {
-      "schema": "admin",
-      "description": "Dynamic whitelist entries for administrator access control and permissions."
-    },
-    "/quotes/{quoteId}": {
-      "schema": "quote",
-      "description": "Incoming quote requests from the website form."
-    },
-    "/analytics/{docId}": {
-      "schema": "analytic_event",
-      "description": "Collection of tracking events and daily summaries (summary IDs are YYYY-MM-DD)."
-    },
-    "/promotions/{promoId}": {
-      "schema": "promotion",
-      "description": "Marketing promotions and announcements."
-    },
-    "/discountRules/{ruleId}": {
-      "schema": "discountRule",
-      "description": "Rules for automated bulk order discounts."
-    },
-    "/reviews/{reviewId}": {
-      "schema": "review",
-      "description": "Product reviews moderated by admins."
-    },
-    "/system/{docId}": {
-      "schema": {
-        "title": "System Document",
-        "description": "Misc system documents for health checks.",
-        "type": "object",
-        "properties": {
-          "status": { "type": "string" }
-        }
-      },
-      "description": "System health and configuration checks."
+      "schema": { "$ref": "admin" },
+      "description": "Administrator whitelist for dynamic runtime authorization"
     }
   }
 }

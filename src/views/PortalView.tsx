@@ -191,8 +191,14 @@ export const PortalView: React.FC = () => {
         message: `Welcome ${result.user.displayName || "Customer"}! You can now checkout seamlessly.`,
       });
     } catch (err: any) {
-      if (err.code !== "auth/popup-closed-by-user") {
-        notify({ type: "ERROR", title: "Sign-In Failed", message: err.message });
+      if (err.code === "auth/unauthorized-domain") {
+        notify({
+          type: "INFO",
+          title: "Guest Checkout Ready",
+          message: "Google Sign-In is pending domain authorization in Firebase Console. You can complete checkout seamlessly with M-Pesa & Phone as a guest!",
+        });
+      } else if (err.code !== "auth/popup-closed-by-user" && err.code !== "auth/cancelled-popup-request") {
+        notify({ type: "ERROR", title: "Sign-In Failed", message: err.message || "Failed to authenticate with Google." });
       }
     } finally {
       setIsAuthLoading(false);
@@ -544,7 +550,7 @@ export const PortalView: React.FC = () => {
           }`}
         >
           {/* Search & School Filters Bar */}
-          <div className="bg-white p-3.5 sm:p-4 rounded-2xl border border-slate-200 shadow-xs space-y-3">
+          <div className="bg-white hover:bg-slate-50/40 p-3.5 sm:p-4 rounded-2xl border border-slate-200 shadow-xs hover:shadow-md hover:border-slate-300 transition-all duration-300 space-y-3">
             <div className="flex flex-col sm:flex-row gap-2.5">
               {/* Search input */}
               <div className="relative flex-1">
@@ -554,7 +560,7 @@ export const PortalView: React.FC = () => {
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Search uniform name, school, color, SKU..."
-                  className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#030A91] transition-all"
+                  className="w-full pl-10 pr-4 py-2.5 bg-slate-50 hover:bg-white border border-slate-200 hover:border-slate-300 rounded-xl text-xs focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#030A91] transition-all shadow-2xs hover:shadow-xs"
                 />
                 {searchQuery && (
                   <button
@@ -572,7 +578,7 @@ export const PortalView: React.FC = () => {
                   <select
                     value={selectedSchool}
                     onChange={(e) => setSelectedSchool(e.target.value)}
-                    className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#030A91]"
+                    className="w-full px-3 py-2.5 bg-slate-50 hover:bg-white border border-slate-200 hover:border-slate-300 rounded-xl text-xs font-bold text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#030A91] transition-all shadow-2xs hover:shadow-xs cursor-pointer"
                   >
                     <option value="ALL">🏫 All Institutions & Schools</option>
                     {schools.map((s) => (
@@ -584,7 +590,7 @@ export const PortalView: React.FC = () => {
                 </div>
                 <button
                   onClick={() => setProducts([...products].sort(() => Math.random() - 0.5))}
-                  className="px-3 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-all cursor-pointer"
+                  className="px-3 py-2.5 bg-slate-100 hover:bg-slate-200 active:scale-95 text-slate-700 rounded-xl text-xs font-bold transition-all shadow-2xs hover:shadow-sm cursor-pointer"
                   title="Reshuffle Products"
                 >
                   <RefreshCw className="w-4 h-4" />
@@ -599,7 +605,7 @@ export const PortalView: React.FC = () => {
                 type="button"
                 onClick={() => scrollCategories("left")}
                 aria-label="Scroll left"
-                className="hidden sm:flex absolute -left-2 top-1/2 -translate-y-1/2 z-10 w-7 h-7 bg-white hover:bg-slate-50 border border-slate-300 rounded-full shadow-md items-center justify-center text-slate-700 hover:text-[#030A91] transition-all cursor-pointer opacity-90 hover:opacity-100 hover:scale-110"
+                className="hidden sm:flex absolute -left-2 top-1/2 -translate-y-1/2 z-10 w-7 h-7 bg-white hover:bg-slate-50 border border-slate-300 rounded-full shadow-md hover:shadow-lg items-center justify-center text-slate-700 hover:text-[#030A91] transition-all cursor-pointer opacity-90 hover:opacity-100 hover:scale-110"
               >
                 <ChevronLeft className="w-4 h-4" />
               </button>
@@ -630,8 +636,8 @@ export const PortalView: React.FC = () => {
                       onClick={() => setSelectedCategory(c)}
                       className={`shrink-0 px-3.5 py-2 rounded-xl font-bold whitespace-nowrap text-xs transition-all cursor-pointer select-none inline-flex items-center space-x-2 ${
                         selectedCategory === c
-                          ? "bg-[#030A91] text-white shadow-sm scale-[1.02]"
-                          : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                          ? "bg-[#030A91] text-white shadow-md scale-[1.02]"
+                          : "bg-slate-100 text-slate-700 hover:bg-slate-200 hover:shadow-sm"
                       }`}
                     >
                       <CatIcon className={`w-4 h-4 ${selectedCategory === c ? "text-[#FACB00]" : "text-[#030A91]"}`} />
@@ -706,10 +712,10 @@ export const PortalView: React.FC = () => {
                   <div
                     key={p.id}
                     onClick={() => setActiveProductForVariant(p)}
-                    className="bg-white rounded-2xl border border-slate-200 hover:border-[#030A91] hover:shadow-xl hover:scale-[1.02] transition-all duration-300 cursor-pointer flex flex-col overflow-hidden group text-left"
+                    className="bg-white hover:bg-slate-50/80 rounded-2xl border border-slate-200/90 hover:border-[#030A91] shadow-xs hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 cursor-pointer flex flex-col overflow-hidden group text-left"
                   >
                     {/* Image Box */}
-                    <div className="aspect-square bg-slate-100 relative overflow-hidden flex items-center justify-center">
+                    <div className="aspect-square bg-slate-100 group-hover:bg-slate-200/60 relative overflow-hidden flex items-center justify-center transition-colors">
                       <div className="scanner-beam" />
                       <img
                         src={normalizeImageUrl(p.imageUrl || "")}
@@ -721,35 +727,35 @@ export const PortalView: React.FC = () => {
                           (e.target as HTMLImageElement).src = "/logo.png";
                         }}
                       />
-                      <span className="absolute top-2 left-2 bg-[#030A91]/80 backdrop-blur-xs text-[#FACB00] text-[9px] font-black uppercase px-2 py-0.5 rounded-md shadow-xs truncate max-w-[85%]">
+                      <span className="absolute top-2 left-2 bg-[#030A91]/80 group-hover:bg-[#030A91] backdrop-blur-xs text-[#FACB00] text-[9px] font-black uppercase px-2 py-0.5 rounded-md shadow-xs truncate max-w-[85%] transition-colors">
                         {p.school}
                       </span>
                       {p.category && (
-                        <span className="absolute bottom-2 left-2 bg-white/90 backdrop-blur-xs text-slate-700 text-[9px] font-bold px-1.5 py-0.5 rounded shadow-xs">
+                        <span className="absolute bottom-2 left-2 bg-white/90 group-hover:bg-white backdrop-blur-xs text-slate-700 text-[9px] font-bold px-1.5 py-0.5 rounded shadow-xs transition-colors">
                           {p.category}
                         </span>
                       )}
                     </div>
 
                     {/* Card Details */}
-                    <div className="p-3 flex-1 flex flex-col justify-between space-y-2">
+                    <div className="p-3 flex-1 flex flex-col justify-between space-y-2 group-hover:bg-white/40 transition-colors">
                       <div>
-                        <h3 className="font-black text-xs text-slate-900 group-hover:text-[#030A91] line-clamp-2 leading-tight">
+                        <h3 className="font-black text-xs text-slate-900 group-hover:text-[#030A91] line-clamp-2 leading-tight transition-colors">
                           {p.name}
                         </h3>
-                        <p className="text-[10px] text-slate-400 mt-0.5 font-medium">
+                        <p className="text-[10px] text-slate-400 group-hover:text-slate-500 mt-0.5 font-medium transition-colors">
                           {variants.length} {variants.length === 1 ? "size variant" : "sizes available"}
                         </p>
                       </div>
 
-                      <div className="pt-1 flex items-center justify-between border-t border-slate-100">
+                      <div className="pt-1 flex items-center justify-between border-t border-slate-100 group-hover:border-slate-200 transition-colors">
                         <div>
                           <span className="text-[9px] text-slate-400 block font-bold uppercase">Price</span>
                           <span className="text-xs font-black text-[#030A91]">
                             KES {minPrice.toLocaleString()} {hasMultiplePrices && `+`}
                           </span>
                         </div>
-                        <span className="bg-blue-50 text-[#030A91] group-hover:bg-[#030A91] group-hover:text-white px-2 py-1 rounded-lg text-[10px] font-bold transition-colors">
+                        <span className="bg-blue-50 text-[#030A91] group-hover:bg-[#030A91] group-hover:text-white group-hover:shadow-xs px-2.5 py-1 rounded-lg text-[10px] font-bold transition-all">
                           Select &rarr;
                         </span>
                       </div>
@@ -765,7 +771,7 @@ export const PortalView: React.FC = () => {
         {/* RIGHT COLUMN: POS-STYLE CART & CHECKOUT TERMINAL     */}
         {/* ==================================================== */}
         <aside
-          className={`w-full lg:w-96 bg-white rounded-3xl border border-slate-200 shadow-lg p-4 sm:p-5 flex flex-col space-y-4 shrink-0 ${
+          className={`w-full lg:w-96 bg-white hover:bg-slate-50/20 rounded-3xl border border-slate-200/90 shadow-md hover:shadow-xl hover:border-slate-300 transition-all duration-300 p-4 sm:p-5 flex flex-col space-y-4 shrink-0 ${
             mobileTab === "cart" ? "block" : "hidden lg:flex"
           }`}
         >
@@ -786,10 +792,10 @@ export const PortalView: React.FC = () => {
           </div>
 
           {/* Customer Profile Banner */}
-          <div className="p-3 rounded-2xl bg-blue-50/70 border border-blue-100 flex items-center justify-between">
+          <div className="p-3 rounded-2xl bg-blue-50/70 hover:bg-blue-50/95 border border-blue-100 shadow-2xs hover:shadow-sm hover:border-blue-200 transition-all flex items-center justify-between">
             {currentUser ? (
               <div className="flex items-center space-x-2.5 min-w-0">
-                <div className="w-8 h-8 rounded-full bg-[#030A91] text-white flex items-center justify-center font-bold text-xs shrink-0">
+                <div className="w-8 h-8 rounded-full bg-[#030A91] text-white flex items-center justify-center font-bold text-xs shrink-0 shadow-xs">
                   {(currentUser.displayName || "C")[0]}
                 </div>
                 <div className="min-w-0">
@@ -809,7 +815,7 @@ export const PortalView: React.FC = () => {
                 </div>
                 <button
                   onClick={handleGoogleSignIn}
-                  className="bg-[#030A91] text-white text-[10px] font-black px-2.5 py-1.5 rounded-lg hover:bg-blue-900 cursor-pointer"
+                  className="bg-[#030A91] text-white text-[10px] font-black px-2.5 py-1.5 rounded-lg hover:bg-blue-900 hover:shadow-xs active:scale-95 transition-all cursor-pointer"
                 >
                   Sign In
                 </button>
@@ -828,7 +834,7 @@ export const PortalView: React.FC = () => {
             ) : (
               <>
                 {(isCartExpanded ? cart : cart.slice(0, 2)).map((item) => (
-                  <div key={item.variantId} className="pt-2.5 flex items-center justify-between gap-2">
+                  <div key={item.variantId} className="pt-2.5 p-2 rounded-xl hover:bg-slate-50 hover:shadow-2xs border border-transparent hover:border-slate-200 transition-all flex items-center justify-between gap-2">
                     <div className="min-w-0 flex-1">
                       <h4 className="font-bold text-xs text-slate-900 truncate leading-tight">
                         {item.productName}
@@ -841,23 +847,23 @@ export const PortalView: React.FC = () => {
                       </p>
                     </div>
 
-                    <div className="flex items-center space-x-1 shrink-0 bg-slate-100 p-1 rounded-xl">
+                    <div className="flex items-center space-x-1 shrink-0 bg-slate-100 p-1 rounded-xl shadow-2xs">
                       <button
                         onClick={() => updateQuantity(item.variantId, -1)}
-                        className="p-1 hover:bg-white rounded-lg text-slate-700 transition-colors cursor-pointer"
+                        className="p-1 hover:bg-white rounded-lg text-slate-700 hover:shadow-xs transition-all cursor-pointer"
                       >
                         <Minus className="w-3 h-3" />
                       </button>
                       <span className="font-black text-xs px-1.5 text-slate-900">{item.quantity}</span>
                       <button
                         onClick={() => updateQuantity(item.variantId, 1)}
-                        className="p-1 hover:bg-white rounded-lg text-slate-700 transition-colors cursor-pointer"
+                        className="p-1 hover:bg-white rounded-lg text-slate-700 hover:shadow-xs transition-all cursor-pointer"
                       >
                         <Plus className="w-3 h-3" />
                       </button>
                       <button
                         onClick={() => removeFromCart(item.variantId)}
-                        className="p-1 text-slate-400 hover:text-rose-600 transition-colors ml-1 cursor-pointer"
+                        className="p-1 text-slate-400 hover:text-rose-600 hover:bg-white rounded-lg transition-all ml-1 cursor-pointer"
                       >
                         <Trash2 className="w-3 h-3" />
                       </button>
@@ -870,7 +876,7 @@ export const PortalView: React.FC = () => {
                     <button
                       type="button"
                       onClick={() => setIsCartExpanded(!isCartExpanded)}
-                      className="w-full py-2 px-3 bg-blue-50/70 hover:bg-blue-100/70 border border-blue-200/60 rounded-xl text-[11px] font-bold text-[#030A91] flex items-center justify-center space-x-1.5 transition-all cursor-pointer"
+                      className="w-full py-2 px-3 bg-blue-50/70 hover:bg-blue-100/70 hover:shadow-xs border border-blue-200/60 rounded-xl text-[11px] font-bold text-[#030A91] flex items-center justify-center space-x-1.5 transition-all cursor-pointer"
                     >
                       <span>
                         {isCartExpanded
@@ -916,8 +922,8 @@ export const PortalView: React.FC = () => {
                 onClick={() => setPaymentMethod("MPESA")}
                 className={`p-2.5 rounded-xl border-2 text-xs font-black flex items-center justify-center space-x-1.5 transition-all cursor-pointer ${
                   paymentMethod === "MPESA"
-                    ? "border-emerald-600 bg-emerald-50 text-emerald-800"
-                    : "border-slate-200 text-slate-600 hover:border-slate-300"
+                    ? "border-emerald-600 bg-emerald-50 text-emerald-800 shadow-sm"
+                    : "border-slate-200 bg-white hover:bg-slate-50 text-slate-600 hover:border-slate-300 hover:shadow-xs"
                 }`}
               >
                 <Smartphone className="w-3.5 h-3.5 text-emerald-600" />
@@ -928,8 +934,8 @@ export const PortalView: React.FC = () => {
                 onClick={() => setPaymentMethod("CARD")}
                 className={`p-2.5 rounded-xl border-2 text-xs font-black flex items-center justify-center space-x-1.5 transition-all cursor-pointer ${
                   paymentMethod === "CARD"
-                    ? "border-blue-600 bg-blue-50 text-blue-800"
-                    : "border-slate-200 text-slate-600 hover:border-slate-300"
+                    ? "border-blue-600 bg-blue-50 text-blue-800 shadow-sm"
+                    : "border-slate-200 bg-white hover:bg-slate-50 text-slate-600 hover:border-slate-300 hover:shadow-xs"
                 }`}
               >
                 <CreditCard className="w-3.5 h-3.5 text-blue-600" />
@@ -1020,7 +1026,7 @@ export const PortalView: React.FC = () => {
                   setSearchQuery("");
                   window.scrollTo({ top: 0, behavior: "smooth" });
                 }}
-                className="flex items-center space-x-1.5 px-3 py-2 bg-white hover:bg-slate-50 border border-slate-200/90 rounded-xl text-xs font-bold text-slate-700 hover:text-[#030A91] transition-all shadow-2xs cursor-pointer"
+                className="flex items-center space-x-1.5 px-3 py-2 bg-white hover:bg-slate-100 hover:shadow-md hover:border-slate-300 border border-slate-200/90 rounded-xl text-xs font-bold text-slate-700 hover:text-[#030A91] transition-all shadow-2xs cursor-pointer active:scale-95"
                 title="View All Uniforms & Reset Filters"
               >
                 <Shirt className="w-3.5 h-3.5 text-[#030A91]" />
@@ -1032,7 +1038,7 @@ export const PortalView: React.FC = () => {
                 onClick={() => {
                   window.scrollTo({ top: 120, behavior: "smooth" });
                 }}
-                className="flex items-center space-x-1.5 px-3 py-2 bg-white hover:bg-slate-50 border border-slate-200/90 rounded-xl text-xs font-bold text-slate-700 hover:text-[#030A91] transition-all shadow-2xs cursor-pointer"
+                className="flex items-center space-x-1.5 px-3 py-2 bg-white hover:bg-slate-100 hover:shadow-md hover:border-slate-300 border border-slate-200/90 rounded-xl text-xs font-bold text-slate-700 hover:text-[#030A91] transition-all shadow-2xs cursor-pointer active:scale-95"
                 title="Filter by School or Institution"
               >
                 <Building className="w-3.5 h-3.5 text-[#030A91]" />
@@ -1045,7 +1051,7 @@ export const PortalView: React.FC = () => {
                   const cartEl = document.querySelector("aside");
                   if (cartEl) cartEl.scrollIntoView({ behavior: "smooth" });
                 }}
-                className="flex items-center space-x-1.5 px-3 py-2 bg-white hover:bg-slate-50 border border-slate-200/90 rounded-xl text-xs font-bold text-slate-700 hover:text-[#030A91] transition-all shadow-2xs cursor-pointer"
+                className="flex items-center space-x-1.5 px-3 py-2 bg-white hover:bg-slate-100 hover:shadow-md hover:border-slate-300 border border-slate-200/90 rounded-xl text-xs font-bold text-slate-700 hover:text-[#030A91] transition-all shadow-2xs cursor-pointer active:scale-95"
                 title="View Cart"
               >
                 <ShoppingCart className="w-3.5 h-3.5 text-[#030A91]" />
@@ -1164,10 +1170,10 @@ export const PortalView: React.FC = () => {
                     setIsCategoryModalOpen(false);
                     window.scrollTo({ top: 0, behavior: 'smooth' });
                   }}
-                  className={`flex flex-col items-center justify-center p-6 rounded-3xl border-2 transition-all ${
+                  className={`flex flex-col items-center justify-center p-6 rounded-3xl border-2 transition-all duration-200 cursor-pointer ${
                     selectedCategory === c 
                       ? "bg-[#030A91] text-[#FACB00] border-[#030A91] shadow-lg scale-105" 
-                      : "bg-white text-slate-700 border-slate-100 shadow-sm hover:border-[#FACB00]"
+                      : "bg-white text-slate-700 border-slate-100 shadow-xs hover:border-[#030A91] hover:bg-slate-50 hover:shadow-md hover:-translate-y-0.5"
                   }`}
                 >
                   <CatIcon className="w-10 h-10 mb-3" />
@@ -1284,17 +1290,17 @@ export const PortalView: React.FC = () => {
                     <a
                       key={link.href}
                       href={link.href}
-                      className="flex flex-col items-center justify-center p-2.5 bg-white border border-slate-100 rounded-xl hover:border-[#030A91] transition-all"
+                      className="flex flex-col items-center justify-center p-2.5 bg-white hover:bg-slate-50 border border-slate-100 hover:border-[#030A91] rounded-xl shadow-2xs hover:shadow-md hover:-translate-y-0.5 transition-all group"
                     >
-                      <link.icon className="w-4 h-4 text-[#030A91] mb-1" />
-                      <span className="text-[9px] font-bold text-slate-700 text-center leading-tight">{link.label}</span>
+                      <link.icon className="w-4 h-4 text-[#030A91] group-hover:scale-110 mb-1 transition-transform" />
+                      <span className="text-[9px] font-bold text-slate-700 group-hover:text-[#030A91] text-center leading-tight transition-colors">{link.label}</span>
                     </a>
                   ))}
                 </div>
               </div>
 
               {/* GOOGLE AUTHENTICATION & USER PROFILE CARD (STAYS PROMINENT INSIDE HAMBURGER) */}
-              <div className="bg-slate-50 border border-slate-200/90 rounded-2xl p-3.5 shadow-2xs">
+              <div className="bg-slate-50 hover:bg-slate-100/70 border border-slate-200/90 hover:border-slate-300 rounded-2xl p-3.5 shadow-2xs hover:shadow-md transition-all duration-300">
                 <div className="text-[10px] font-black uppercase tracking-wider text-slate-400 mb-2.5 flex items-center justify-between">
                   <span>Google Account</span>
                   <span className="text-emerald-700 font-bold flex items-center gap-1">
@@ -1453,7 +1459,7 @@ export const PortalView: React.FC = () => {
 
                           <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
                             {customerOrders.map((order) => (
-                              <div key={order.id} className="bg-white p-2.5 rounded-xl border border-slate-200 shadow-2xs space-y-1.5 text-xs">
+                              <div key={order.id} className="bg-white hover:bg-slate-50 p-2.5 rounded-xl border border-slate-200 hover:border-[#030A91]/40 shadow-2xs hover:shadow-md transition-all duration-200 space-y-1.5 text-xs">
                                 <div className="flex items-center justify-between">
                                   <span className="font-black text-[#030A91] font-mono text-[11px]">
                                     {order.receiptNumber}
@@ -1488,7 +1494,7 @@ export const PortalView: React.FC = () => {
                         setIsMobileMenuOpen(false);
                       }}
                       disabled={isAuthLoading}
-                      className="w-full flex items-center justify-center space-x-2.5 bg-white border border-slate-300 hover:bg-slate-100 active:scale-95 text-slate-800 py-2.5 px-3 rounded-xl text-xs font-black shadow-xs transition-all cursor-pointer"
+                      className="w-full flex items-center justify-center space-x-2.5 bg-white border border-slate-300 hover:bg-slate-100 hover:shadow-sm active:scale-95 text-slate-800 py-2.5 px-3 rounded-xl text-xs font-black shadow-xs transition-all cursor-pointer"
                     >
                       <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24">
                         <path
@@ -1526,7 +1532,7 @@ export const PortalView: React.FC = () => {
                     setIsMobileMenuOpen(false);
                     window.scrollTo({ top: 300, behavior: 'smooth' });
                   }}
-                  className="w-full flex items-center justify-between p-2.5 rounded-xl hover:bg-slate-100 text-xs font-bold text-slate-800 transition-colors"
+                  className="w-full flex items-center justify-between p-2.5 rounded-xl hover:bg-slate-100 hover:shadow-2xs text-xs font-bold text-slate-800 transition-all cursor-pointer"
                 >
                   <div className="flex items-center space-x-2.5">
                     <Shirt className="w-4 h-4 text-[#030A91]" />
@@ -1543,7 +1549,7 @@ export const PortalView: React.FC = () => {
                     setIsMobileMenuOpen(false);
                     window.scrollTo({ top: 300, behavior: 'smooth' });
                   }}
-                  className="w-full flex items-center justify-between p-2.5 rounded-xl hover:bg-slate-100 text-xs font-bold text-slate-800 transition-colors"
+                  className="w-full flex items-center justify-between p-2.5 rounded-xl hover:bg-slate-100 hover:shadow-2xs text-xs font-bold text-slate-800 transition-all cursor-pointer"
                 >
                   <div className="flex items-center space-x-2.5">
                     <ShoppingCart className="w-4 h-4 text-[#030A91]" />
@@ -1564,7 +1570,7 @@ export const PortalView: React.FC = () => {
                     setSelectedCategory("ALL");
                     setIsMobileMenuOpen(false);
                   }}
-                  className="w-full flex items-center justify-between p-2.5 rounded-xl hover:bg-slate-100 text-xs font-bold text-slate-800 transition-colors"
+                  className="w-full flex items-center justify-between p-2.5 rounded-xl hover:bg-slate-100 hover:shadow-2xs text-xs font-bold text-slate-800 transition-all cursor-pointer"
                 >
                   <div className="flex items-center space-x-2.5">
                     <RefreshCw className="w-4 h-4 text-emerald-600" />
@@ -1575,7 +1581,7 @@ export const PortalView: React.FC = () => {
               </div>
 
               {/* Physical Branch & Customer Care */}
-              <div className="bg-blue-50/70 rounded-2xl p-3 border border-blue-100 space-y-1.5">
+              <div className="bg-blue-50/70 hover:bg-blue-50 border border-blue-100 hover:border-blue-200 rounded-2xl p-3 shadow-2xs hover:shadow-sm transition-all space-y-1.5">
                 <p className="text-[10px] font-black uppercase tracking-wider text-[#030A91] flex items-center gap-1.5">
                   <Building className="w-3.5 h-3.5" /> Flagship Store
                 </p>

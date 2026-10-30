@@ -173,7 +173,7 @@ body, button, input, select, textarea {
   top: 0;
   bottom: 0;
   width: 35%;
-  background: linear-gradient(90deg, transparent, rgba(250, 203, 0, 0.35), rgba(255, 255, 255, 0.6), rgba(250, 203, 0, 0.35), transparent);
+  background: linear-gradient(90deg, transparent, rgba(250, 203, 0, 0.15), rgba(255, 255, 255, 0.3), rgba(250, 203, 0, 0.15), transparent);
   transform: skewX(-45deg);
   pointer-events: none;
   animation: scannerSweep 5s cubic-bezier(0.4, 0, 0.2, 1) infinite;

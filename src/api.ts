@@ -48,7 +48,7 @@ export const api = {
       method: 'POST',
       body: JSON.stringify(credentials),
     }),
-  googleLogin: (payload?: { email?: string; name?: string; role?: string }) =>
+  googleLogin: (payload?: { email?: string; name?: string; role?: string; idToken?: string }) =>
     request<{ token: string; user: any }>('/auth/google', {
       method: 'POST',
       body: JSON.stringify(payload || {}),
@@ -90,6 +90,17 @@ export const api = {
     request<any>('/users', { method: 'POST', body: JSON.stringify(data) }),
   updateUser: (id: string, data: any) =>
     request<any>(`/users/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  deleteUser: (id: string) =>
+    request<{ success: boolean; message: string }>(`/users/${id}`, { method: 'DELETE' }),
+  syncRootAdmin: () =>
+    request<{ success: boolean; user: any }>('/users/sync-root-admin', { method: 'POST' }),
+  syncAllRoles: () =>
+    request<{
+      success: boolean;
+      count: number;
+      users: any[];
+      rolesBreakdown: Record<string, number>;
+    }>('/users/sync-all-roles', { method: 'POST' }),
 
   // Products & Catalog
   getProducts: (params?: {

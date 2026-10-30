@@ -28,7 +28,10 @@ import {
   Users,
   RefreshCw,
   HelpCircle,
-  BadgeCheck
+  BadgeCheck,
+  Copy,
+  ExternalLink,
+  Globe
 } from 'lucide-react';
 import { useNotification } from '../context/NotificationContext';
 import { api } from '../api';
@@ -88,6 +91,29 @@ export const LoginView: React.FC = () => {
     clearAutoTimeoutNotice();
     setAutoTimeoutNotice(null);
   };
+
+  // Google OAuth Domain Authorization & Diagnostics Modal States
+  const [isDomainModalOpen, setIsDomainModalOpen] = useState(false);
+  const [domainCopyFeedback, setDomainCopyFeedback] = useState(false);
+
+  const currentHost = typeof window !== 'undefined' ? window.location.hostname : 'localhost';
+
+  const handleCopyDeploymentDomain = () => {
+    if (typeof window !== 'undefined' && navigator.clipboard) {
+      navigator.clipboard.writeText(currentHost);
+      setDomainCopyFeedback(true);
+      setTimeout(() => setDomainCopyFeedback(false), 2500);
+    }
+  };
+
+  const handleFallbackToPassword = () => {
+    setIsDomainModalOpen(false);
+    setSelectedRole('ADMIN');
+    setEmail(PRIMARY_ADMIN_EMAIL);
+    setPassword('');
+    setErrorMessage('');
+  };
+
   // Password Reset Modal States
   const [isResetModalOpen, setIsResetModalOpen] = useState(false);
   const [resetStep, setResetStep] = useState<"EMAIL" | "CODE">("EMAIL");
@@ -187,9 +213,13 @@ export const LoginView: React.FC = () => {
         );
       }
 
+      const idToken = await googleUser.getIdToken();
+
       await loginWithGoogle({
         email: googleUser.email,
         name: googleUser.displayName || 'Administrator',
+        role: 'ADMIN',
+        idToken,
       });
       notify({
         type: 'SUCCESS',
@@ -197,7 +227,34 @@ export const LoginView: React.FC = () => {
         message: `Welcome, ${googleUser.displayName || 'Administrator'} (${googleUser.email})`,
       });
     } catch (err: any) {
-      if (err.code !== 'auth/popup-closed-by-user') {
+      console.warn('[GoogleAuth] Error encountered:', err);
+      if (err.code === 'auth/unauthorized-domain') {
+        setIsDomainModalOpen(true);
+        const host = typeof window !== 'undefined' ? window.location.hostname : 'this deployment domain';
+        const errorMsg = `Deployment domain "${host}" is not yet authorized in Firebase Console. Click "Authorize Domain" below or log in with your administrator password.`;
+        setErrorMessage(errorMsg);
+        notify({
+          type: 'WARNING',
+          title: 'Firebase Authorized Domain Required',
+          message: errorMsg,
+        });
+      } else if (err.code === 'auth/popup-blocked') {
+        const errorMsg = 'The Google sign-in popup window was blocked by your browser or iframe security settings. Please allow popups or use administrator password.';
+        setErrorMessage(errorMsg);
+        notify({
+          type: 'ERROR',
+          title: 'Sign-In Popup Blocked',
+          message: errorMsg,
+        });
+      } else if (err.code === 'auth/operation-not-supported-in-this-environment') {
+        const errorMsg = 'Google popup sign-in is not supported in this frame environment. Please open in a standalone browser window or use master credentials.';
+        setErrorMessage(errorMsg);
+        notify({
+          type: 'ERROR',
+          title: 'Environment Restriction',
+          message: errorMsg,
+        });
+      } else if (err.code !== 'auth/popup-closed-by-user' && err.code !== 'auth/cancelled-popup-request') {
         const errorMsg = err.message || 'Could not verify Google credentials';
         setErrorMessage(errorMsg);
         notify({
@@ -353,7 +410,7 @@ export const LoginView: React.FC = () => {
     setUseEmailForStaff(false);
 
     if (role === 'ADMIN') {
-      setEmail('');
+      setEmail(PRIMARY_ADMIN_EMAIL);
       setPassword('');
     } else if (role === 'ACCOUNTANT') {
       setEmail('');
@@ -739,6 +796,17 @@ export const LoginView: React.FC = () => {
                     className="text-[11px] font-semibold text-slate-500 hover:text-[#030A91] hover:underline text-center"
                   >
                     Or sign in with email & password &rarr;
+                  </button>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setIsDomainModalOpen(true);
+                    }}
+                    className="text-[10.5px] text-slate-400 hover:text-[#030A91] hover:underline inline-flex items-center justify-center space-x-1 pt-0.5 cursor-pointer"
+                  >
+                    <Globe className="w-3 h-3 text-slate-400" />
+                    <span>Authorized domain settings</span>
                   </button>
                 </div>
               </div>
@@ -1802,6 +1870,136 @@ export const LoginView: React.FC = () => {
           </div>
         </div>
       )}
-</div>
+
+      {/* Firebase Authorized Domain Diagnostics & Resolution Modal */}
+      {isDomainModalOpen && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl shadow-2xl max-w-lg w-full p-6 sm:p-7 relative border border-slate-200 animate-in fade-in zoom-in-95 duration-200">
+            <button
+              type="button"
+              onClick={() => setIsDomainModalOpen(false)}
+              className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-100 transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <div className="flex items-start space-x-3.5 mb-5">
+              <div className="w-12 h-12 rounded-2xl bg-amber-100 text-amber-900 flex items-center justify-center shrink-0 shadow-inner">
+                <Globe className="w-6 h-6 text-amber-700" />
+              </div>
+              <div>
+                <span className="text-[10px] font-black uppercase tracking-wider text-amber-800 bg-amber-100 px-2 py-0.5 rounded-full">
+                  Deployment Environment Configuration
+                </span>
+                <h3 className="text-lg font-black text-slate-900 mt-1">
+                  Firebase Authorized Domain Required
+                </h3>
+                <p className="text-xs text-slate-500 mt-0.5 leading-relaxed">
+                  Google Authentication on Cloud Run & AI Studio deployment requires this hosting domain to be registered in your Firebase project's Authorized Domains list.
+                </p>
+              </div>
+            </div>
+
+            {/* Current Domain Box with Copy Action */}
+            <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl mb-4">
+              <div className="flex items-center justify-between text-xs font-bold text-slate-700 mb-1.5">
+                <span>Current Deployment Domain:</span>
+                {domainCopyFeedback && (
+                  <span className="text-emerald-600 text-[11px] font-bold flex items-center space-x-1 animate-in fade-in">
+                    <CheckCircle2 className="w-3.5 h-3.5" />
+                    <span>Domain Copied!</span>
+                  </span>
+                )}
+              </div>
+              <div className="flex items-center space-x-2">
+                <div className="flex-1 bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs font-mono font-bold text-slate-800 break-all select-all">
+                  {currentHost}
+                </div>
+                <button
+                  type="button"
+                  onClick={handleCopyDeploymentDomain}
+                  className="px-3 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold inline-flex items-center space-x-1.5 shrink-0 transition-colors cursor-pointer"
+                >
+                  <Copy className="w-3.5 h-3.5" />
+                  <span>{domainCopyFeedback ? 'Copied' : 'Copy'}</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Step-by-Step Instructions */}
+            <div className="space-y-2 mb-5 text-xs text-slate-600">
+              <h4 className="font-black text-slate-800 uppercase tracking-wider text-[11px]">
+                How to resolve in 3 quick steps:
+              </h4>
+              <ol className="list-decimal list-inside space-y-1.5 pl-1 leading-relaxed">
+                <li>
+                  Open your Firebase project{' '}
+                  <strong className="text-slate-900 font-mono">naisiae-erp</strong> in the Firebase Console.
+                </li>
+                <li>
+                  Navigate to{' '}
+                  <strong className="text-slate-900">Authentication &rarr; Settings &rarr; Authorized domains</strong>.
+                </li>
+                <li>
+                  Click <strong className="text-slate-900">Add domain</strong>, paste{' '}
+                  <code className="bg-slate-100 text-slate-900 px-1 py-0.5 rounded font-mono font-bold">{currentHost}</code>, and click Save.
+                </li>
+              </ol>
+            </div>
+
+            {/* Direct Link to Firebase Console */}
+            <div className="mb-4">
+              <a
+                href="https://console.firebase.google.com/project/naisiae-erp/authentication/settings"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full py-2.5 px-4 bg-amber-500 hover:bg-amber-600 text-slate-950 rounded-xl text-xs font-black flex items-center justify-center space-x-2 transition-all shadow-sm"
+              >
+                <span>Open Firebase Console Settings</span>
+                <ExternalLink className="w-3.5 h-3.5" />
+              </a>
+            </div>
+
+            {/* Immediate Administrator Master Password Fallback */}
+            <div className="p-3.5 bg-blue-50/70 border border-blue-200/80 rounded-2xl mb-5">
+              <div className="text-[11px] text-blue-950 font-medium mb-2 leading-relaxed">
+                <strong className="text-[#030A91]">Immediate Access:</strong> You can log in instantly without waiting for domain authorization by using the master administrator password.
+              </div>
+              <button
+                type="button"
+                onClick={handleFallbackToPassword}
+                className="w-full py-2 px-3 bg-[#030A91] hover:bg-blue-900 text-white rounded-xl text-xs font-bold flex items-center justify-center space-x-1.5 transition-colors cursor-pointer"
+              >
+                <KeyRound className="w-3.5 h-3.5 text-[#FACB00]" />
+                <span>Sign In with Administrator Password</span>
+              </button>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex space-x-3">
+              <button
+                type="button"
+                onClick={() => setIsDomainModalOpen(false)}
+                className="w-1/3 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-all"
+              >
+                Close
+              </button>
+              <button
+                type="button"
+                onClick={(e) => {
+                  setIsDomainModalOpen(false);
+                  handleGoogleLogin(e);
+                }}
+                disabled={isSubmitting}
+                className="w-2/3 py-2.5 bg-[#030A91] hover:bg-blue-900 text-white rounded-xl text-xs font-bold flex items-center justify-center space-x-2 transition-all shadow-md"
+              >
+                <GoogleIcon className="w-3.5 h-3.5" />
+                <span>Retry Google Sign-In</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
   );
 };

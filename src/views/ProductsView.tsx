@@ -937,7 +937,7 @@ export const ProductsView: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Top Header & Action Toolbar */}
-      <div className="bg-white p-4 sm:p-6 rounded-2xl border border-slate-200 shadow-xs flex flex-col xl:flex-row xl:items-center justify-between gap-4">
+      <div className="bg-white p-4 sm:p-6 rounded-2xl border border-slate-200 shadow-xs hover:shadow-md transition-all flex flex-col xl:flex-row xl:items-center justify-between gap-4">
         <div>
           <div className="flex items-center space-x-2">
             <div className="w-8 h-8 rounded-xl bg-blue-50 text-[#030A91] flex items-center justify-center shrink-0">
@@ -1146,7 +1146,7 @@ export const ProductsView: React.FC = () => {
         {filtered.map((prod) => (
           <div
             key={prod.id}
-            className="bg-white rounded-3xl border border-slate-200 shadow-xs hover:shadow-md transition-all overflow-hidden flex flex-col justify-between group"
+            className="bg-white rounded-3xl border border-slate-200 shadow-xs hover:shadow-lg hover:bg-slate-50 transition-all overflow-hidden flex flex-col justify-between group"
           >
             <div>
               {/* Product Image Banner */}

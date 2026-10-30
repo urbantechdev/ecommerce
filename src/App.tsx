@@ -27,6 +27,7 @@ import { PolicyView } from './views/pages/PolicyView';
 import { ContactUsView } from './views/pages/ContactUsView';
 import { UniformsView } from './views/pages/UniformsView';
 import { ProductDetailView } from './views/pages/ProductDetailView';
+import { GalleryView } from './views/pages/GalleryView';
 import { getSessionSnapshot, saveSessionSnapshot } from './utils/sessionManager';
 
 const AppContent: React.FC = () => {
@@ -178,6 +179,8 @@ const AppContent: React.FC = () => {
           return <AuditLogsView />;
         case 'settings':
           return <SettingsView />;
+        case 'gallery':
+          return <GalleryView />;
         default:
           return <DashboardView onNavigate={setCurrentView} />;
       }

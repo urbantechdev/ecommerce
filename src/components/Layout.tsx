@@ -26,7 +26,8 @@ import {
   FileCheck,
   UserCheck,
   Maximize2,
-  Minimize2
+  Minimize2,
+  Shirt
 } from 'lucide-react';
 import { api } from '../api';
 
@@ -107,6 +108,7 @@ export const Layout: React.FC<LayoutProps> = ({ currentView, onNavigate, childre
         { id: 'pos', label: 'POS Terminal', icon: ShoppingCart, highlight: true },
         { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
         { id: 'receipts', label: 'Sales Receipts', icon: Receipt },
+        { id: 'gallery', label: 'Uniform Gallery', icon: Shirt },
       ],
     },
     {

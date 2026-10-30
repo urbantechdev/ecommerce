@@ -28,7 +28,7 @@ interface AuthContextType {
   consumeRestoredNotice: () => void;
   login: (credentials: { email: string; password: string }) => Promise<void>;
   loginAsAdmin: () => Promise<void>;
-  loginWithGoogle: (googleData?: { email?: string; name?: string }) => Promise<void>;
+  loginWithGoogle: (googleData: { email: string; name?: string; role?: string; idToken?: string }) => Promise<void>;
   loginWithPin: (credentials: { userId: string; pin: string }) => Promise<void>;
   logout: (isAutoInactivity?: boolean) => Promise<void>;
   switchBranch: (branchId: string) => Promise<void>;
@@ -36,6 +36,7 @@ interface AuthContextType {
   canAccessFinancials: boolean;
   canAccessSettings: boolean;
   canAccessAdmin: boolean;
+  isSuperAdmin: boolean;
   isStaff: boolean;
   refreshBranches: () => Promise<void>;
 }
@@ -241,7 +242,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     throw new Error('Direct 1-click admin login has been disabled for system security. Please enter your administrator credentials or authenticate via Google.');
   };
 
-  const loginWithGoogle = async (googleData: { email: string; name?: string }) => {
+  const loginWithGoogle = async (googleData: { email: string; name?: string; role?: string; idToken?: string }) => {
     if (!googleData?.email) {
       throw new Error('Google account email is required');
     }
@@ -288,18 +289,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const isSuperAdmin = user?.role === 'SUPER_ADMIN';
+  const isAdmin = user?.role === 'ADMIN' || isSuperAdmin;
+
   const hasRole = (...roles: UserRole[]) => {
     if (!user) return false;
-    if (user.role === 'ADMIN') return true;
+    // SUPER_ADMIN has access to everything
+    if (user.role === 'SUPER_ADMIN') return true;
+    // ADMIN has access to any role check except strict SUPER_ADMIN
+    if (user.role === 'ADMIN' && (roles.includes('ADMIN') || !roles.includes('SUPER_ADMIN'))) return true;
     return roles.includes(user.role);
   };
 
   const activeBranch = branches.find((b) => b.id === activeBranchId);
   const activeBranchName = activeBranch ? activeBranch.name : 'Consolidated (All Branches)';
 
-  const canAccessAdmin = user?.role === 'ADMIN';
-  const canAccessFinancials = user?.role === 'ADMIN' || user?.role === 'ACCOUNTANT';
-  const canAccessSettings = user?.role === 'ADMIN';
+  const canAccessAdmin = isAdmin;
+  const canAccessFinancials = isAdmin || user?.role === 'ACCOUNTANT';
+  const canAccessSettings = isAdmin;
   const isStaff = user?.role === 'STAFF';
 
   return (
@@ -324,6 +331,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         canAccessFinancials,
         canAccessSettings,
         canAccessAdmin,
+        isSuperAdmin,
         isStaff,
         refreshBranches: fetchBranches,
       }}
