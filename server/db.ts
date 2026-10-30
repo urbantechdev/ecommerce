@@ -3,12 +3,22 @@ import path from 'path';
 import bcrypt from 'bcryptjs';
 import { v4 as uuidv4 } from 'uuid';
 
+export type UserRole =
+  | 'SUPER_ADMIN'
+  | 'ADMIN'
+  | 'BRANCH_MANAGER'
+  | 'ACCOUNTANT'
+  | 'STORE_KEEPER'
+  | 'CASHIER'
+  | 'TAILOR'
+  | 'STAFF';
+
 export interface User {
   id: string;
   name: string;
   email: string;
   passwordHash: string;
-  role: 'ADMIN' | 'ACCOUNTANT' | 'STAFF';
+  role: UserRole;
   branchId: string; // 'all' or specific branchId
   phone?: string;
   pin?: string; // 6-digit assigned PIN for fast POS terminal cashier authentication

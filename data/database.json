@@ -121,12 +121,60 @@
       "name": "Dorcah Moraa (Admin)",
       "email": "moraasdorcah@gmail.com",
       "passwordHash": "$2b$10$kxLVk.Lan07mEAz2hSamyOKW0eRIQI71a1ogDDsLJBGiME9Hs6.72",
-      "role": "ADMIN",
+      "role": "SUPER_ADMIN",
       "branchId": "all",
       "phone": "0792021496",
       "status": "ACTIVE",
       "createdAt": "2026-10-29T07:03:57.220Z",
-      "lastLogin": "2026-10-29T07:03:57.221Z"
+      "lastLogin": "2026-10-30T09:10:47.812Z"
+    },
+    {
+      "id": "usr-bm-grace",
+      "name": "Grace Wanjiku",
+      "email": "grace@naisiaetextiles.com",
+      "passwordHash": "$2b$10$E79ZUvNYUy549307h1RRce1TKxgFojDdgy5R8lAi62ktglIrqayei",
+      "role": "BRANCH_MANAGER",
+      "branchId": "branch-nbi-cbd",
+      "phone": "0722100200",
+      "pin": "100200",
+      "status": "ACTIVE",
+      "createdAt": "2026-10-30T09:00:07.644Z"
+    },
+    {
+      "id": "usr-sk-faith",
+      "name": "Faith Mutua",
+      "email": "faith@naisiaetextiles.com",
+      "passwordHash": "$2b$10$E79ZUvNYUy549307h1RRce1TKxgFojDdgy5R8lAi62ktglIrqayei",
+      "role": "STORE_KEEPER",
+      "branchId": "branch-nbi-cbd",
+      "phone": "0733200300",
+      "pin": "200300",
+      "status": "ACTIVE",
+      "createdAt": "2026-10-30T09:00:07.644Z"
+    },
+    {
+      "id": "usr-csh-brian",
+      "name": "Brian Kiprop",
+      "email": "brian@naisiaetextiles.com",
+      "passwordHash": "$2b$10$E79ZUvNYUy549307h1RRce1TKxgFojDdgy5R8lAi62ktglIrqayei",
+      "role": "CASHIER",
+      "branchId": "branch-nbi-cbd",
+      "phone": "0711300400",
+      "pin": "300400",
+      "status": "ACTIVE",
+      "createdAt": "2026-10-30T09:00:07.644Z"
+    },
+    {
+      "id": "usr-tlr-mercy",
+      "name": "Mercy Chebet",
+      "email": "mercy@naisiaetextiles.com",
+      "passwordHash": "$2b$10$E79ZUvNYUy549307h1RRce1TKxgFojDdgy5R8lAi62ktglIrqayei",
+      "role": "TAILOR",
+      "branchId": "branch-nbi-cbd",
+      "phone": "0744500600",
+      "pin": "500600",
+      "status": "ACTIVE",
+      "createdAt": "2026-10-30T09:00:07.644Z"
     }
   ],
   "products": [
@@ -65584,6 +65632,48 @@
   "purchases": [],
   "expenses": [],
   "auditLogs": [
+    {
+      "id": "1bad9237-2007-41a7-bd38-4921e343b923",
+      "timestamp": "2026-10-30T09:10:47.824Z",
+      "userId": "usr-admin-moraasdorcah",
+      "userName": "Dorcah Moraa (Admin)",
+      "userRole": "SUPER_ADMIN",
+      "branchId": "all",
+      "branchName": "All Branches (HQ)",
+      "action": "GOOGLE_AUTH_SUCCESS",
+      "entityType": "AUTH",
+      "entityId": "usr-admin-moraasdorcah",
+      "details": "SUPER_ADMIN user Dorcah Moraa (Admin) signed in successfully via Google Account (moraasdorcah@gmail.com)",
+      "ipAddress": "127.0.0.1"
+    },
+    {
+      "id": "3b0ac90d-ffb1-4a8d-9227-ec21b17f9f4e",
+      "timestamp": "2026-10-30T09:00:07.773Z",
+      "userId": "system-sync",
+      "userName": "User & Role Migration Engine",
+      "userRole": "SYSTEM",
+      "branchId": "all",
+      "branchName": "All Branches (HQ)",
+      "action": "USER_ROLES_BATCH_SYNC",
+      "entityType": "SECURITY",
+      "entityId": "all-users",
+      "details": "Synchronized 11 organization users across 8 distinct RBAC roles.",
+      "ipAddress": "127.0.0.1"
+    },
+    {
+      "id": "f05ad790-2943-4c3c-b544-92ffcd51f06b",
+      "timestamp": "2026-10-30T07:51:58.074Z",
+      "userId": "usr-admin-moraasdorcah",
+      "userName": "Dorcah Moraa (Admin)",
+      "userRole": "ADMIN",
+      "branchId": "all",
+      "branchName": "All Branches (HQ)",
+      "action": "ROOT_ADMIN_SYNCED",
+      "entityType": "SECURITY",
+      "entityId": "moraasdorcah@gmail.com",
+      "details": "Root administrator account synchronized and verified: moraasdorcah@gmail.com",
+      "ipAddress": "127.0.0.1"
+    },
     {
       "id": "efb55e4f-ac71-41fe-8540-42474ebe710f",
       "timestamp": "2026-10-27T08:05:58.569Z",

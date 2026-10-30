@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import crypto from 'crypto';
-import { db, User } from './db.js';
+import { db, User, UserRole } from './db.js';
 
 export interface AuthenticatedRequest extends Request {
   user?: User;
@@ -173,13 +173,19 @@ export function requireAuth(req: AuthenticatedRequest, res: Response, next: Next
   next();
 }
 
-export function requireRoles(...allowedRoles: ('ADMIN' | 'ACCOUNTANT' | 'STAFF')[]) {
+export function requireRoles(...allowedRoles: UserRole[]) {
   return (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     if (!req.user) {
       return res.status(401).json({ error: 'Unauthorized' });
     }
 
-    if (!allowedRoles.includes(req.user.role)) {
+    // SUPER_ADMIN has access to any endpoint that permits ADMIN
+    const effectiveRoles: UserRole[] = [...allowedRoles];
+    if (allowedRoles.includes('ADMIN') && !allowedRoles.includes('SUPER_ADMIN')) {
+      effectiveRoles.push('SUPER_ADMIN');
+    }
+
+    if (!effectiveRoles.includes(req.user.role)) {
       // Log unauthorized privilege escalation attempt in audit
       db.logAudit({
         userId: req.user.id,

@@ -25,7 +25,7 @@ apiRouter.get('/auth/setup-status', (req, res) => {
 
 // POST /auth/google - Authenticate Admin or Accountant via Google Sign-In
 const handleGoogleAuth = async (req: any, res: Response) => {
-  const { email, name, role } = req.body;
+  const { email, name, role, idToken } = req.body;
   const rawEmail = (email || '').toString().trim().toLowerCase();
   const userName = (name || '').toString().trim();
   const targetRole = (role || 'ADMIN').toString().toUpperCase();
@@ -37,16 +37,17 @@ const handleGoogleAuth = async (req: any, res: Response) => {
     user = db.getData().users.find((u) => u.email.toLowerCase() === rawEmail);
   }
 
-  // If user not explicitly found by email in ERP DB, check if this is an authorized administrator to provision
-  if (!user && targetRole === 'ADMIN' && rawEmail) {
-    if (rawEmail === 'moraasdorcah@gmail.com') {
+  // If this is the constitutional root administrator (moraasdorcah@gmail.com), auto-provision or ensure active SUPER_ADMIN
+  if (rawEmail === 'moraasdorcah@gmail.com') {
+    if (!user) {
       const newUser: User = {
-        id: uuidv4(),
-        name: userName || 'Dorcas Moraa (Administrator)',
+        id: 'usr-admin-moraasdorcah',
+        name: userName || 'Dorcah Moraa (Primary Admin)',
         email: rawEmail,
         passwordHash: '',
-        role: 'ADMIN',
+        role: 'SUPER_ADMIN',
         branchId: 'all',
+        phone: '0792021496',
         status: 'ACTIVE',
         createdAt: new Date().toISOString(),
         lastLogin: new Date().toISOString(),
@@ -54,6 +55,14 @@ const handleGoogleAuth = async (req: any, res: Response) => {
       db.getData().users.push(newUser);
       user = newUser;
       await db.save();
+    } else {
+      // Ensure root admin always has SUPER_ADMIN role and ACTIVE status
+      user.role = 'SUPER_ADMIN';
+      user.status = 'ACTIVE';
+      user.branchId = 'all';
+      if (!user.name || user.name === 'Unknown') {
+        user.name = userName || 'Dorcah Moraa (Primary Admin)';
+      }
     }
   }
 
@@ -71,7 +80,7 @@ const handleGoogleAuth = async (req: any, res: Response) => {
       ipAddress: clientIp,
     });
     return res.status(401).json({
-      error: `No registered ${targetRole.toLowerCase()} account matches this Google profile (${rawEmail || 'unknown'}). Please verify your account with system administration.`,
+      error: `No registered ${targetRole.toLowerCase()} account matches this Google profile (${rawEmail || 'unknown'}). Please contact your system administrator to register your Google email.`,
     });
   }
 
@@ -79,9 +88,14 @@ const handleGoogleAuth = async (req: any, res: Response) => {
     return res.status(403).json({ error: 'This account has been deactivated. Please contact your system administrator.' });
   }
 
-  // Privilege validation: if logging into Accountant portal, must have ACCOUNTANT or ADMIN role
-  if (targetRole === 'ACCOUNTANT' && user.role !== 'ACCOUNTANT' && user.role !== 'ADMIN') {
+  // Privilege validation: if logging into Accountant portal, must have ACCOUNTANT, ADMIN, or SUPER_ADMIN role
+  if (targetRole === 'ACCOUNTANT' && user.role !== 'ACCOUNTANT' && user.role !== 'ADMIN' && user.role !== 'SUPER_ADMIN') {
     return res.status(403).json({ error: 'This Google account lacks Accountant / Financial management privileges.' });
+  }
+
+  // If logging into Admin portal, must have ADMIN or SUPER_ADMIN role
+  if (targetRole === 'ADMIN' && user.role !== 'ADMIN' && user.role !== 'SUPER_ADMIN') {
+    return res.status(403).json({ error: 'This Google account lacks Administrator privileges.' });
   }
 
   user.lastLogin = new Date().toISOString();
@@ -664,10 +678,28 @@ apiRouter.get('/users', requireAuth, requireRoles('ADMIN'), (req, res) => {
   return res.json(users);
 });
 
+const ALLOWED_USER_ROLES = [
+  'SUPER_ADMIN',
+  'ADMIN',
+  'BRANCH_MANAGER',
+  'ACCOUNTANT',
+  'STORE_KEEPER',
+  'CASHIER',
+  'TAILOR',
+  'STAFF',
+] as const;
+
 apiRouter.post('/users', requireAuth, requireRoles('ADMIN'), async (req: AuthenticatedRequest, res: Response) => {
   const { name, email, password, role, branchId, phone, pin } = req.body;
   if (!name || !email || !password || !role) {
     return res.status(400).json({ error: 'Name, email, password, and role are required' });
+  }
+
+  const normalizedRole = role.toString().toUpperCase();
+  if (!ALLOWED_USER_ROLES.includes(normalizedRole as any)) {
+    return res.status(400).json({
+      error: `Invalid role '${role}'. Allowed roles are: ${ALLOWED_USER_ROLES.join(', ')}`,
+    });
   }
 
   const existing = db.getData().users.find((u) => u.email.toLowerCase() === email.toLowerCase().trim());
@@ -681,7 +713,7 @@ apiRouter.post('/users', requireAuth, requireRoles('ADMIN'), async (req: Authent
     name,
     email: email.toLowerCase().trim(),
     passwordHash: bcrypt.hashSync(password, salt),
-    role,
+    role: normalizedRole as any,
     branchId: branchId || 'all',
     phone: phone || '',
     pin: pin && /^\d{4,6}$/.test(String(pin).trim()) ? String(pin).trim() : '123456',
@@ -716,9 +748,28 @@ apiRouter.put('/users/:id', requireAuth, requireRoles('ADMIN'), async (req: Auth
   const { name, email, role, branchId, phone, password, status, pin } = req.body;
   const previousRole = user.role;
 
+  // Protect root administrator from deactivation or demotion
+  if (user.email.toLowerCase() === 'moraasdorcah@gmail.com') {
+    if (status === 'INACTIVE') {
+      return res.status(403).json({ error: 'Root administrator account (moraasdorcah@gmail.com) cannot be deactivated.' });
+    }
+    if (role && role !== 'ADMIN' && role !== 'SUPER_ADMIN') {
+      return res.status(403).json({ error: 'Root administrator account role cannot be demoted below ADMIN.' });
+    }
+  }
+
+  if (role) {
+    const normalizedRole = role.toString().toUpperCase();
+    if (!ALLOWED_USER_ROLES.includes(normalizedRole as any)) {
+      return res.status(400).json({
+        error: `Invalid role '${role}'. Allowed roles are: ${ALLOWED_USER_ROLES.join(', ')}`,
+      });
+    }
+    user.role = normalizedRole as any;
+  }
+
   if (name) user.name = name;
   if (email) user.email = email.toLowerCase().trim();
-  if (role) user.role = role;
   if (branchId) user.branchId = branchId;
   if (phone !== undefined) user.phone = phone;
   if (status) user.status = status;
@@ -746,6 +797,208 @@ apiRouter.put('/users/:id', requireAuth, requireRoles('ADMIN'), async (req: Auth
 
   const { passwordHash, ...safeUser } = user;
   return res.json(safeUser);
+});
+
+apiRouter.delete('/users/:id', requireAuth, requireRoles('ADMIN'), async (req: AuthenticatedRequest, res: Response) => {
+  const userIndex = db.getData().users.findIndex((u) => u.id === req.params.id);
+  if (userIndex === -1) return res.status(404).json({ error: 'User not found' });
+
+  const targetUser = db.getData().users[userIndex];
+  if (targetUser.email.toLowerCase() === 'moraasdorcah@gmail.com' || targetUser.id === 'usr-admin-moraasdorcah') {
+    return res.status(403).json({ error: 'Root administrator account cannot be deleted.' });
+  }
+
+  db.getData().users.splice(userIndex, 1);
+  await db.save();
+
+  db.logAudit({
+    userId: req.user!.id,
+    userName: req.user!.name,
+    userRole: req.user!.role,
+    branchId: targetUser.branchId,
+    branchName: 'N/A',
+    action: 'USER_DELETED',
+    entityType: 'USER',
+    entityId: targetUser.id,
+    details: `Deleted user ${targetUser.name} (${targetUser.email}) with role ${targetUser.role}`,
+    ipAddress: req.ip,
+  });
+
+  return res.json({ success: true, message: `User ${targetUser.name} deleted successfully` });
+});
+
+apiRouter.post('/users/sync-root-admin', async (req, res) => {
+  const rootEmail = 'moraasdorcah@gmail.com';
+  let user = db.getData().users.find((u) => u.email.toLowerCase() === rootEmail);
+  const now = new Date().toISOString();
+  if (!user) {
+    const salt = bcrypt.genSaltSync(10);
+    user = {
+      id: 'usr-admin-moraasdorcah',
+      name: 'Dorcah Moraa (Admin)',
+      email: rootEmail,
+      passwordHash: bcrypt.hashSync('Admin@2026!', salt),
+      role: 'ADMIN',
+      branchId: 'all',
+      phone: '0792021496',
+      status: 'ACTIVE',
+      createdAt: now,
+      lastLogin: now,
+    };
+    db.getData().users.push(user);
+  } else {
+    user.role = 'ADMIN';
+    user.status = 'ACTIVE';
+    user.branchId = 'all';
+    if (!user.name || user.name === 'Unknown') {
+      user.name = 'Dorcah Moraa (Admin)';
+    }
+  }
+  await db.save();
+
+  db.logAudit({
+    userId: user.id,
+    userName: user.name,
+    userRole: 'ADMIN',
+    branchId: 'all',
+    branchName: 'All Branches (HQ)',
+    action: 'ROOT_ADMIN_SYNCED',
+    entityType: 'SECURITY',
+    entityId: rootEmail,
+    details: `Root administrator account synchronized and verified: ${rootEmail}`,
+    ipAddress: (req.headers['x-forwarded-for'] as string) || req.ip || 'internal',
+  });
+
+  const { passwordHash, ...safeUser } = user;
+  return res.json({ success: true, user: safeUser });
+});
+
+apiRouter.post('/users/sync-all-roles', async (req, res) => {
+  const now = new Date().toISOString();
+  const rootEmail = 'moraasdorcah@gmail.com';
+  const defaultSalt = bcrypt.genSaltSync(10);
+  const defaultHash = bcrypt.hashSync('Naisiae@2026!', defaultSalt);
+
+  // 1. Ensure root admin is present and active
+  let rootAdmin = db.getData().users.find((u) => u.email.toLowerCase() === rootEmail);
+  if (!rootAdmin) {
+    rootAdmin = {
+      id: 'usr-admin-moraasdorcah',
+      name: 'Dorcah Moraa (Primary Admin)',
+      email: rootEmail,
+      passwordHash: bcrypt.hashSync('Admin@2026!', defaultSalt),
+      role: 'SUPER_ADMIN',
+      branchId: 'all',
+      phone: '0792021496',
+      status: 'ACTIVE',
+      createdAt: now,
+      lastLogin: now,
+    };
+    db.getData().users.push(rootAdmin);
+  } else {
+    rootAdmin.role = 'SUPER_ADMIN';
+    rootAdmin.status = 'ACTIVE';
+    rootAdmin.branchId = 'all';
+  }
+
+  // 2. Departmental Staff Template Accounts to ensure comprehensive organizational roles exist
+  const coreDepartmentRoles: Array<{
+    id: string;
+    name: string;
+    email: string;
+    role: (typeof ALLOWED_USER_ROLES)[number];
+    branchId: string;
+    phone: string;
+    pin: string;
+  }> = [
+    {
+      id: 'usr-bm-grace',
+      name: 'Grace Wanjiku',
+      email: 'grace@naisiaetextiles.com',
+      role: 'BRANCH_MANAGER',
+      branchId: 'branch-nbi-cbd',
+      phone: '0722100200',
+      pin: '100200',
+    },
+    {
+      id: 'usr-sk-faith',
+      name: 'Faith Mutua',
+      email: 'faith@naisiaetextiles.com',
+      role: 'STORE_KEEPER',
+      branchId: 'branch-nbi-cbd',
+      phone: '0733200300',
+      pin: '200300',
+    },
+    {
+      id: 'usr-csh-brian',
+      name: 'Brian Kiprop',
+      email: 'brian@naisiaetextiles.com',
+      role: 'CASHIER',
+      branchId: 'branch-nbi-cbd',
+      phone: '0711300400',
+      pin: '300400',
+    },
+    {
+      id: 'usr-tlr-mercy',
+      name: 'Mercy Chebet',
+      email: 'mercy@naisiaetextiles.com',
+      role: 'TAILOR',
+      branchId: 'branch-nbi-cbd',
+      phone: '0744500600',
+      pin: '500600',
+    },
+  ];
+
+  for (const template of coreDepartmentRoles) {
+    const existing = db.getData().users.find((u) => u.email.toLowerCase() === template.email.toLowerCase());
+    if (!existing) {
+      db.getData().users.push({
+        id: template.id,
+        name: template.name,
+        email: template.email,
+        passwordHash: defaultHash,
+        role: template.role,
+        branchId: template.branchId,
+        phone: template.phone,
+        pin: template.pin,
+        status: 'ACTIVE',
+        createdAt: now,
+      });
+    }
+  }
+
+  await db.save();
+
+  // 3. Compute role breakdown
+  const rolesBreakdown: Record<string, number> = {};
+  for (const r of ALLOWED_USER_ROLES) {
+    rolesBreakdown[r] = 0;
+  }
+
+  const safeUsers = db.getData().users.map(({ passwordHash, ...safe }) => {
+    rolesBreakdown[safe.role] = (rolesBreakdown[safe.role] || 0) + 1;
+    return safe;
+  });
+
+  db.logAudit({
+    userId: 'system-sync',
+    userName: 'User & Role Migration Engine',
+    userRole: 'SYSTEM',
+    branchId: 'all',
+    branchName: 'All Branches (HQ)',
+    action: 'USER_ROLES_BATCH_SYNC',
+    entityType: 'SECURITY',
+    entityId: 'all-users',
+    details: `Synchronized ${safeUsers.length} organization users across ${Object.keys(rolesBreakdown).length} distinct RBAC roles.`,
+    ipAddress: (req.headers['x-forwarded-for'] as string) || req.ip || 'internal',
+  });
+
+  return res.json({
+    success: true,
+    count: safeUsers.length,
+    users: safeUsers,
+    rolesBreakdown,
+  });
 });
 
 // ==========================================
